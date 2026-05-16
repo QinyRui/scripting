@@ -2043,8 +2043,7 @@ async function handleAction(action: string) {
   if (action === "clear-background") return clearBackground()
   if (action === "transparent-background") return transparentBackground()
   if (action === "refresh-weather-background") {
-    // handled implicitly by widget reload side effects, or we can add fetch logic here if needed.
-    // For now, reloadWidgets already wakes up the widget to fetch.
+    reloadWidgets("force-refresh")
     return
   }
 }
