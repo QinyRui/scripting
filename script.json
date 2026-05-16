@@ -1,0 +1,44 @@
+{
+  "localizedDescriptions" : {
+    "pt" : "",
+    "de" : "",
+    "en" : "",
+    "ja" : "",
+    "it" : "",
+    "ru" : "",
+    "fr" : "",
+    "es" : "",
+    "zh" : ""
+  },
+  "localizedNames" : {
+    "zh" : "",
+    "ja" : "",
+    "ru" : "",
+    "pt" : "",
+    "en" : "",
+    "fr" : "",
+    "de" : "",
+    "it" : "",
+    "es" : ""
+  },
+  "entry" : "index.tsx",
+  "intentInputTypes" : [
+
+  ],
+  "contributors" : [
+
+  ],
+  "remoteResource" : null,
+  "iconImage" : null,
+  "runInApp" : false,
+  "color" : "rgba(102, 196, 235,1)",
+  "name" : "IP 信息展示改①",
+  "description" : null,
+  "version" : "1.0.0",
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
+  },
+  "icon" : "network"
+}
