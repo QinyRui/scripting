@@ -1,48 +1,44 @@
 {
   "author" : {
-    "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "name" : "QinyRui"
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
   },
-  "icon" : "cloud.fill",
   "iconImage" : "",
-  "contributors" : [
-
-  ],
-  "remoteResource" : {
-    "autoUpdateInterval" : 86400,
-    "url" : "https:\/\/github.com\/QinyRui\/QYR-\/blob\/jiuhao\/2.9.js",
-    "hash" : "F1FD9FD1-9B20-4253-824D-46737CAF8937"
-  },
-  "localizedNames" : {
-    "pt" : "",
-    "ja" : "",
-    "es" : "",
-    "it" : "",
-    "ru" : "",
-    "zh" : "",
-    "en" : "",
-    "fr" : "",
-    "de" : ""
-  },
-  "name" : "彩云天气(^ᴗ^)☁️",
-  "runInApp" : true,
+  "description" : "",
   "intentInputTypes" : [
 
   ],
-  "description" : "",
-  "localizedDescriptions" : {
-    "it" : "",
-    "en" : "",
-    "zh" : "",
-    "es" : "",
+  "localizedNames" : {
     "ja" : "",
+    "en" : "",
+    "fr" : "",
+    "it" : "",
     "de" : "",
-    "pt" : "",
+    "es" : "",
     "ru" : "",
-    "fr" : ""
+    "zh" : "",
+    "pt" : ""
   },
+  "remoteResource" : null,
+  "runInApp" : false,
+  "entry" : "index.tsx",
   "version" : "1.0.0",
-  "color" : "rgba(174, 109, 216,1)",
-  "entry" : "index.tsx"
+  "name" : "九号签到（多功能）",
+  "color" : "rgba(102, 196, 235,1)",
+  "localizedDescriptions" : {
+    "ja" : "",
+    "it" : "",
+    "pt" : "",
+    "en" : "",
+    "es" : "",
+    "zh" : "",
+    "fr" : "",
+    "ru" : "",
+    "de" : ""
+  },
+  "icon" : "scooter",
+  "contributors" : [
+
+  ]
 }
