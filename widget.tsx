@@ -168,10 +168,10 @@ const solarTerms = ["小寒", "大寒", "立春", "雨水", "惊蛰", "春分", 
 const solarTermOffsets = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758]
 const greetingText = {
   nightGreeting: "☀️   彩云天气☀️~ ",
-  morningGreeting: "💫,早上心情美美哒~",
-  noonGreeting: "🥳,中午好呀~",
-  afternoonGreeting: "🐡,下午好呀~",
-  eveningGreeting: "🐳,傍晚好呀!",
+  morningGreeting: "🥱早上心情美美哒~",
+  noonGreeting: "🫩中午好呀",
+  afternoonGreeting: "🫨下午好呀",
+  eveningGreeting: "😈傍晚好呀!",
   nightText: "🌙,晚上好呀!",
 }
 const weatherIcos: Record<string, string> = {
