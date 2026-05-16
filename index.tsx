@@ -1568,13 +1568,15 @@ function reloadWidgets(source = "index") {
 
 async function previewWidget(family: "systemMedium" | "systemLarge") {
   reloadWidgets(`preview:${family}`)
-  // Note: Widget.preview() 在 Scripting 应用中未实现
-  // 使用外部工具预览 widget: scripting_project action=widget
-  const alert = new Alert()
-  alert.title = "预览 Widget"
-  alert.message = `已触发 ${family} 组件的预览加载。\n请在 Scripting 应用中手动查看 widget 预览。`
-  alert.addAction("确定")
-  await alert.presentAlert()
+  try {
+    await Widget.preview({ family: family })
+  } catch (error) {
+    const alert = new Alert()
+    alert.title = "预览失败"
+    alert.message = String(error)
+    alert.addAction("确定")
+    await alert.presentAlert()
+  }
 }
 
 async function inputApiKey() {
