@@ -1,48 +1,44 @@
 {
+  "runInApp" : false,
+  "description" : "",
+  "name" : "九号自带签到（多功能）",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/%E4%B9%9D%E5%8F%B7\/IMG_1706.png",
   "author" : {
-    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "name" : "QinyRui"
+    "email" : "602839678@qq.com"
   },
-  "icon" : "cloud.fill",
-  "iconImage" : "",
-  "contributors" : [
-
-  ],
-  "remoteResource" : {
-    "autoUpdateInterval" : 86400,
-    "url" : "https:\/\/github.com\/QinyRui\/QYR-\/blob\/jiuhao\/2.9.js",
-    "hash" : "F1FD9FD1-9B20-4253-824D-46737CAF8937"
-  },
+  "color" : "rgba(143, 168, 149,1)",
   "localizedNames" : {
-    "pt" : "",
-    "ja" : "",
-    "es" : "",
-    "it" : "",
-    "ru" : "",
     "zh" : "",
     "en" : "",
+    "ja" : "",
     "fr" : "",
-    "de" : ""
+    "es" : "",
+    "de" : "",
+    "pt" : "",
+    "it" : "",
+    "ru" : ""
   },
-  "name" : "彩云天气(^ᴗ^)☁️",
-  "runInApp" : true,
+  "remoteResource" : null,
+  "localizedDescriptions" : {
+    "de" : "",
+    "it" : "",
+    "ru" : "",
+    "ja" : "",
+    "zh" : "",
+    "fr" : "",
+    "es" : "",
+    "pt" : "",
+    "en" : ""
+  },
+  "icon" : "scooter",
+  "version" : "1.1.0",
+  "entry" : "index.tsx",
   "intentInputTypes" : [
 
   ],
-  "description" : "",
-  "localizedDescriptions" : {
-    "it" : "",
-    "en" : "",
-    "zh" : "",
-    "es" : "",
-    "ja" : "",
-    "de" : "",
-    "pt" : "",
-    "ru" : "",
-    "fr" : ""
-  },
-  "version" : "1.0.0",
-  "color" : "rgba(174, 109, 216,1)",
-  "entry" : "index.tsx"
+  "contributors" : [
+
+  ]
 }

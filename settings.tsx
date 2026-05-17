@@ -8,45 +8,32 @@ import {
   Text,
   Toggle,
   Script,
-  useState,
   Color,
   HStack,
   Spacer,
-  fetch,
-  VStack,
-  Divider
+  useState,
+  fetch
 } from "scripting"
 
-declare const Storage: any
 declare const Dialog: any
 declare const Safari: any
 declare const Pasteboard: any
 
-// ==================== 版本信息 ====================
+// 版本信息
 const VERSION = "1.0.2"
 const BUILD_DATE = "2025-12-19"
 
-// ==================== 存储键 ====================
+// 存储键
 const SETTINGS_KEY = "ninebotSettings"
 const FULLSCREEN_KEY = "ninebotSettingsFullscreen"
 
-// ==================== 九号的 BoxJs / 模块链接 ====================
+// 九号的 BoxJs 订阅链接
 const NINEBOT_BOXJS_JSON_URL =
-  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/2.9.boxjs.json"
-
+  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/Ninebot.boxjs.json"
 const NINEBOT_BOXJS_SUB_URL =
   `http://boxjs.com/#/sub/add/${encodeURIComponent(NINEBOT_BOXJS_JSON_URL)}`
 
-const NINEBOT_LOON_PLUGIN_URL =
-  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/NinebotSign2.9.plugin"
-
-const NINEBOT_LOON_INSTALL_URL =
-  `loon://import?plugin=${encodeURIComponent(NINEBOT_LOON_PLUGIN_URL)}`
-
-// ==================== API测试地址 ====================
-const NINEBOT_TEST_SIGN_URL = "https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/status"
-
-// ==================== 设置数据结构 ====================
+// 设置数据结构
 export interface NinebotSettings {
   authorization: string
   deviceId: string
@@ -54,16 +41,10 @@ export interface NinebotSettings {
   enableBoxJs: boolean
   boxJsUrl: string
   refreshInterval: number
-  autoSign: boolean
-  autoSignTime: string
   autoOpenBlindBox: boolean
-  titleDayColor: Color
-  titleNightColor: Color
-  descDayColor: Color
-  descNightColor: Color
 }
 
-// ==================== 默认设置 ====================
+// 默认设置
 const defaultSettings: NinebotSettings = {
   authorization: "",
   deviceId: "",
@@ -71,30 +52,21 @@ const defaultSettings: NinebotSettings = {
   enableBoxJs: false,
   boxJsUrl: "https://boxjs.com",
   refreshInterval: 15,
-  autoSign: false,
-  autoSignTime: "00:30",
   autoOpenBlindBox: false,
-  titleDayColor: "#333333" as unknown as Color,
-  titleNightColor: "#FFFFFF" as unknown as Color,
-  descDayColor: "#666666" as unknown as Color,
-  descNightColor: "#CCCCCC" as unknown as Color,
 }
 
-// ==================== 工具函数 ====================
+// 工具函数：验证DeviceId格式
 const validateDeviceId = (deviceId: string): boolean => {
   return /^[0-9A-F-]{32,}$/i.test(deviceId)
 }
 
+// 工具函数：测试API连接
 const testApiConnection = async (auth: string, deviceId: string, ua: string) => {
   try {
-    if (!auth) {
-      throw new Error("Authorization不能为空")
-    }
-    if (!validateDeviceId(deviceId)) {
-      throw new Error("DeviceId格式错误，应为UUID格式")
-    }
+    if (!auth) throw new Error("Authorization不能为空")
+    if (!validateDeviceId(deviceId)) throw new Error("DeviceId格式错误，应为UUID格式")
 
-    const response = await fetch(NINEBOT_TEST_SIGN_URL, {
+    const response = await fetch("https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/status", {
       method: "GET",
       headers: {
         "Authorization": auth,
@@ -105,38 +77,47 @@ const testApiConnection = async (auth: string, deviceId: string, ua: string) => 
       timeout: 10
     })
 
-    if (response.ok) {
-      return { success: true, message: "API连接成功，鉴权信息有效" }
-    } else {
-      return { success: false, message: `API请求失败，状态码：${response.status}` }
-    }
+    return response.ok 
+      ? { success: true, message: "API连接成功，鉴权信息有效" } 
+      : { success: false, message: `API请求失败，状态码：${response.status}` }
   } catch (error: any) {
     return { success: false, message: `连接异常：${error.message || "未知错误"}` }
   }
 }
 
+// 工具函数：测试BoxJs连接
 const testBoxJsConnection = async (url: string) => {
   try {
-    const testUrl = `${url.replace(/\/$/, "")}/api/v1/status`
-    const response = await fetch(testUrl, { timeout: 5 })
-    return response.ok 
-      ? { success: true, message: "BoxJs服务连接正常" } 
-      : { success: false, message: `BoxJs响应异常，状态码：${response.status}` }
+    const testUrl = `${url.replace(/\/$/, "")}/api/boxjs/get?key=Ninebot`
+    const response = await fetch(testUrl, {
+      headers: {
+        "Accept": "application/json",
+        "User-Agent": "NinebotSettings/1.0.2",
+        "Referer": url,
+      },
+      timeout: 15000
+    })
+    const raw = await response.text()
+    if (raw.startsWith("<")) throw new Error("返回HTML，接口地址错误")
+    const data = JSON.parse(raw)
+    return { success: true, message: "BoxJs连接成功，可读取Ninebot变量" }
   } catch (error: any) {
     return { success: false, message: `BoxJs连接失败：${error.message || "请检查地址是否正确"}` }
   }
 }
 
+// 工具函数：从 BoxJS 读取鉴权信息（与 widget.tsx 逻辑完全一致）
 const syncAuthFromBoxJs = async (boxJsUrl: string) => {
   try {
     const baseUrl = boxJsUrl.replace(/\/$/, "")
     const authUrl = `${baseUrl}/query/data/ninebot.authorization`
     const deviceUrl = `${baseUrl}/query/data/ninebot.deviceId`
     
-    console.log(`📡 从 BoxJs 同步鉴权信息`)
-    console.log(`   Auth URL: ${authUrl}`)
-    console.log(`   Device URL: ${deviceUrl}`)
+    console.log(`📡 开始从 BoxJs 同步鉴权信息`)
+    console.log(`   Authorization URL: ${authUrl}`)
+    console.log(`   DeviceId URL: ${deviceUrl}`)
     
+    // 使用与 widget.tsx 完全相同的请求方式
     const [authResponse, deviceResponse] = await Promise.all([
       fetch(authUrl, {
         method: "GET",
@@ -158,41 +139,57 @@ const syncAuthFromBoxJs = async (boxJsUrl: string) => {
       })
     ])
 
-    console.log(`   Auth Status: ${authResponse.status}`)
-    console.log(`   Device Status: ${deviceResponse.status}`)
+    console.log(`✅ BoxJs 请求完成`)
+    console.log(`   Authorization Status: ${authResponse.status}`)
+    console.log(`   DeviceId Status: ${deviceResponse.status}`)
 
-    if (!authResponse.ok || !deviceResponse.ok) {
-      throw new Error("BoxJS 请求失败")
-    }
-
+    // 先获取文本，便于调试
     const authText = await authResponse.text()
     const deviceText = await deviceResponse.text()
     
-    console.log(`   Auth Response: ${authText}`)
-    console.log(`   Device Response: ${deviceText}`)
+    console.log(`📄 原始响应:`)
+    console.log(`   Authorization: ${authText}`)
+    console.log(`   DeviceId: ${deviceText}`)
 
-    const authData = JSON.parse(authText)
-    const deviceData = JSON.parse(deviceText)
+    // 解析 JSON
+    let authData: any
+    let deviceData: any
+    
+    try {
+      authData = JSON.parse(authText)
+      deviceData = JSON.parse(deviceText)
+    } catch (e) {
+      throw new Error(`JSON 解析失败: ${e}`)
+    }
 
+    console.log(`🔍 解析后的数据:`)
+    console.log(`   authData:`, JSON.stringify(authData))
+    console.log(`   deviceData:`, JSON.stringify(deviceData))
+
+    // 提取值（兼容多种可能的响应格式）
     const authorization = authData?.val || authData?.value || authData?.data || ""
     const deviceId = deviceData?.val || deviceData?.value || deviceData?.data || ""
 
-    console.log(`   提取 authorization: ${authorization ? '成功' : '失败'}`)
-    console.log(`   提取 deviceId: ${deviceId ? '成功' : '失败'}`)
+    console.log(`📊 提取的值:`)
+    console.log(`   authorization: ${authorization}`)
+    console.log(`   deviceId: ${deviceId}`)
 
     if (!authorization || !deviceId) {
-      const missing = []
-      if (!authorization) missing.push("authorization")
-      if (!deviceId) missing.push("deviceId")
+      const errorMsg = []
+      if (!authorization) errorMsg.push("authorization")
+      if (!deviceId) errorMsg.push("deviceId")
       throw new Error(
-        `BoxJs 中未找到 ${missing.join(" 和 ")}\n\n` +
+        `BoxJs 中未找到有效的 ${errorMsg.join(" 和 ")}。\n\n` +
         `请确保已在 BoxJs 中配置:\n` +
         `• ninebot.authorization\n` +
-        `• ninebot.deviceId`
+        `• ninebot.deviceId\n\n` +
+        `当前获取到的值:\n` +
+        `authorization: ${authorization || "(空)"}\n` +
+        `deviceId: ${deviceId || "(空)"}`
       )
     }
 
-    console.log("✅ 同步成功")
+    console.log("✅ 鉴权信息同步成功")
     return { 
       success: true, 
       authorization, 
@@ -201,7 +198,7 @@ const syncAuthFromBoxJs = async (boxJsUrl: string) => {
     }
 
   } catch (error: any) {
-    console.error("❌ 同步失败:", error)
+    console.error("❌ 从 BoxJs 同步鉴权失败:", error)
     return { 
       success: false, 
       authorization: "",
@@ -211,123 +208,11 @@ const syncAuthFromBoxJs = async (boxJsUrl: string) => {
   }
 }
 
-function AboutView() {
-  const dismiss = Navigation.useDismiss()
-  
-  const openTelegram = async () => {
-    try {
-      await Safari.openURL("https://t.me/JiuHaoAPP")
-    } catch (error) {
-      await Pasteboard.setString("https://t.me/JiuHaoAPP")
-      await Dialog.alert({
-        title: "已复制链接",
-        message: "Telegram 链接已复制到剪贴板",
-        buttonLabel: "确定"
-      })
-    }
-  }
-  
-  const openGithub = async () => {
-    try {
-      await Safari.openURL("https://github.com/QinyRui/QYR-/tree/jiuhao")
-    } catch (error) {
-      await Pasteboard.setString("https://github.com/QinyRui/QYR-/tree/jiuhao")
-      await Dialog.alert({
-        title: "已复制链接",
-        message: "GitHub 仓库链接已复制到剪贴板",
-        buttonLabel: "确定"
-      })
-    }
-  }
-  
-  return (
-    <NavigationStack>
-      <List
-        navigationTitle="关于"
-        navigationBarTitleDisplayMode="inline"
-        toolbar={{
-          topBarTrailing: [
-            <Button title="完成" action={dismiss} />
-          ]
-        }}
-      >
-        <Section>
-          <VStack alignment="center" spacing={12} padding={20} frame={{ maxWidth: 'infinity' }}>
-            <Text font={48} multilineTextAlignment="center">🛴</Text>
-            <Text font={20} fontWeight="bold" foregroundStyle="#1E90FF" multilineTextAlignment="center">
-              九号电动车助手
-            </Text>
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2" multilineTextAlignment="center">
-              Ninebot Assistant
-            </Text>
-          </VStack>
-        </Section>
-        
-        <Section header={<Text font="body" fontWeight="semibold">📱 版本信息</Text>}>
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">版本号</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">v{VERSION}</Text>
-          </HStack>
-          
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">构建日期</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">{BUILD_DATE}</Text>
-          </HStack>
-          
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">适配系统</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">iOS 17+</Text>
-          </HStack>
-        </Section>
-        
-        <Section header={<Text font="body" fontWeight="semibold">👨‍💻 作者信息</Text>}>
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">开发者</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">QinyRui</Text>
-          </HStack>
-        </Section>
-        
-        <Section 
-          header={<Text font="body" fontWeight="semibold">🔗 相关链接</Text>}
-          footer={
-            <Text font="footnote" foregroundStyle="secondaryLabel">
-              点击链接可跳转至相应页面
-            </Text>
-          }
-        >
-          <Button title="Telegram 频道" systemImage="paperplane.fill" action={openTelegram} />
-          <Button title="GitHub 仓库" systemImage="chevron.left.forwardslash.chevron.right" action={openGithub} />
-        </Section>
-        
-        <Section header={<Text font="body" fontWeight="semibold">💝 致谢</Text>}>
-          <VStack alignment="center" spacing={8} padding={16} frame={{ maxWidth: 'infinity' }}>
-            <Text font={13} foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-              感谢所有使用和支持本项目的用户！
-            </Text>
-            <Text font={13} foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-              如有问题或建议，欢迎通过 Telegram 或 GitHub 反馈。
-            </Text>
-          </VStack>
-        </Section>
-        
-        <Section>
-          <VStack alignment="center" spacing={4} padding={12} frame={{ maxWidth: 'infinity' }}>
-            <Text font={11} foregroundStyle="tertiaryLabel" multilineTextAlignment="center">© 2025 QinyRui</Text>
-            <Text font={11} foregroundStyle="tertiaryLabel" multilineTextAlignment="center">Made with ❤️ for Ninebot Users</Text>
-          </VStack>
-        </Section>
-      </List>
-    </NavigationStack>
-  )
-}
-
+// 设置页面
 function SettingsView() {
   const dismiss = Navigation.useDismiss()
   
+  // 读取全屏偏好
   const storedFullscreen = Storage.get(FULLSCREEN_KEY)
   const [fullscreenPref, setFullscreenPref] = useState<boolean>(
     typeof storedFullscreen === "boolean" ? storedFullscreen : true
@@ -339,21 +224,30 @@ function SettingsView() {
     Storage.set(FULLSCREEN_KEY, newValue)
   }
 
+  // 读取设置
   const stored = Storage.get(SETTINGS_KEY) as NinebotSettings | null
   const initial: NinebotSettings = stored ?? defaultSettings
 
+  // State
   const [authorization, setAuthorization] = useState(initial.authorization || "")
   const [deviceId, setDeviceId] = useState(initial.deviceId || "")
   const [userAgent, setUserAgent] = useState(initial.userAgent || defaultSettings.userAgent)
+  
   const [enableBoxJs, setEnableBoxJs] = useState(initial.enableBoxJs ?? false)
   const [boxJsUrl, setBoxJsUrl] = useState(initial.boxJsUrl ?? "https://boxjs.com")
-  const [refreshInterval, setRefreshInterval] = useState(initial.refreshInterval ?? 15)
-  const [autoSign, setAutoSign] = useState(initial.autoSign ?? false)
-  const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
-  const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
+  
+  const [refreshInterval, setRefreshInterval] = useState(
+    initial.refreshInterval ?? 15
+  )
+  
+  const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(
+    initial.autoOpenBlindBox ?? false
+  )
+
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
+  // 保存设置
   const handleSave = () => {
     const newSettings: NinebotSettings = {
       authorization: (authorization ?? "").trim(),
@@ -362,13 +256,7 @@ function SettingsView() {
       enableBoxJs: !!enableBoxJs,
       boxJsUrl: (boxJsUrl ?? "").trim() || "https://boxjs.com",
       refreshInterval: Number(refreshInterval) || 15,
-      autoSign: !!autoSign,
-      autoSignTime: (autoSignTime || "00:30").trim(),
       autoOpenBlindBox: !!autoOpenBlindBox,
-      titleDayColor: initial.titleDayColor,
-      titleNightColor: initial.titleNightColor,
-      descDayColor: initial.descDayColor,
-      descNightColor: initial.descNightColor,
     }
 
     Storage.set(SETTINGS_KEY, newSettings)
@@ -378,11 +266,12 @@ function SettingsView() {
     
     Dialog.alert({
       title: "保存成功",
-      message: "配置已更新,小组件将使用新的设置",
+      message: "配置已更新，小组件将使用新的设置",
       buttonLabel: "确定"
     }).then(dismiss)
   }
 
+  // 从 BoxJS 同步鉴权信息
   const handleSyncFromBoxJs = async () => {
     if (!boxJsUrl) {
       await Dialog.alert({ 
@@ -393,67 +282,78 @@ function SettingsView() {
       return
     }
     
+    console.log("🔄 用户点击同步按钮")
     setSyncing(true)
     
     try {
       const result = await syncAuthFromBoxJs(boxJsUrl)
       setSyncing(false)
       
+      console.log("🎯 同步结果:", result)
+      
       if (result.success) {
+        // 自动填充到输入框
+        console.log(`📝 填充数据到输入框:`)
+        console.log(`   authorization: ${result.authorization}`)
+        console.log(`   deviceId: ${result.deviceId}`)
+        
         setAuthorization(result.authorization)
         setDeviceId(result.deviceId)
         
+        console.log("✅ 输入框已更新")
+        
         await Dialog.alert({
-          title: "✅ 同步成功",
+          title: "同步成功",
           message: `${result.message}\n\n已自动填充到下方输入框\n请点击右上角"完成"按钮保存配置`,
           buttonLabel: "确定"
         })
       } else {
-        // 优化点：同步失败时，引导用户通过简单方式获取
-        const shouldOpenApp = await Dialog.confirm({
-          title: "❌ 同步失败",
-          message: `${result.message}\n\n是否打开九号 App 引导获取鉴权？`,
-          confirmButtonLabel: "打开 App",
-          cancelButtonLabel: "取消"
+        await Dialog.alert({
+          title: "同步失败",
+          message: result.message,
+          buttonLabel: "确定"
         })
-        
-        if (shouldOpenApp) {
-          try {
-            await Safari.openURL("segway-ninebot://")
-          } catch {
-            await Dialog.alert({ title: "提示", message: "无法打开九号 App，请手动打开并访问签到页进行抓包", buttonLabel: "确定" })
-          }
-        }
       }
     } catch (error: any) {
       setSyncing(false)
+      console.error("❌ 同步过程出错:", error)
       await Dialog.alert({
-        title: "❌ 同步出错",
-        message: `${error.message || "未知错误"}`,
+        title: "同步出错",
+        message: `发生未预期的错误：${error.message || "未知错误"}`,
         buttonLabel: "确定"
       })
     }
   }
 
+  // 一键清除功能
   const clearAuth = () => {
     setAuthorization("")
     Storage.remove("ninebot.authorization")
+    Storage.remove(SETTINGS_KEY)
     Dialog.alert({ title: "清除成功", message: "Authorization 已清除", buttonLabel: "确定" })
   }
 
   const clearDeviceId = () => {
     setDeviceId("")
     Storage.remove("ninebot.deviceId")
+    Storage.remove(SETTINGS_KEY)
     Dialog.alert({ title: "清除成功", message: "DeviceId 已清除", buttonLabel: "确定" })
   }
 
+  // 关于信息
   const handleAbout = async () => {
-    await Navigation.present({
-      element: <AboutView />,
-      modalPresentationStyle: "pageSheet"
+    await Dialog.alert({
+      title: "九号电动车助手",
+      message:
+        `作者：QinyRui\n` +
+        `版本：v${VERSION}（${BUILD_DATE}）\n` +
+        `Telegram：https://t.me/JiuHaoAPP\n` +
+        `GitHub：github.com/QinyRui/QYR-`,
+      buttonLabel: "关闭",
     })
   }
 
+  // 打开 BoxJS 订阅
   const openBoxJsSubscription = async () => {
     try {
       await Safari.openURL(NINEBOT_BOXJS_SUB_URL)
@@ -475,27 +375,7 @@ function SettingsView() {
     }
   }
 
-  const installLoonPlugin = async () => {
-    try {
-      await Safari.openURL(NINEBOT_LOON_INSTALL_URL)
-    } catch (error) {
-      try {
-        await Pasteboard.setString(NINEBOT_LOON_PLUGIN_URL)
-        await Dialog.alert({
-          title: "已复制链接",
-          message: `Loon 插件链接已复制到剪贴板：\n\n${NINEBOT_LOON_PLUGIN_URL}\n\n请在 Loon 中手动添加插件。`,
-          buttonLabel: "知道了",
-        })
-      } catch {
-        await Dialog.alert({
-          title: "跳转失败",
-          message: `无法打开 Loon 应用。\n\n插件链接：\n\n${NINEBOT_LOON_PLUGIN_URL}`,
-          buttonLabel: "确定",
-        })
-      }
-    }
-  }
-
+  // 测试功能
   const handleTestApi = async () => {
     if (!authorization || !deviceId) {
       await Dialog.alert({ title: "参数缺失", message: "请先填写 Authorization 和 DeviceId", buttonLabel: "确定" })
@@ -523,6 +403,7 @@ function SettingsView() {
     })
   }
 
+  // UI
   return (
     <NavigationStack>
       <List
@@ -539,35 +420,31 @@ function SettingsView() {
             <Button title="完成" action={handleSave} />,
           ],
           bottomBar: [
-            <Button 
-              systemImage="info.circle.fill" 
-              title="关于" 
-              action={handleAbout} 
-              foregroundStyle="#1E90FF"
-            />
+            <Button systemImage="info.circle" title="关于本组件" action={handleAbout} foregroundStyle="secondaryLabel" />
           ],
         }}
       >
+        {/* 模块安装 */}
         <Section 
           header={<Text font="body" fontWeight="semibold">📦 模块安装</Text>}
           footer={
-            <VStack alignment="center" spacing={4} padding={{ vertical: 8 }}>
-              <Text font="footnote" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-使用前建议按顺序完成：
-              </Text>
-              <Text font="footnote" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-                1）在 BoxJS 中订阅配置（可同步鉴权信息）
-              </Text>
-              <Text font="footnote" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-                2）安装九号签到插件到 Loon 等客户端
-              </Text>
-            </VStack>
+            <Text font="footnote" foregroundStyle="secondaryLabel">
+              使用前建议按顺序完成：{"\n"}
+              1）在 BoxJS 中订阅配置（可同步鉴权信息）{"\n"}
+              2）安装九号签到脚本到支持的客户端{"\n\n"}
+              BoxJS 配置链接：{"\n"}
+              {NINEBOT_BOXJS_JSON_URL}
+            </Text>
           }
         >
-          <Button title="订阅 BoxJS 配置" systemImage="shippingbox" action={openBoxJsSubscription} />
-          <Button title="安装 Loon 插件" systemImage="puzzlepiece.extension" action={installLoonPlugin} />
+          <Button
+            title="订阅 BoxJS 配置"
+            systemImage="shippingbox"
+            action={openBoxJsSubscription}
+          />
         </Section>
 
+        {/* BoxJs 配置 */}
         <Section header={<Text font="body" fontWeight="semibold">🔗 BoxJs 配置</Text>}>
           <Toggle
             title="启用 BoxJs 读取鉴权"
@@ -597,27 +474,28 @@ function SettingsView() {
               <Text font="caption2" foregroundStyle="secondaryLabel">
                 点击右侧按钮可测试 BoxJs 连接状态
               </Text>
-              
+              {/* 新增：从 BoxJS 同步按钮 */}
               <Button
-                title={syncing ? "同步中..." : "📥 从 BoxJS 同步鉴权信息"}
+                title={syncing ? "同步中..." : "从 BoxJS 同步鉴权信息"}
                 systemImage="arrow.triangle.2.circlepath"
                 action={handleSyncFromBoxJs}
                 disabled={syncing}
               />
               <Text font="caption2" foregroundStyle="secondaryLabel">
-                点击此按钮可自动从 BoxJS 拉取并填充鉴权信息
+                📥 点击此按钮可自动从 BoxJS 拉取鉴权信息并填充到下方输入框
               </Text>
             </>
           ) : null}
         </Section>
 
+        {/* 鉴权信息 */}
         <Section 
           header={<Text font="body" fontWeight="semibold">🔑 鉴权信息</Text>}
           footer={
             <>
               <Text font="footnote" foregroundStyle="secondaryLabel">
                 {enableBoxJs 
-                  ? "可使用上方同步按钮自动填充，或手动填写" 
+                  ? "可使用上方「从 BoxJS 同步鉴权信息」按钮自动填充，或手动填写" 
                   : "请先运行签到脚本抓包获取 Authorization 和 Device ID"}
               </Text>
               {deviceId && !validateDeviceId(deviceId) ? (
@@ -628,22 +506,24 @@ function SettingsView() {
             </>
           }
         >
+          {/* Authorization 字段 */}
           <HStack spacing={4} padding={{ vertical: 4 }}>
             <TextField
               title="Authorization 鉴权Token"
               value={authorization}
-              prompt="直接粘贴抓包获取的令牌（无需 Bearer 前缀）"
+              prompt="直接粘贴抓包获取的令牌"
               onChanged={setAuthorization}
               frame={{ maxWidth: 'infinity' }}
             />
             <Button 
-              title="清除" 
+              title="一键清除" 
               systemImage="trash" 
               action={clearAuth}
               padding={{ horizontal: 4 }}
             />
           </HStack>
 
+          {/* DeviceId 字段 */}
           <HStack spacing={4} padding={{ vertical: 4 }}>
             <TextField
               title="DeviceId 设备标识"
@@ -653,19 +533,23 @@ function SettingsView() {
               frame={{ maxWidth: 'infinity' }}
             />
             <Button 
-              title="清除" 
+              title="一键清除" 
               systemImage="trash" 
               action={clearDeviceId}
               padding={{ horizontal: 4 }}
             />
           </HStack>
 
-          <TextField
-            title="User-Agent 请求头"
-            value={userAgent}
-            prompt="留空使用默认值"
-            onChanged={setUserAgent}
-          />
+          {/* User-Agent 字段 */}
+          <HStack spacing={4} padding={{ vertical: 4 }}>
+            <TextField
+              title="User-Agent 请求头"
+              value={userAgent}
+              prompt="留空使用默认值"
+              onChanged={setUserAgent}
+              frame={{ maxWidth: 'infinity' }}
+            />
+          </HStack>
 
           <Button
             title={testing ? "测试中..." : "测试 API 连接"}
@@ -675,15 +559,17 @@ function SettingsView() {
           />
         </Section>
 
+        {/* 小组件配置 */}
         <Section 
           header={<Text font="body" fontWeight="semibold">⚙️ 小组件配置</Text>}
           footer={
             <Text font="footnote" foregroundStyle="secondaryLabel">
               刷新间隔：小组件自动刷新的时间间隔（分钟），建议不小于15分钟{"\n"}
-              自动开启盲盒：小组件刷新时自动开启所有可开启的盲盒
+              自动开启盲盒：小组件刷新时自动开启到期的盲盒
             </Text>
           }
         >
+          {/* 刷新间隔 */}
           <HStack spacing={8} padding={{ vertical: 4 }} alignment="center">
             <TextField
               title="刷新间隔（分钟）"
@@ -697,29 +583,7 @@ function SettingsView() {
             </Text>
           </HStack>
           
-          <Toggle
-            title="自动签到"
-            value={autoSign}
-            onChanged={setAutoSign}
-          />
-          {autoSign && (
-            <HStack spacing={8} padding={{ vertical: 4 }} alignment="center">
-              <TextField
-                title="签到时间"
-                value={autoSignTime}
-                onChanged={setAutoSignTime}
-                prompt="例如: 08:30"
-                frame={{ maxWidth: 'infinity' }}
-              />
-              <Text font="caption2" foregroundStyle="secondaryLabel">
-                (格式 HH:mm)
-              </Text>
-            </HStack>
-          )}
-          <Text font="caption2" foregroundStyle="secondaryLabel">
-            🗓 启用后，小组件将在每天设定的时间（或之后第一次刷新时）执行签到
-          </Text>
-          
+          {/* 自动开启盲盒 */}
           <Toggle
             title="自动开启盲盒"
             value={autoOpenBlindBox}
@@ -730,15 +594,11 @@ function SettingsView() {
           </Text>
         </Section>
 
+        {/* 版本信息 */}
         <Section>
-          <VStack alignment="center" spacing={4} padding={12} frame={{ maxWidth: "infinity" }}>
-            <Text font="caption2" foregroundStyle="tertiaryLabel" multilineTextAlignment="center">
-              v{VERSION} · {BUILD_DATE}
-            </Text>
-            <Text font="caption2" foregroundStyle="tertiaryLabel" multilineTextAlignment="center">
-              适配 iOS 17+
-            </Text>
-          </VStack>
+          <Text font="caption2" foregroundStyle="tertiaryLabel" multilineTextAlignment="center">
+            v{VERSION} · {BUILD_DATE} | 适配 iOS 17+
+          </Text>
         </Section>
 
       </List>
@@ -746,6 +606,7 @@ function SettingsView() {
   )
 }
 
+// App / Run
 type AppProps = { interactiveDismissDisabled?: boolean }
 function App(_props: AppProps) {
   return <SettingsView />
