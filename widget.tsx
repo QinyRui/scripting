@@ -1217,7 +1217,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
   const wDesc = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
-  const leftWidth = widgetType === "medium" ? 202 : 210
+  const leftWidth = widgetType === "medium" ? 202 : 225
 
   appendDebugLog("widget info summary", {
     cityStr,
@@ -1238,7 +1238,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
         <SectionText text={cityStr} font={s(widgetType === "medium" ? 9 : 10, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={1} />
       </HStack>
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
-        <SectionText text={wDesc} font={s(widgetType === "medium" ? 9 : 11, "weather")} color={c("#ffffff", "weather")} lineLimit={widgetType === "medium" ? 2 : 3} />
+        <SectionText text={wDesc} font={s(widgetType === "medium" ? 9 : 11, "weather")} color={c("#ffffff", "weather")} lineLimit={widgetType === "medium" ? 3 : 4} />
       </VStack>
       <Spacer minLength={widgetType === "medium" ? 1 : 3} />
       <HStack alignment="top" spacing={widgetType === "medium" ? 6 : 8} frame={{ width: leftWidth, alignment: "leading" }}>
@@ -1303,7 +1303,7 @@ function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherInfo; wi
           <SectionText text={`↑${weatherInfo.maxTemperature ?? "-"}°`} font={s(10, "weather")} color={c("#ff6b6b", "weather")} />
           <SectionText text={`↓${weatherInfo.minTemperature ?? "-"}°`} font={s(10, "weather")} color={c("#72e38a", "weather")} />
         </HStack>
-        <HStack spacing={widgetType === "medium" ? 8 : 11}>
+        <HStack spacing={widgetType === "medium" ? 8 : 4}>
           <HStack spacing={2}>
             <Image systemName="sunrise.fill" renderingMode="template" foregroundStyle={"#ffcc66" as any} frame={{ width: 10, height: 10 }} />
             <SectionText text={weatherInfo.sunrise || "--:--"} font={s(9, "weather")} color={lineColor} />
@@ -1431,9 +1431,11 @@ function LargeWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; po
   return (
     <VStack alignment="leading" spacing={1} padding={{ top: 13, bottom: 3 }}>
       <VStack padding={{ leading: 12, trailing: 12 }}>
-        <HStack alignment="top" spacing={6} frame={{ minHeight: 120 }}>
-          <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
-          <Spacer minLength={2} />
+        <HStack alignment="top" spacing={1} frame={{ minHeight: 120 }}>
+          <VStack frame={{ width: 225, alignment: "leading" }}>
+            <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
+          </VStack>
+          <Spacer />
           <WeatherSide weatherInfo={props.weatherInfo} widgetType="large" />
         </HStack>
         <VStack frame={{ height: 4 }} />
