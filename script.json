@@ -1,44 +1,48 @@
 {
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/%E4%B9%9D%E5%8F%B7\/IMG_1706.png",
+  "icon" : "scooter",
+  "color" : "rgba(143, 168, 149,1)",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
+    "autoUpdateInterval" : 300,
+    "hash" : "22f3f51673f0088177403332b7dabf1b"
+  },
   "runInApp" : false,
   "description" : "",
-  "name" : "九号自带签到（多功能）",
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/%E4%B9%9D%E5%8F%B7\/IMG_1706.png",
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "email" : "602839678@qq.com"
-  },
-  "color" : "rgba(143, 168, 149,1)",
+  "version" : "1.1.0",
   "localizedNames" : {
-    "zh" : "",
-    "en" : "",
-    "ja" : "",
-    "fr" : "",
-    "es" : "",
-    "de" : "",
-    "pt" : "",
-    "it" : "",
-    "ru" : ""
-  },
-  "remoteResource" : null,
-  "localizedDescriptions" : {
-    "de" : "",
     "it" : "",
     "ru" : "",
-    "ja" : "",
-    "zh" : "",
     "fr" : "",
     "es" : "",
+    "zh" : "",
+    "ja" : "",
     "pt" : "",
-    "en" : ""
+    "en" : "",
+    "de" : ""
   },
-  "icon" : "scooter",
-  "version" : "1.1.0",
+  "name" : "九号系统签到",
   "entry" : "index.tsx",
+  "contributors" : [
+
+  ],
   "intentInputTypes" : [
 
   ],
-  "contributors" : [
-
-  ]
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
+    "name" : "QinyRui"
+  },
+  "localizedDescriptions" : {
+    "ja" : "",
+    "it" : "",
+    "es" : "",
+    "de" : "",
+    "pt" : "",
+    "fr" : "",
+    "ru" : "",
+    "zh" : "",
+    "en" : ""
+  }
 }
