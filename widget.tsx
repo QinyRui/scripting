@@ -11,11 +11,8 @@ import {
   Rectangle,
 } from "scripting"
 
-declare const Device: any
-
 declare const FileManager: any
 declare const Location: any
-declare const Photos: any
 declare const CalendarEvent: any
 declare const fetch: any
 
@@ -155,7 +152,6 @@ type LocationData = {
   resolvedAt?: number
 }
 
-const locale = "zh_cn"
 const colorMode = false
 const bgColorStr = "#000000"
 const weekTitle = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
@@ -292,13 +288,6 @@ function hasValidCoordinates(data?: Partial<LocationData> | null) {
     Number.isFinite(Number(data.longitude)) &&
     (Number(data.latitude) !== 0 || Number(data.longitude) !== 0)
   )
-}
-
-function hasReadableLocationName(data?: Partial<LocationData> | null) {
-  if (!data) return false
-  return [data.administrativeArea, data.locality, data.subLocality, data.street, data.neighborhood, data.name]
-    .map((item) => String(item || "").trim())
-    .some(isMeaningfulName)
 }
 
 function hasFullLocationName(data?: Partial<LocationData> | null) {
@@ -529,16 +518,6 @@ async function ensureBackgroundMigrated() {
   }
 }
 
-function getBatteryText() {
-  try {
-    const raw = Number(Device?.batteryLevel)
-    if (Number.isFinite(raw) && raw >= 0) {
-      return `电量 ${Math.round(raw * 100)}%`
-    }
-  } catch {}
-  return "电量 --%"
-}
-
 function getDisplayLocationText() {
   let province = String(locationData.administrativeArea || "").trim()
   let city = String(locationData.locality || "").trim()
@@ -580,20 +559,31 @@ async function getJson(url: string) {
 }
 
 async function getLocation(): Promise<LocationData> {
+  // 1. 以 documentsDir 的 config 为权威来源（主应用写入）
   const savedConfig = getSavedLocationConfig()
   if (savedConfig?.locationData) {
     locationData = {
       ...locationData,
       ...savedConfig.locationData,
     }
+    lockLocation = !!savedConfig.lockLocation
   }
+
+  // 2. 如果 appGroup 缓存有更新的数据，合并坐标和地名
   const cached = Cache.read<LocationData>(locationCachePath)
-  if (cached) {
-    locationData = {
-      ...locationData,
-      ...cached,
+  if (cached && hasValidCoordinates(cached)) {
+    // 只在缓存比 savedConfig 更新时才采用
+    const cachedTime = cached.resolvedAt || 0
+    const savedTime = savedConfig?.locationData?.resolvedAt || 0
+    if (cachedTime > savedTime) {
+      locationData = {
+        ...locationData,
+        ...cached,
+      }
     }
   }
+
+  // 3. 如果锁定位置或无法获取实时 GPS，直接使用缓存
   const liveLocation = await getCurrentLocationInfo()
   if (lockLocation || !liveLocation) {
     locationData = await resolveLocationNameIfNeeded(locationData)
@@ -604,6 +594,8 @@ async function getLocation(): Promise<LocationData> {
     })
     return locationData
   }
+
+  // 4. 自动 GPS 模式：用实时位置更新
   try {
     const l = liveLocation
     const liveResolved = await resolveLocationNameIfNeeded({
@@ -622,13 +614,15 @@ async function getLocation(): Promise<LocationData> {
       longitude: l.longitude,
       resolvedAt: Date.now(),
     }
+    // 同步写入 appGroup 缓存
     Cache.write(locationCachePath, locationData)
+    // 同步写回 documentsDir config，但不改变 lockLocation 设置
     try {
-      const current = FileManager.readAsStringSync(locCachePath)
+      const current = FileManager.existsSync(locCachePath) ? FileManager.readAsStringSync(locCachePath) : "{}"
       const config = current ? JSON.parse(current) : {}
       FileManager.writeAsStringSync(locCachePath, JSON.stringify({
         ...config,
-        lockLocation: false,
+        lockLocation: config.lockLocation ?? false,
         locationData,
       }))
     } catch {}
@@ -1073,16 +1067,6 @@ function SectionText(props: { text: string; font?: number; color?: string; lineL
   )
 }
 
-function CalendarHeaderText({ text, width }: { text: string; width: number }) {
-  return (
-    <Text
-      styledText={{ content: text, font: s(10, "calendar"), foregroundColor: c("rgba(255,255,255,0.82)", "calendar") as any }}
-      frame={{ width, height: 14 }}
-      lineLimit={1}
-    />
-  )
-}
-
 function ForecastView({ future }: { future: WeatherFuture[] }) {
   return (
     <HStack spacing={7}>
@@ -1234,7 +1218,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
   const wDesc = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
-  const leftWidth = widgetType === "medium" ? 214 : 238
+  const leftWidth = widgetType === "medium" ? 214 : 192
   const dateLineText = [getDateStr(currentDate), weekTitle[currentDate.getDay()], lunarStr || ""]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
@@ -1282,7 +1266,7 @@ function getWeatherIconColor(icon: string) {
 
 function WeatherMetricLine({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <HStack spacing={3} frame={{ maxWidth: "infinity", alignment: "trailing" }}>
+    <HStack spacing={3}>
       <SectionText text={label} font={s(9, "weather")} color={c("rgba(255,255,255,0.58)", "weather")} lineLimit={1} />
       <SectionText text={value || "--"} font={s(10, "weather")} color={color || c("rgba(255,255,255,0.95)", "weather")} lineLimit={1} />
     </HStack>
@@ -1298,7 +1282,7 @@ function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherInfo; wi
   const updateFont = s(widgetType === "medium" ? 8 : 9, "weather")
   const updateText = `更新 ${formatUpdateTime(weatherInfo.updatedAt)}`
   return (
-    <VStack alignment="trailing" spacing={widgetType === "medium" ? 3 : 4} frame={{ maxHeight: "infinity", alignment: "center" }} {...offsetStyle(widgetType, "right")}>
+    <VStack alignment="trailing" spacing={widgetType === "medium" ? 3 : 4} frame={{ minWidth: widgetType === "medium" ? 100 : 140, alignment: "trailing" }} {...offsetStyle(widgetType, "right")}>
       <HStack spacing={5} padding={{ bottom: widgetType === "medium" ? 1 : 2 }}>
         <Image
           systemName={wIco}
@@ -1306,7 +1290,7 @@ function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherInfo; wi
           foregroundStyle={getWeatherIconColor(wIco) as any}
           frame={{ width: iconSize, height: iconSize }}
         />
-        <Text font={temperatureFont}>{`${wTemp}°C`}</Text>
+        <Text font={temperatureFont} lineLimit={1}>{`${wTemp}°C`}</Text>
       </HStack>
 
       <VStack alignment="trailing" spacing={widgetType === "medium" ? 1 : 2}>
@@ -1359,7 +1343,6 @@ function TimeInfoBar() {
   const zodiac = zodiacAnimals[(currentDate.getFullYear() - 4) % 12]
   const weekNumber = getWeekOfYear(currentDate)
   const dayOfYear = getDayOfYear(currentDate)
-  const totalDays = currentDate.getFullYear() % 4 === 0 ? 366 : 365
   const yiList = getYiJiSimple(currentDate, 0)
   const jiList = getYiJiSimple(currentDate, 1)
   return (
@@ -1449,12 +1432,10 @@ function MediumWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; p
 function LargeWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
     <VStack alignment="leading" spacing={1} padding={{ top: 13, bottom: 3 }}>
-      <VStack padding={{ leading: 12, trailing: 12 }}>
-        <HStack alignment="top" spacing={1} frame={{ minHeight: 120 }}>
-          <VStack frame={{ width: 238, alignment: "leading" }}>
-            <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
-          </VStack>
-          <Spacer />
+      <VStack padding={{ leading: 8, trailing: 4 }}>
+        <HStack alignment="top" spacing={0} frame={{ minHeight: 120 }}>
+          <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
+          <Spacer minLength={4} />
           <WeatherSide weatherInfo={props.weatherInfo} widgetType="large" />
         </HStack>
         <VStack frame={{ height: 4 }} />
