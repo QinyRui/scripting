@@ -216,12 +216,8 @@ function ConfigPage() {
     if (isRefreshing) return
     setIsRefreshing(true)
     try {
-      // Direct call to fetch real-time weather, bypassing the implicit widget reload wait
       await safeGetWeather(true)
-      
       setStatusInfo(loadStatusInfo())
-      
-      // Also update the widget in the background
       Widget.reloadAll()
     } catch {}
     setIsRefreshing(false)
@@ -721,10 +717,68 @@ function LocationSettingsPage() {
     }
   }
 
-  function useAutoLocation() {
+  async function liveGpsRefresh(alertTitle: string) {
+    const l = await requestCurrentLocationInfo()
+    if (!l) throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
+    const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
+    let nextLocality = locality
+    let nextSubLocality = subLocality
+    let nextStreet = street
+    if (g?.[0]) {
+      nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
+      nextSubLocality = g[0].subLocality || g[0].name || nextSubLocality
+      nextStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || nextStreet
+    }
+    const nextLatitude = String(l.latitude)
+    const nextLongitude = String(l.longitude)
+    setLatitude(nextLatitude)
+    setLongitude(nextLongitude)
+    setLocality(nextLocality)
+    setSubLocality(nextSubLocality)
+    setStreet(nextStreet)
     setLockLocation(false)
-    persistLocation(false, latitude, longitude, locality, subLocality, street)
-    dismiss()
+    persistLocation(false, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet)
+    await safeGetWeather(true)
+    reloadWidgets("location-live-refresh")
+    setRefreshSeed(refreshSeed + 1)
+
+    const successAlert = new Alert()
+    successAlert.title = alertTitle
+    successAlert.message = `${[nextLocality.trim(), nextSubLocality.trim(), nextStreet.trim()].filter(Boolean).join(" · ") || "位置已更新"}\n桌面组件已使用最新 GPS 精确位置刷新彩云天气`
+    successAlert.addCancelAction("知道了")
+    await successAlert.presentAlert()
+  }
+
+  async function selectAutoGps() {
+    if (isLocating) return
+    setIsLocating(true)
+    try {
+      await liveGpsRefresh("已切换为自动 GPS")
+    } catch (error) {
+      const alert = new Alert()
+      alert.title = "自动 GPS 失败"
+      alert.message = String((error as any)?.message || error || "无法切换为自动 GPS")
+      alert.addCancelAction("知道了")
+      await alert.presentAlert()
+    } finally {
+      setIsLocating(false)
+    }
+  }
+
+  async function refreshLiveLocationAndWeather() {
+    if (isLocating) return
+    setIsLocating(true)
+    try {
+      await liveGpsRefresh("已刷新实时定位与天气")
+    } catch (error) {
+      const alert = new Alert()
+      alert.title = "刷新失败"
+      alert.message = String((error as any)?.message || error || "无法刷新实时定位与天气")
+      alert.addCancelAction("知道了")
+      await alert.presentAlert()
+    } finally {
+      setIsLocating(false)
+    }
   }
 
   function save() {
@@ -742,59 +796,110 @@ function LocationSettingsPage() {
           confirmationAction: <Button title="保存" action={save} />,
         }}
       >
+        {/* ─── 状态卡片 ─── */}
         <Section>
-          <ZStack alignment="center">
-            <Rectangle fill="#f0f4f8" frame={{ height: 140 }} />
-            <VStack spacing={8} padding={16} alignment="leading">
-              <HStack alignment="center" spacing={8}>
-                <Image systemName="location.circle.fill" renderingMode="template" foregroundStyle={["#007aff", "#cce5ff"]} font={24} />
-                <Text font={18} foregroundStyle="#333333">当前定位状态</Text>
-              </HStack>
-              <VStack spacing={4} alignment="leading" padding={{ top: 4 }}>
-                <HStack>
-                  <Image systemName="mappin.and.ellipse" font={12} foregroundStyle="#666666" />
-                  <Text font={14} foregroundStyle="#555555">{locationStatusText}</Text>
+          <VStack spacing={0}>
+            <ZStack alignment="center">
+              <Rectangle fill={{ colors: ["#e8f4fd", "#f0f9ff"], startPoint: "topLeading", endPoint: "bottomTrailing" }} frame={{ height: 160 }} />
+              <VStack spacing={10} padding={{ horizontal: 16, vertical: 14 }} alignment="leading">
+                <HStack alignment="center" spacing={12}>
+                  <ZStack frame={{ width: 40, height: 40 }}>
+                    <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
+                    <Image systemName={lockLocation ? "mappin.circle.fill" : "location.fill"} renderingMode="template" foregroundStyle="white" font={18} />
+                  </ZStack>
+                  <VStack spacing={2} alignment="leading">
+                    <Text font={17} fontWeight="bold" foregroundStyle="#1a2b3c">当前定位状态</Text>
+                    <HStack spacing={4}>
+                      <Text font={12} fontWeight="medium" foregroundStyle={lockLocation ? "#e67e22" : "#27ae60"}>{lockLocation ? "● 固定模式" : "● 自动 GPS"}</Text>
+                    </HStack>
+                  </VStack>
                 </HStack>
-                <HStack>
-                  <Image systemName="globe.asia.australia.fill" font={12} foregroundStyle="#666666" />
-                  <Text font={14} foregroundStyle="#555555">{coordinateStatusText}</Text>
-                </HStack>
-                <HStack>
-                  <Image systemName="gearshape.fill" font={12} foregroundStyle="#666666" />
-                  <Text font={14} foregroundStyle="#555555">模式：{modeStatusText}</Text>
-                </HStack>
-                <HStack>
-                  <Image systemName="clock.fill" font={12} foregroundStyle="#666666" />
-                  <Text font={14} foregroundStyle="#555555">时间：{resolvedTimeText}</Text>
-                </HStack>
+                <VStack spacing={5} alignment="leading" padding={{ top: 2 }}>
+                  <HStack spacing={6}>
+                    <Image systemName="mappin.and.ellipse" font={11} foregroundStyle="#5a6470" />
+                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>{locationStatusText}</Text>
+                  </HStack>
+                  <HStack spacing={6}>
+                    <Image systemName="globe.asia.australia.fill" font={11} foregroundStyle="#5a6470" />
+                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>{coordinateStatusText}</Text>
+                  </HStack>
+                  <HStack spacing={6}>
+                    <Image systemName="clock.fill" font={11} foregroundStyle="#5a6470" />
+                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>更新：{resolvedTimeText}</Text>
+                  </HStack>
+                </VStack>
               </VStack>
-            </VStack>
-          </ZStack>
+            </ZStack>
+          </VStack>
         </Section>
 
-        <Section title="定位方式">
+        {/* ─── 定位操作 ─── */}
+        <Section header={
+          <HStack spacing={4}>
+            <Image systemName="antenna.radiowaves.left.and.right" font={12} foregroundStyle="#007aff" />
+            <Text font={13} fontWeight="medium" foregroundStyle="#555">定位操作</Text>
+          </HStack>
+        }>
+          <Button action={selectAutoGps}>
+            <HStack spacing={10}>
+              <ZStack frame={{ width: 30, height: 30 }}>
+                <Circle fill={{ colors: ["#56ab2f", "#a8e063"], startPoint: "top", endPoint: "bottom" }} />
+                <Image systemName="location.north.fill" renderingMode="template" foregroundStyle="white" font={13} />
+              </ZStack>
+              <VStack spacing={1} alignment="leading">
+                <Text font={15} fontWeight="medium">{isLocating ? "正在获取实时 GPS…" : "自动 GPS 定位"}</Text>
+                <Text font={11} foregroundStyle="gray">立即获取精确位置并刷新桌面组件天气</Text>
+              </VStack>
+            </HStack>
+          </Button>
+          <Button action={refreshLiveLocationAndWeather}>
+            <HStack spacing={10}>
+              <ZStack frame={{ width: 30, height: 30 }}>
+                <Circle fill={{ colors: ["#f7971e", "#ffd200"], startPoint: "top", endPoint: "bottom" }} />
+                <Image systemName="arrow.triangle.2.circlepath" renderingMode="template" foregroundStyle="white" font={13} />
+              </ZStack>
+              <VStack spacing={1} alignment="leading">
+                <Text font={15} fontWeight="medium">{isLocating ? "正在刷新…" : "刷新实时定位与天气"}</Text>
+                <Text font={11} foregroundStyle="gray">重新取位 + 调用彩云实时天气 API</Text>
+              </VStack>
+            </HStack>
+          </Button>
           <Button action={fillCurrentLocation}>
-            <HStack spacing={8}>
-              <Image systemName="location.fill" font={16} foregroundStyle="#007aff" />
-              <Text font={16}>{isLocating ? "正在获取当前位置…" : "自动获取当前位置"}</Text>
+            <HStack spacing={10}>
+              <ZStack frame={{ width: 30, height: 30 }}>
+                <Circle fill={{ colors: ["#667eea", "#764ba2"], startPoint: "top", endPoint: "bottom" }} />
+                <Image systemName="mappin.and.ellipse" renderingMode="template" foregroundStyle="white" font={13} />
+              </ZStack>
+              <VStack spacing={1} alignment="leading">
+                <Text font={15} fontWeight="medium">{isLocating ? "正在获取…" : "获取并固定当前位置"}</Text>
+                <Text font={11} foregroundStyle="gray">获取一次坐标并锁定，不再自动跟随</Text>
+              </VStack>
             </HStack>
           </Button>
-          <Button action={useAutoLocation}>
-            <HStack spacing={8}>
-              <Image systemName="point.topleft.down.curvedto.point.bottomright.up" font={16} foregroundStyle="#34c759" />
-              <Text font={16}>使用自动 GPS 定位</Text>
-            </HStack>
-          </Button>
-          <Toggle title="固定使用当前位置" systemImage="mappin.and.ellipse" value={lockLocation} onChanged={setLockLocation} />
-          <Text font={12} foregroundStyle="gray">点击“自动获取当前位置”会请求系统定位并反向解析城市/区域，保存后小组件会优先显示位置名称。</Text>
         </Section>
 
-        <Section title="位置信息">
+        {/* ─── 模式开关 ─── */}
+        <Section header={
+          <HStack spacing={4}>
+            <Image systemName="gearshape.fill" font={12} foregroundStyle="#8e8e93" />
+            <Text font={13} fontWeight="medium" foregroundStyle="#555">定位模式</Text>
+          </HStack>
+        } footer={<Text font={12} foregroundStyle="gray">开启“固定位置”后组件不再自动跟随 GPS，关闭则每次刷新都会用最新实时位置。</Text>}>
+          <Toggle title="固定使用当前位置" systemImage="lock.fill" value={lockLocation} onChanged={setLockLocation} />
+        </Section>
+
+        {/* ─── 手动位置信息 ─── */}
+        <Section header={
+          <HStack spacing={4}>
+            <Image systemName="pencil.line" font={12} foregroundStyle="#8e8e93" />
+            <Text font={13} fontWeight="medium" foregroundStyle="#555">手动位置信息</Text>
+          </HStack>
+        } footer={<Text font={12} foregroundStyle="gray">一般无需手动填写，自动 GPS 会自动填充以上字段。</Text>}>
           <TextField key={`lat-${refreshSeed}`} title="纬度" prompt="例如 31.2304" value={latitude} onChanged={setLatitude} />
           <TextField key={`lng-${refreshSeed}`} title="经度" prompt="例如 121.4737" value={longitude} onChanged={setLongitude} />
           <TextField key={`city-${refreshSeed}`} title="城市" prompt="例如 上海市" value={locality} onChanged={setLocality} />
           <TextField key={`area-${refreshSeed}`} title="区域" prompt="例如 宝山区" value={subLocality} onChanged={setSubLocality} />
-          <TextField key={`street-${refreshSeed}`} title="街道" prompt="例如  / " value={street} onChanged={setStreet} />
+          <TextField key={`street-${refreshSeed}`} title="街道" prompt="例如 乔松路421号" value={street} onChanged={setStreet} />
         </Section>
       </List>
     </NavigationStack>
@@ -1455,7 +1560,8 @@ function loadStatusInfo(): StatusInfo {
   const readinessBadge = readyCount === 3 ? "已就绪" : readyCount === 2 ? "接近完成" : readyCount === 1 ? "待完善" : "未开始"
   
   const apiKeyText = hasApiKey ? "已设置" : "未设置"
-  const locationModeText = locationConfig?.lockLocation ? "手动固定" : "自动 GPS"
+  const locationModeText = locationConfig?.lockLocation ? "固定 GPS" : "自动 GPS"
+
   const refreshText = styleConfig.refreshInterval ? `${styleConfig.refreshInterval} 分钟` : "默认"
   const backgroundText = hasBackground ? "已更换" : "默认"
 
