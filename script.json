@@ -1,48 +1,45 @@
 {
+  "name" : "彩云天气(^ᴗ^)☁️修改",
+  "remoteResource" : null,
   "author" : {
+    "name" : "QinyRui",
     "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "name" : "QinyRui"
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
   },
-  "icon" : "cloud.fill",
-  "iconImage" : "",
-  "contributors" : [
-
-  ],
-  "remoteResource" : {
-    "autoUpdateInterval" : 86400,
-    "url" : "https:\/\/github.com\/QinyRui\/QYR-\/blob\/jiuhao\/2.9.js",
-    "hash" : "F1FD9FD1-9B20-4253-824D-46737CAF8937"
-  },
-  "localizedNames" : {
-    "pt" : "",
-    "ja" : "",
-    "es" : "",
-    "it" : "",
-    "ru" : "",
-    "zh" : "",
-    "en" : "",
-    "fr" : "",
-    "de" : ""
-  },
-  "name" : "彩云天气(^ᴗ^)☁️",
-  "runInApp" : true,
+  "version" : "1.0.0",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
   "intentInputTypes" : [
 
   ],
-  "description" : "",
-  "localizedDescriptions" : {
+  "color" : "rgba(174, 109, 216,1)",
+  "icon" : "cloud.fill",
+  "runInApp" : true,
+  "entry" : "index.tsx",
+  "widget" : "widget.tsx",
+  "localizedNames" : {
     "it" : "",
     "en" : "",
-    "zh" : "",
-    "es" : "",
-    "ja" : "",
     "de" : "",
     "pt" : "",
     "ru" : "",
+    "es" : "",
+    "ja" : "",
+    "zh" : "",
     "fr" : ""
   },
-  "version" : "1.0.0",
-  "color" : "rgba(174, 109, 216,1)",
-  "entry" : "index.tsx"
+  "localizedDescriptions" : {
+    "en" : "",
+    "de" : "",
+    "ja" : "",
+    "es" : "",
+    "zh" : "",
+    "ru" : "",
+    "fr" : "",
+    "it" : "",
+    "pt" : ""
+  },
+  "contributors" : [
+
+  ],
+  "description" : ""
 }
