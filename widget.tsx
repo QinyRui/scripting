@@ -29,20 +29,21 @@ function placemarkHasDetailedAddress(placemark: any) {
   const province = placemark.administrativeArea || placemark.state
   const city = placemark.locality || placemark.city
   const district = placemark.subLocality || placemark.subAdministrativeArea || placemark.district
-  const fine = placemark.neighborhood || placemark.quarter || placemark.thoroughfare || placemark.name
-  return Boolean(isMeaningfulName(province) && (isMeaningfulName(city) || isMeaningfulName(district)) && isMeaningfulName(fine))
+  const fine = placemark.neighborhood || placemark.quarter || placemark.thoroughfare || placemark.name || placemark.subLocality
+  
+  const hasRegion = isMeaningfulName(province) || isMeaningfulName(city) || isMeaningfulName(district)
+  return Boolean(hasRegion && isMeaningfulName(fine))
 }
 
 async function callReverseGeocode(options: { latitude: number; longitude: number; locale?: string }): Promise<any[] | null> {
-  const nativeFn = (globalThis as any)?.reverseGeocode
+  const nativeFn = (typeof Location !== "undefined" && Location.reverseGeocode) ? Location.reverseGeocode : (globalThis as any)?.reverseGeocode
   let nativeResult: any[] | null = null
   if (typeof nativeFn === "function") {
     try {
       nativeResult = await nativeFn(options)
       const native = nativeResult?.[0]
-      const hasSeparateStreet = isMeaningfulName(native?.thoroughfare) && native?.thoroughfare !== native?.neighborhood && native?.thoroughfare !== native?.name
-      const hasDistrict = isMeaningfulName(native?.subLocality) || isMeaningfulName(native?.subAdministrativeArea) || /[区县旗]$/.test(String(native?.locality || ""))
-      if (placemarkHasDetailedAddress(native) && hasDistrict && hasSeparateStreet) return nativeResult
+      const hasDistrict = isMeaningfulName(native?.subLocality) || isMeaningfulName(native?.subAdministrativeArea) || /[区县旗]$/.test(String(native?.locality || "")) || isMeaningfulName(native?.locality)
+      if (placemarkHasDetailedAddress(native) && hasDistrict) return nativeResult
     } catch {}
   }
 
@@ -223,7 +224,7 @@ async function getCurrentLocationInfo() {
     return globalLocation
   }
   try {
-    const requestedLocation = await Location.requestCurrent()
+    const requestedLocation = await Location.requestCurrent({ forceRequest: true })
     if (requestedLocation && typeof requestedLocation.latitude === "number" && typeof requestedLocation.longitude === "number") {
       return requestedLocation
     }
@@ -341,9 +342,6 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
   let districtName = [placemark.subLocality, placemark.subAdministrativeArea, placemark.district]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName)) || base.subLocality || base.subAdministrativeArea || ""
-
-  // iOS 原生反向地理编码在直辖市中常把“区县”放进 locality。
-  // 例如：administrativeArea=上海市, locality=宝山区，此处归一成 省/市=上海市，区=宝山区。
   if (provinceName && provinceName.endsWith("市") && cityName && /[区县旗]$/.test(cityName) && !districtName) {
     districtName = cityName
     cityName = provinceName
@@ -352,10 +350,10 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
   const neighborhoodName = [placemark.neighborhood, placemark.quarter]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName)) || base.neighborhood || base.quarter || ""
-  const streetName = [placemark.thoroughfare, placemark.subThoroughfare, placemark.name]
+  const streetName = [placemark.thoroughfare, placemark.subThoroughfare, placemark.name, placemark.subLocality]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || base.street || base.name || ""
-  const fineName = [placemark.name, placemark.thoroughfare, placemark.subThoroughfare]
+  const fineName = [placemark.name, placemark.thoroughfare, placemark.subThoroughfare, placemark.subLocality]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || streetName || neighborhoodName || districtName || cityName || provinceName
 
@@ -377,7 +375,7 @@ async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
   if (!hasValidCoordinates(data)) return data
   if (!force && hasFullLocationName(data)) return data
   try {
-    const placemarks = await callReverseGeocode({ latitude: Number(data.latitude), longitude: Number(data.longitude), locale })
+    const placemarks = await callReverseGeocode({ latitude: Number(data.latitude), longitude: Number(data.longitude), locale: "zh_cn" })
     if (placemarks?.[0]) {
       const resolved = applyPlacemarkToLocationData(data, placemarks[0])
       Cache.write(locationCachePath, resolved)
@@ -545,6 +543,7 @@ function getDisplayLocationText() {
   let province = String(locationData.administrativeArea || "").trim()
   let city = String(locationData.locality || "").trim()
   let district = String(locationData.subLocality || locationData.subAdministrativeArea || "").trim()
+  const country = String((locationData as any).country || "").trim()
 
   // 直辖市常见缓存：administrativeArea=上海市，locality=宝山区。
   // 显示时归一为：上海市/宝山区/地点名称。
@@ -556,20 +555,21 @@ function getDisplayLocationText() {
   const street = String(locationData.street || "").trim()
   const neighborhood = String(locationData.neighborhood || locationData.quarter || "").trim()
   const name = String(locationData.name || "").trim()
-  const area = district || city
-  const fineName = [name, street, neighborhood]
+  const region = (province || city).replace(/市$/u, "")
+  const area = district && district !== region ? district : city
+  const fineName = [street, name, neighborhood]
     .map((item) => String(item || "").trim())
-    .find((item) => Boolean(isMeaningfulName(item) && item !== province && item !== city && item !== district))
-  const parts = [province || city, area, fineName]
+    .find((item) => Boolean(isMeaningfulName(item) && item !== country && item !== province && item !== city && item !== district))
+  const parts = [region, area, fineName]
     .map((item) => String(item || "").trim())
-    .filter((item, index, arr) => isMeaningfulName(item) && arr.indexOf(item) === index)
+    .filter((item, index, arr) => isMeaningfulName(item) && item !== country && arr.indexOf(item) === index)
   if (parts.length === 0) {
     const hasCoordinates = Number.isFinite(Number(locationData.latitude)) && Number.isFinite(Number(locationData.longitude))
     return hasCoordinates && (locationData.latitude !== 0 || locationData.longitude !== 0)
       ? `${Number(locationData.latitude).toFixed(2)}, ${Number(locationData.longitude).toFixed(2)}`
       : "定位获取中"
   }
-  return parts.join("/")
+  return parts.join("•")
 }
 
 async function getJson(url: string) {
@@ -737,7 +737,7 @@ function provideGreeting(d: Date) {
 }
 
 function getDateStr(d: Date) {
-  return `${d.getFullYear()}年${pad(d.getMonth() + 1)}月${d.getDate()}日`
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
 }
 
 function pad(n: number) {
@@ -1217,7 +1217,12 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
   const wDesc = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
-  const leftWidth = widgetType === "medium" ? 202 : 225
+  const leftWidth = widgetType === "medium" ? 214 : 238
+  const dateLineText = [getDateStr(currentDate), weekTitle[currentDate.getDay()], lunarStr || ""]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join("/")
+  const locationLineLimit = 1
 
   appendDebugLog("widget info summary", {
     cityStr,
@@ -1229,13 +1234,10 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
     <VStack alignment="leading" spacing={widgetType === "medium" ? 1 : 2} frame={{ width: leftWidth, alignment: "leading" }} {...offsetStyle(widgetType, "left")}>
       <SectionText text={provideGreeting(currentDate)} font={s(widgetType === "medium" ? 21 : 22, "greeting")} color={c("#ffffff", "greeting")} lineLimit={1} />
       <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
-        <SectionText text={getDateStr(currentDate)} font={s(widgetType === "medium" ? 15 : 15, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
-        <SectionText text={lunarStr || ""} font={s(widgetType === "medium" ? 14 : 13, "lunar")} color={c("#99ccff", "lunar")} lineLimit={1} />
+        <SectionText text={dateLineText} font={s(widgetType === "medium" ? 12 : 13, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
       </HStack>
-      <HStack spacing={4} alignment="center" frame={{ width: leftWidth, height: widgetType === "medium" ? 17 : 18, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
-        <SectionText text={weekTitle[currentDate.getDay()]} font={s(widgetType === "medium" ? 12 : 13, "info")} color={c("rgba(255,255,255,0.9)", "info")} lineLimit={1} />
-        <SectionText text="📍" font={s(widgetType === "medium" ? 10 : 11, "info")} color="#ff6b6b" lineLimit={1} />
-        <SectionText text={cityStr} font={s(widgetType === "medium" ? 9 : 10, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={1} />
+      <HStack spacing={0} alignment="top" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
+        <SectionText text={cityStr} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} />
       </HStack>
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
         <SectionText text={wDesc} font={s(widgetType === "medium" ? 9 : 11, "weather")} color={c("#ffffff", "weather")} lineLimit={widgetType === "medium" ? 3 : 4} />
