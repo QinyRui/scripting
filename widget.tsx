@@ -557,12 +557,13 @@ function getDisplayLocationText() {
   const name = String(locationData.name || "").trim()
   const region = (province || city).replace(/市$/u, "")
   const area = district && district !== region ? district : city
+  const countryNames = [country, "中国", "China", "中华人民共和国"].filter(Boolean)
   const fineName = [street, name, neighborhood]
     .map((item) => String(item || "").trim())
-    .find((item) => Boolean(isMeaningfulName(item) && item !== country && item !== province && item !== city && item !== district))
+    .find((item) => Boolean(isMeaningfulName(item) && !countryNames.includes(item) && item !== province && item !== city && item !== district))
   const parts = [region, area, fineName]
     .map((item) => String(item || "").trim())
-    .filter((item, index, arr) => isMeaningfulName(item) && item !== country && arr.indexOf(item) === index)
+    .filter((item, index, arr) => isMeaningfulName(item) && !countryNames.includes(item) && arr.indexOf(item) === index)
   if (parts.length === 0) {
     const hasCoordinates = Number.isFinite(Number(locationData.latitude)) && Number.isFinite(Number(locationData.longitude))
     return hasCoordinates && (locationData.latitude !== 0 || locationData.longitude !== 0)
@@ -605,16 +606,32 @@ async function getLocation(): Promise<LocationData> {
   }
   try {
     const l = liveLocation
-    locationData = await resolveLocationNameIfNeeded({
+    const liveResolved = await resolveLocationNameIfNeeded({
       latitude: l.latitude,
       longitude: l.longitude,
       locality: locationData.locality || "",
       subLocality: locationData.subLocality || "",
       street: locationData.street,
       name: locationData.name,
-      resolvedAt: locationData.resolvedAt,
+      resolvedAt: Date.now(),
     }, true)
+    locationData = {
+      ...locationData,
+      ...liveResolved,
+      latitude: l.latitude,
+      longitude: l.longitude,
+      resolvedAt: Date.now(),
+    }
     Cache.write(locationCachePath, locationData)
+    try {
+      const current = FileManager.readAsStringSync(locCachePath)
+      const config = current ? JSON.parse(current) : {}
+      FileManager.writeAsStringSync(locCachePath, JSON.stringify({
+        ...config,
+        lockLocation: false,
+        locationData,
+      }))
+    } catch {}
     appendDebugLog("resolved live location", locationData)
     return locationData
   } catch (error) {
