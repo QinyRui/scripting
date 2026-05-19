@@ -1451,7 +1451,7 @@ function LargeWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; po
     <VStack alignment="leading" spacing={1} padding={{ top: 13, bottom: 3 }}>
       <VStack padding={{ leading: 12, trailing: 12 }}>
         <HStack alignment="top" spacing={1} frame={{ minHeight: 120 }}>
-          <VStack frame={{ width: 225, alignment: "leading" }}>
+          <VStack frame={{ width: 238, alignment: "leading" }}>
             <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
           </VStack>
           <Spacer />
