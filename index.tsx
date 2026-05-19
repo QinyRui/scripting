@@ -43,9 +43,13 @@ type LocationConfig = {
   locationData?: {
     latitude?: number
     longitude?: number
+    administrativeArea?: string
+    subAdministrativeArea?: string
     locality?: string
     subLocality?: string
     street?: string
+    neighborhood?: string
+    quarter?: string
     name?: string
     resolvedAt?: number
   }
@@ -151,7 +155,12 @@ function writeApiKey(apiKey: string) {
 
 function writeLocationCaches(locationConfig: LocationConfig) {
   writeJson(locCachePath, locationConfig)
-  writeJson(locationCachePath, locationConfig.locationData || {})
+  // appGroupDir 也写入完整的 locationData，确保 widget 读取时字段一致
+  const fullLocationData = {
+    ...(locationConfig.locationData || {}),
+    // 确保 widget 的 extractLocationData 能正确解析
+  }
+  writeJson(locationCachePath, fullLocationData)
 }
 
 function getCurrentLocationInfo() {
@@ -660,14 +669,18 @@ function LocationSettingsPage() {
   const modeStatusText = lockLocation ? "固定当前位置" : "自动跟随 GPS"
   const resolvedTimeText = currentLocation.resolvedAt ? new Date(currentLocation.resolvedAt).toLocaleString("zh-CN") : "尚未保存"
 
-  function persistLocation(nextLockLocation: boolean, nextLatitude: string, nextLongitude: string, nextLocality: string, nextSubLocality: string, nextStreet: string) {
+  function persistLocation(nextLockLocation: boolean, nextLatitude: string, nextLongitude: string, nextLocality: string, nextSubLocality: string, nextStreet: string, extra?: { administrativeArea?: string; neighborhood?: string; quarter?: string }) {
+    const administrativeArea = extra?.administrativeArea || nextLocality.trim()
     writeLocationCaches({
       lockLocation: nextLockLocation,
       locationData: {
         latitude: parseFloat(nextLatitude) || 0,
         longitude: parseFloat(nextLongitude) || 0,
+        administrativeArea: administrativeArea,
         locality: nextLocality.trim(),
         subLocality: nextSubLocality.trim(),
+        neighborhood: extra?.neighborhood || "",
+        quarter: extra?.quarter || "",
         street: nextStreet.trim(),
         name: nextStreet.trim() || nextSubLocality.trim() || nextLocality.trim(),
         resolvedAt: Date.now(),
@@ -724,10 +737,14 @@ function LocationSettingsPage() {
     let nextLocality = locality
     let nextSubLocality = subLocality
     let nextStreet = street
+    let nextAdministrativeArea = ""
+    let nextNeighborhood = ""
     if (g?.[0]) {
+      nextAdministrativeArea = g[0].administrativeArea || g[0].state || ""
       nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
       nextSubLocality = g[0].subLocality || g[0].name || nextSubLocality
       nextStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || nextStreet
+      nextNeighborhood = g[0].neighborhood || g[0].quarter || ""
     }
     const nextLatitude = String(l.latitude)
     const nextLongitude = String(l.longitude)
@@ -737,7 +754,10 @@ function LocationSettingsPage() {
     setSubLocality(nextSubLocality)
     setStreet(nextStreet)
     setLockLocation(false)
-    persistLocation(false, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet)
+    persistLocation(false, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet, {
+      administrativeArea: nextAdministrativeArea,
+      neighborhood: nextNeighborhood,
+    })
     await safeGetWeather(true)
     reloadWidgets("location-live-refresh")
     setRefreshSeed(refreshSeed + 1)
