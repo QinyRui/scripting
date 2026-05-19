@@ -28,11 +28,7 @@ import {
 declare const FileManager: any
 declare const Location: any
 declare const Alert: any
-declare function reverseGeocode(options: {
-  latitude: number
-  longitude: number
-  locale?: string
-}): Promise<any[] | null>
+
 
 type MenuItem = {
   icon: string
@@ -170,7 +166,7 @@ async function requestCurrentLocationInfo() {
   const cachedLocation = getCurrentLocationInfo()
   if (cachedLocation) return cachedLocation
   try {
-    const requestedLocation = await Location.requestCurrent()
+    const requestedLocation = await Location.requestCurrent({ forceRequest: true })
     if (requestedLocation && typeof requestedLocation.latitude === "number" && typeof requestedLocation.longitude === "number") {
       return requestedLocation
     }
@@ -422,8 +418,9 @@ function ConfigPage() {
 function AboutDetailView() {
   const dismiss = Navigation.useDismiss()
   return (
-    <VStack spacing={0} background="systemBackground" frame={{ maxWidth: Infinity, maxHeight: Infinity }}>
-      <HStack padding={16} alignment="center">
+    <ScrollView frame={{ maxWidth: Infinity, maxHeight: Infinity }} background="systemBackground">
+      <VStack spacing={0}>
+        <HStack padding={16} alignment="center">
         <Button action={dismiss}>
           <HStack padding={{ horizontal: 16, vertical: 8 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 20 } }}>
             <Text font="headline">关闭</Text>
@@ -520,7 +517,8 @@ function AboutDetailView() {
       <VStack frame={{ maxWidth: Infinity }} alignment="center" padding={20}>
         <Text font="caption2" foregroundStyle="tertiaryLabel">© 2025 QinyRui. All rights reserved.</Text>
       </VStack>
-    </VStack>
+      </VStack>
+    </ScrollView>
   )
 }
 
@@ -687,7 +685,7 @@ function LocationSettingsPage() {
     try {
       const l = await requestCurrentLocationInfo()
       if (!l) throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
-      const g = await reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
+      const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
       const nextLatitude = String(l.latitude)
       const nextLongitude = String(l.longitude)
       let nextLocality = locality
@@ -696,7 +694,7 @@ function LocationSettingsPage() {
       if (g?.[0]) {
         nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
         nextSubLocality = g[0].subLocality || g[0].name || nextSubLocality
-        nextStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || nextStreet
+        nextStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || nextStreet
       }
       setLatitude(nextLatitude)
       setLongitude(nextLongitude)
@@ -1192,12 +1190,12 @@ function FontSizeSettingsPage() {
       >
         <Section>
           <VStack spacing={8} padding={{ vertical: 8 }}>
-            <HStack spacing={8} alignment="center">
+            <HStack spacing={8} alignment="top">
               <ZStack frame={{ width: 28, height: 28 }}>
                 <Circle fill="systemPurple" opacity={0.15} />
                 <Image systemName="textformat.size" font={14} foregroundStyle="systemPurple" />
               </ZStack>
-              <Text font="subheadline" foregroundStyle="secondaryLabel">
+              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={2}>
                 输入比例值(40-130)调整各区域字体大小
               </Text>
             </HStack>
@@ -1639,13 +1637,13 @@ async function setupLocation() {
   try {
     const l = await requestCurrentLocationInfo()
     if (!l) throw new Error("当前运行环境未提供可访问的 location 数据")
-    const g = await reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
+    const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
     fillLat = l.latitude
     fillLng = l.longitude
     if (g?.[0]) {
       fillCity = g[0].locality || g[0].administrativeArea || fillCity
       fillSub = g[0].subLocality || g[0].name || fillSub
-      fillStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || fillStreet
+      fillStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || fillStreet
     }
   } catch {}
 
