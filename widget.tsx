@@ -1061,16 +1061,19 @@ function BackgroundLayer({ family }: { family: string }) {
   )
 }
 
-function SectionText(props: { text: string; font?: number; color?: string; lineLimit?: number; opacity?: number }) {
+function SectionText(props: { text: string | string[]; font?: number; color?: string; lineLimit?: number; opacity?: number; minScaleFactor?: number; fixedSize?: boolean | { horizontal?: boolean; vertical?: boolean }; layoutPriority?: number }) {
   return (
     <Text
       styledText={{
-        content: props.text,
+        content: Array.isArray(props.text) ? props.text.join("") : props.text,
         font: props.font,
         foregroundColor: props.color as any,
       }}
       lineLimit={props.lineLimit}
       opacity={props.opacity}
+      minScaleFactor={props.minScaleFactor}
+      {...(props.fixedSize !== undefined ? { fixedSize: props.fixedSize as any } : {})}
+      {...(props.layoutPriority !== undefined ? { layoutPriority: props.layoutPriority } : {})}
     />
   )
 }
@@ -1248,14 +1251,21 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       <HStack spacing={0} alignment="top" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
         <SectionText text={cityStr} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} />
       </HStack>
-      <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
-        <SectionText text={wDesc} font={s(widgetType === "medium" ? 9 : 11, "weather")} color={c("#ffffff", "weather")} lineLimit={widgetType === "medium" ? 3 : 4} />
-      </VStack>
-      <Spacer minLength={widgetType === "medium" ? 1 : 3} />
+      <Spacer minLength={widgetType === "medium" ? 0 : 1} />
       <HStack alignment="top" spacing={widgetType === "medium" ? 6 : 8} frame={{ width: leftWidth, alignment: "leading" }}>
         {weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} /> : <Spacer />}
         {poetry?.data ? <PoetryCard poetry={poetry} widgetType={widgetType} /> : null}
       </HStack>
+      <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
+        <SectionText 
+          text={wDesc} 
+          font={s(widgetType === "medium" ? 9 : 11, "weather")} 
+          color={c("#ffffff", "weather")} 
+          lineLimit={1} 
+          minScaleFactor={0.4}
+        />
+      </VStack>
+      <Spacer minLength={widgetType === "medium" ? 1 : 2} />
       <BottomCountdownBlock primary={primaryCountdownText} secondary={secondaryCountdownText} widgetType={widgetType} />
     </VStack>
   )
