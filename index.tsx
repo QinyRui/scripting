@@ -662,27 +662,62 @@ function LocationSettingsPage() {
   const [refreshSeed, setRefreshSeed] = useState(0)
   const [isLocating, setIsLocating] = useState(false)
 
-  const locationStatusText = [locality.trim(), subLocality.trim(), street.trim()].filter(Boolean).join(" · ") || "尚未设置位置"
   const parsedLatitude = Number(latitude)
   const parsedLongitude = Number(longitude)
   const coordinateStatusText = Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude) && latitude && longitude ? `${parsedLatitude.toFixed(5)}, ${parsedLongitude.toFixed(5)}` : "等待获取"
   const modeStatusText = lockLocation ? "固定当前位置" : "自动跟随 GPS"
   const resolvedTimeText = currentLocation.resolvedAt ? new Date(currentLocation.resolvedAt).toLocaleString("zh-CN") : "尚未保存"
 
-  function persistLocation(nextLockLocation: boolean, nextLatitude: string, nextLongitude: string, nextLocality: string, nextSubLocality: string, nextStreet: string, extra?: { administrativeArea?: string; neighborhood?: string; quarter?: string }) {
+  function formatLocationDataForDisplay(loc: any): string {
+    if (!loc) return "未知位置"
+    const province = (loc.administrativeArea || "").replace(/市$/, "")
+    let city = (loc.locality || "").replace(/市$/, "")
+    let district = loc.subLocality || ""
+    const neighborhood = loc.neighborhood || loc.quarter || ""
+    let street = loc.name || loc.street || ""
+
+    if (/[镇乡街道]$/.test(city) && /[区县市]$/.test(district)) {
+      const temp = city
+      city = district
+      district = temp
+    }
+
+    if (street === district || street === city || street === province || street === "中国") {
+      street = ""
+    }
+
+    const parts = [province]
+    if (city && city !== province) parts.push(city)
+    if (district && district !== city) parts.push(district)
+
+    const detailedParts = []
+    if (neighborhood) detailedParts.push(neighborhood)
+    if (street && street !== neighborhood) detailedParts.push(street)
+
+    const detailStr = detailedParts.join("")
+    if (detailStr && !parts.includes(detailStr)) {
+      parts.push(detailStr)
+    }
+
+    return parts.filter(Boolean).join("•") || "尚未设置位置"
+  }
+
+  const locationStatusText = formatLocationDataForDisplay(currentLocation)
+
+  function persistLocation(nextLockLocation: boolean, nextLatitude: string, nextLongitude: string, nextLocality: string, nextSubLocality: string, nextStreet: string, extra?: { administrativeArea?: string; neighborhood?: string; quarter?: string; name?: string }) {
     const administrativeArea = extra?.administrativeArea || nextLocality.trim()
     writeLocationCaches({
       lockLocation: nextLockLocation,
       locationData: {
         latitude: parseFloat(nextLatitude) || 0,
         longitude: parseFloat(nextLongitude) || 0,
-        administrativeArea: administrativeArea,
+        administrativeArea: extra?.administrativeArea || administrativeArea,
         locality: nextLocality.trim(),
         subLocality: nextSubLocality.trim(),
         neighborhood: extra?.neighborhood || "",
         quarter: extra?.quarter || "",
         street: nextStreet.trim(),
-        name: nextStreet.trim() || nextSubLocality.trim() || nextLocality.trim(),
+        name: extra?.name || nextStreet.trim() || nextSubLocality.trim() || nextLocality.trim(),
         resolvedAt: Date.now(),
       },
     })
@@ -700,10 +735,22 @@ function LocationSettingsPage() {
       let nextLocality = locality
       let nextSubLocality = subLocality
       let nextStreet = street
+      let nextAdministrativeArea = ""
+      let nextNeighborhood = ""
+      let nextName = ""
+      
       if (g?.[0]) {
+        nextAdministrativeArea = g[0].administrativeArea || g[0].state || ""
         nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
-        nextSubLocality = g[0].subLocality || g[0].name || nextSubLocality
-        nextStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || nextStreet
+        nextSubLocality = g[0].subLocality || nextSubLocality
+        
+        let thoroughfare = g[0].thoroughfare || ""
+        let subThoroughfare = g[0].subThoroughfare || ""
+        let combinedStreet = [thoroughfare, subThoroughfare].filter(Boolean).join("")
+        
+        nextStreet = combinedStreet || nextStreet
+        nextNeighborhood = g[0].neighborhood || g[0].quarter || ""
+        nextName = g[0].name || ""
       }
       setLatitude(nextLatitude)
       setLongitude(nextLongitude)
@@ -711,12 +758,23 @@ function LocationSettingsPage() {
       setSubLocality(nextSubLocality)
       setStreet(nextStreet)
       setLockLocation(true)
-      persistLocation(true, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet)
+      persistLocation(true, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet, {
+        administrativeArea: nextAdministrativeArea,
+        neighborhood: nextNeighborhood,
+        name: nextName
+      })
       setRefreshSeed(refreshSeed + 1)
 
       const successAlert = new Alert()
       successAlert.title = "已获取当前位置"
-      successAlert.message = `${[nextLocality.trim(), nextSubLocality.trim(), nextStreet.trim()].filter(Boolean).join(" · ") || "位置已更新"}\n${nextLatitude}, ${nextLongitude}`
+      successAlert.message = `${formatLocationDataForDisplay({
+        administrativeArea: nextAdministrativeArea,
+        locality: nextLocality,
+        subLocality: nextSubLocality,
+        neighborhood: nextNeighborhood,
+        street: nextStreet,
+        name: nextName
+      })}\n${nextLatitude}, ${nextLongitude}`
       successAlert.addCancelAction("知道了")
       await successAlert.presentAlert()
     } catch (error) {
@@ -739,12 +797,19 @@ function LocationSettingsPage() {
     let nextStreet = street
     let nextAdministrativeArea = ""
     let nextNeighborhood = ""
+    let nextName = ""
     if (g?.[0]) {
       nextAdministrativeArea = g[0].administrativeArea || g[0].state || ""
       nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
-      nextSubLocality = g[0].subLocality || g[0].name || nextSubLocality
-      nextStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || nextStreet
+      nextSubLocality = g[0].subLocality || nextSubLocality
+      
+      let thoroughfare = g[0].thoroughfare || ""
+      let subThoroughfare = g[0].subThoroughfare || ""
+      let combinedStreet = [thoroughfare, subThoroughfare].filter(Boolean).join("")
+      
+      nextStreet = combinedStreet || nextStreet
       nextNeighborhood = g[0].neighborhood || g[0].quarter || ""
+      nextName = g[0].name || ""
     }
     const nextLatitude = String(l.latitude)
     const nextLongitude = String(l.longitude)
@@ -757,6 +822,7 @@ function LocationSettingsPage() {
     persistLocation(false, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet, {
       administrativeArea: nextAdministrativeArea,
       neighborhood: nextNeighborhood,
+      name: g?.[0]?.name || ""
     })
     await safeGetWeather(true)
     reloadWidgets("location-live-refresh")
