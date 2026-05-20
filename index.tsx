@@ -43,13 +43,20 @@ type LocationConfig = {
   locationData?: {
     latitude?: number
     longitude?: number
+
     administrativeArea?: string
     subAdministrativeArea?: string
+
     locality?: string
     subLocality?: string
+
     street?: string
     neighborhood?: string
     quarter?: string
+
+    subThoroughfare?: string
+    horizontalAccuracy?: number
+
     name?: string
     resolvedAt?: number
   }
@@ -172,15 +179,11 @@ function getCurrentLocationInfo() {
 }
 
 async function requestCurrentLocationInfo() {
-  const cachedLocation = getCurrentLocationInfo()
-  if (cachedLocation) return cachedLocation
   try {
-    const requestedLocation = await Location.requestCurrent({ forceRequest: true })
-    if (requestedLocation && typeof requestedLocation.latitude === "number" && typeof requestedLocation.longitude === "number") {
-      return requestedLocation
-    }
-  } catch {}
-  return null
+    return await Location.requestCurrent({ forceRequest: true })
+  } catch {
+    return getCurrentLocationInfo()
+  }
 }
 
 const statusInfo = loadStatusInfo()
@@ -670,36 +673,29 @@ function LocationSettingsPage() {
 
   function formatLocationDataForDisplay(loc: any): string {
     if (!loc) return "未知位置"
-    const province = (loc.administrativeArea || "").replace(/市$/, "")
-    let city = (loc.locality || "").replace(/市$/, "")
-    let district = loc.subLocality || ""
-    const neighborhood = loc.neighborhood || loc.quarter || ""
-    let street = loc.name || loc.street || ""
-
-    if (/[镇乡街道]$/.test(city) && /[区县市]$/.test(district)) {
-      const temp = city
-      city = district
-      district = temp
+    const province = String(loc.administrativeArea || "").replace(/市$/, "")
+    const city = String(loc.locality || "").replace(/市$/, "")
+    const district = String(loc.subLocality || loc.subAdministrativeArea || "")
+    const street = String(loc.street || "")
+    const name = String(loc.name || "")
+    
+    const parts = []
+    if (province) parts.push(province)
+    if (city && city !== province && city !== district) parts.push(city)
+    if (district && district !== city && !parts.includes(district)) parts.push(district)
+    
+    let fineAddress = ""
+    if (street && name) {
+      fineAddress = name.includes(street) ? name : (street.includes(name) ? street : street + name)
+    } else {
+      fineAddress = street || name
     }
-
-    if (street === district || street === city || street === province || street === "中国") {
-      street = ""
+    
+    if (fineAddress && !parts.includes(fineAddress)) {
+      parts.push(fineAddress)
     }
-
-    const parts = [province]
-    if (city && city !== province) parts.push(city)
-    if (district && district !== city) parts.push(district)
-
-    const detailedParts = []
-    if (neighborhood) detailedParts.push(neighborhood)
-    if (street && street !== neighborhood) detailedParts.push(street)
-
-    const detailStr = detailedParts.join("")
-    if (detailStr && !parts.includes(detailStr)) {
-      parts.push(detailStr)
-    }
-
-    return parts.filter(Boolean).join("•") || "尚未设置位置"
+    
+    return parts.join("·") || "尚未设置位置"
   }
 
   const locationStatusText = formatLocationDataForDisplay(currentLocation)
@@ -757,109 +753,93 @@ function LocationSettingsPage() {
       setLocality(nextLocality)
       setSubLocality(nextSubLocality)
       setStreet(nextStreet)
-      setLockLocation(true)
       persistLocation(true, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet, {
         administrativeArea: nextAdministrativeArea,
         neighborhood: nextNeighborhood,
         name: nextName
       })
       setRefreshSeed(refreshSeed + 1)
+      await safeGetWeather(true)
 
       const successAlert = new Alert()
-      successAlert.title = "已获取当前位置"
+      successAlert.title = "已保存手动固定位置"
       successAlert.message = `${formatLocationDataForDisplay({
         administrativeArea: nextAdministrativeArea,
         locality: nextLocality,
         subLocality: nextSubLocality,
-        neighborhood: nextNeighborhood,
         street: nextStreet,
         name: nextName
-      })}\n${nextLatitude}, ${nextLongitude}`
-      successAlert.addCancelAction("知道了")
+      })}`
+      successAlert.addCancelAction("好的")
       await successAlert.presentAlert()
     } catch (error) {
       const alert = new Alert()
-      alert.title = "自动定位失败"
-      alert.message = String((error as any)?.message || error || "无法获取当前位置")
+      alert.title = "定位失败"
+      alert.message = String((error as any)?.message || error)
       alert.addCancelAction("知道了")
       await alert.presentAlert()
     } finally {
       setIsLocating(false)
     }
-  }
-
-  async function liveGpsRefresh(alertTitle: string) {
-    const l = await requestCurrentLocationInfo()
-    if (!l) throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
-    const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
-    let nextLocality = locality
-    let nextSubLocality = subLocality
-    let nextStreet = street
-    let nextAdministrativeArea = ""
-    let nextNeighborhood = ""
-    let nextName = ""
-    if (g?.[0]) {
-      nextAdministrativeArea = g[0].administrativeArea || g[0].state || ""
-      nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
-      nextSubLocality = g[0].subLocality || nextSubLocality
-      
-      let thoroughfare = g[0].thoroughfare || ""
-      let subThoroughfare = g[0].subThoroughfare || ""
-      let combinedStreet = [thoroughfare, subThoroughfare].filter(Boolean).join("")
-      
-      nextStreet = combinedStreet || nextStreet
-      nextNeighborhood = g[0].neighborhood || g[0].quarter || ""
-      nextName = g[0].name || ""
-    }
-    const nextLatitude = String(l.latitude)
-    const nextLongitude = String(l.longitude)
-    setLatitude(nextLatitude)
-    setLongitude(nextLongitude)
-    setLocality(nextLocality)
-    setSubLocality(nextSubLocality)
-    setStreet(nextStreet)
-    setLockLocation(false)
-    persistLocation(false, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet, {
-      administrativeArea: nextAdministrativeArea,
-      neighborhood: nextNeighborhood,
-      name: g?.[0]?.name || ""
-    })
-    await safeGetWeather(true)
-    reloadWidgets("location-live-refresh")
-    setRefreshSeed(refreshSeed + 1)
-
-    const successAlert = new Alert()
-    successAlert.title = alertTitle
-    successAlert.message = `${[nextLocality.trim(), nextSubLocality.trim(), nextStreet.trim()].filter(Boolean).join(" · ") || "位置已更新"}\n桌面组件已使用最新 GPS 精确位置刷新彩云天气`
-    successAlert.addCancelAction("知道了")
-    await successAlert.presentAlert()
   }
 
   async function selectAutoGps() {
     if (isLocating) return
     setIsLocating(true)
     try {
-      await liveGpsRefresh("已切换为自动 GPS")
-    } catch (error) {
-      const alert = new Alert()
-      alert.title = "自动 GPS 失败"
-      alert.message = String((error as any)?.message || error || "无法切换为自动 GPS")
-      alert.addCancelAction("知道了")
-      await alert.presentAlert()
-    } finally {
-      setIsLocating(false)
-    }
-  }
+      const l = await requestCurrentLocationInfo()
+      if (!l) throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
+      const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
+      
+      let nextLocality = locality
+      let nextSubLocality = subLocality
+      let nextStreet = street
+      let nextAdministrativeArea = ""
+      let nextNeighborhood = ""
+      let nextName = ""
+      
+      if (g?.[0]) {
+        nextAdministrativeArea = g[0].administrativeArea || g[0].state || ""
+        nextLocality = g[0].locality || g[0].administrativeArea || nextLocality
+        nextSubLocality = g[0].subLocality || nextSubLocality
+        
+        let thoroughfare = g[0].thoroughfare || ""
+        let subThoroughfare = g[0].subThoroughfare || ""
+        let combinedStreet = [thoroughfare, subThoroughfare].filter(Boolean).join("")
+        
+        nextStreet = combinedStreet || nextStreet
+        nextNeighborhood = g[0].neighborhood || g[0].quarter || ""
+        nextName = g[0].name || ""
+      }
+      const nextLatitude = String(l.latitude)
+      const nextLongitude = String(l.longitude)
+      
+      // 不更新手动模式的 UI 状态，两个模式独立
+      
+      persistLocation(false, nextLatitude, nextLongitude, nextLocality, nextSubLocality, nextStreet, {
+        administrativeArea: nextAdministrativeArea,
+        neighborhood: nextNeighborhood,
+        name: nextName
+      })
+      await safeGetWeather(true)
+      reloadWidgets("location-live-refresh")
+      setRefreshSeed(refreshSeed + 1)
 
-  async function refreshLiveLocationAndWeather() {
-    if (isLocating) return
-    setIsLocating(true)
-    try {
-      await liveGpsRefresh("已刷新实时定位与天气")
+      const successAlert = new Alert()
+      successAlert.title = "已保存自动定位"
+      successAlert.message = `${formatLocationDataForDisplay({
+        administrativeArea: nextAdministrativeArea,
+        locality: nextLocality,
+        subLocality: nextSubLocality,
+        street: nextStreet,
+        name: nextName
+      })}`
+      successAlert.addCancelAction("好的")
+      await successAlert.presentAlert()
     } catch (error) {
       const alert = new Alert()
-      alert.title = "刷新失败"
-      alert.message = String((error as any)?.message || error || "无法刷新实时定位与天气")
+      alert.title = "自动定位失败"
+      alert.message = String((error as any)?.message || error)
       alert.addCancelAction("知道了")
       await alert.presentAlert()
     } finally {
@@ -919,59 +899,22 @@ function LocationSettingsPage() {
           </VStack>
         </Section>
 
-        {/* ─── 定位操作 ─── */}
-        <Section header={
-          <HStack spacing={4}>
-            <Image systemName="antenna.radiowaves.left.and.right" font={12} foregroundStyle="#007aff" />
-            <Text font={13} fontWeight="medium" foregroundStyle="#555">定位操作</Text>
-          </HStack>
-        }>
-          <Button action={selectAutoGps}>
-            <HStack spacing={10}>
-              <ZStack frame={{ width: 30, height: 30 }}>
-                <Circle fill={{ colors: ["#56ab2f", "#a8e063"], startPoint: "top", endPoint: "bottom" }} />
-                <Image systemName="location.north.fill" renderingMode="template" foregroundStyle="white" font={13} />
-              </ZStack>
-              <VStack spacing={1} alignment="leading">
-                <Text font={15} fontWeight="medium">{isLocating ? "正在获取实时 GPS…" : "自动 GPS 定位"}</Text>
-                <Text font={11} foregroundStyle="gray">立即获取精确位置并刷新桌面组件天气</Text>
-              </VStack>
-            </HStack>
-          </Button>
-          <Button action={refreshLiveLocationAndWeather}>
-            <HStack spacing={10}>
-              <ZStack frame={{ width: 30, height: 30 }}>
-                <Circle fill={{ colors: ["#f7971e", "#ffd200"], startPoint: "top", endPoint: "bottom" }} />
-                <Image systemName="arrow.triangle.2.circlepath" renderingMode="template" foregroundStyle="white" font={13} />
-              </ZStack>
-              <VStack spacing={1} alignment="leading">
-                <Text font={15} fontWeight="medium">{isLocating ? "正在刷新…" : "刷新实时定位与天气"}</Text>
-                <Text font={11} foregroundStyle="gray">重新取位 + 调用彩云实时天气 API</Text>
-              </VStack>
-            </HStack>
-          </Button>
-          <Button action={fillCurrentLocation}>
-            <HStack spacing={10}>
-              <ZStack frame={{ width: 30, height: 30 }}>
-                <Circle fill={{ colors: ["#667eea", "#764ba2"], startPoint: "top", endPoint: "bottom" }} />
-                <Image systemName="mappin.and.ellipse" renderingMode="template" foregroundStyle="white" font={13} />
-              </ZStack>
-              <VStack spacing={1} alignment="leading">
-                <Text font={15} fontWeight="medium">{isLocating ? "正在获取…" : "获取并固定当前位置"}</Text>
-                <Text font={11} foregroundStyle="gray">获取一次坐标并锁定，不再自动跟随</Text>
-              </VStack>
-            </HStack>
-          </Button>
-        </Section>
-
-        {/* ─── 模式开关 ─── */}
+        {/* ─── 定位模式 ─── */}
         <Section header={
           <HStack spacing={4}>
             <Image systemName="gearshape.fill" font={12} foregroundStyle="#8e8e93" />
             <Text font={13} fontWeight="medium" foregroundStyle="#555">定位模式</Text>
           </HStack>
-        } footer={<Text font={12} foregroundStyle="gray">开启“固定位置”后组件不再自动跟随 GPS，关闭则每次刷新都会用最新实时位置。</Text>}>
-          <Toggle title="固定使用当前位置" systemImage="lock.fill" value={lockLocation} onChanged={setLockLocation} />
+        } footer={<Text font={12} foregroundStyle="gray">开启"自动定位"后组件每次刷新跟随最新 GPS 位置；开启"固定位置"则锁定当前已保存的位置不再变动。两个选项互斥。</Text>}>
+          <Toggle title="自动定位" systemImage="location.fill" value={!lockLocation} onChanged={(val) => {
+            const nextLock = !val
+            setLockLocation(nextLock)
+            persistLocation(nextLock, latitude, longitude, locality, subLocality, street)
+          }} />
+          <Toggle title="固定使用当前位置" systemImage="lock.fill" value={lockLocation} onChanged={(val) => {
+            setLockLocation(val)
+            persistLocation(val, latitude, longitude, locality, subLocality, street)
+          }} />
         </Section>
 
         {/* ─── 手动位置信息 ─── */}
@@ -1802,67 +1745,159 @@ async function setupRefreshInterval() {
 }
 
 async function setupLocation() {
-  const currentConfig = readJson<LocationConfig>(locCachePath)
-  const currentLocation = currentConfig?.locationData || {}
+  const currentConfig =
+    readJson<LocationConfig>(locCachePath)
+
+  const currentLocation =
+    currentConfig?.locationData || {}
+
   const alert = new Alert()
-  alert.title = "定位设置"
-  alert.message = `当前: ${currentConfig?.lockLocation ? "固定" : "自动"}\n${currentLocation.locality || "未设置"}-${currentLocation.subLocality || ""}`
-  alert.addAction("切换为自动 (GPS)")
-  alert.addAction("切换为手动固定 (自动填入当前)")
+
+  alert.title = "📍定位设置"
+
+  alert.message =
+  `当前模式：${
+      currentConfig?.lockLocation
+      ? "固定"
+      : "自动GPS"
+   }
+
+位置：
+${
+currentLocation.locality || "未知"
+}
+${
+currentLocation.subLocality || ""
+}
+
+${
+currentLocation.street || ""
+}
+
+精度:
+±${
+Math.round(
+currentLocation.horizontalAccuracy||0
+)
+}m`
+
+  alert.addAction("自动定位")
+  alert.addAction("固定当前位置")
   alert.addCancelAction("取消")
-  const idx = await alert.presentAlert()
-  if (idx === 0) {
-    writeLocationCaches({
-      lockLocation: false,
-      locationData: currentLocation,
-    })
-    reloadWidgets()
-    return
+
+  const idx =
+      await alert.presentAlert()
+
+  if(idx===0){
+
+      writeLocationCaches({
+          lockLocation:false,
+          locationData:currentLocation
+      })
+
+      reloadWidgets()
+
+      return
   }
-  if (idx !== 1) return
 
-  let fillLat = currentLocation.latitude || 0
-  let fillLng = currentLocation.longitude || 0
-  let fillCity = currentLocation.locality || ""
-  let fillSub = currentLocation.subLocality || ""
-  let fillStreet = currentLocation.street || currentLocation.name || ""
-  try {
-    const l = await requestCurrentLocationInfo()
-    if (!l) throw new Error("当前运行环境未提供可访问的 location 数据")
-    const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
-    fillLat = l.latitude
-    fillLng = l.longitude
-    if (g?.[0]) {
-      fillCity = g[0].locality || g[0].administrativeArea || fillCity
-      fillSub = g[0].subLocality || g[0].name || fillSub
-      fillStreet = g[0].thoroughfare || g[0].subThoroughfare || g[0].name || g[0].subLocality || fillStreet
-    }
-  } catch {}
+  if(idx!==1)return
 
-  const input = new Alert()
-  input.title = "手动固定位置"
-  input.message = "已尝试自动填入当前坐标，您可手动修改并保存锁定。"
-  input.addTextField("纬度", String(fillLat))
-  input.addTextField("经度", String(fillLng))
-  input.addTextField("城市", fillCity)
-  input.addTextField("区域", fillSub)
-  input.addTextField("街道", fillStreet)
-  input.addAction("保存锁定")
-  input.addCancelAction("取消")
-  if (await input.presentAlert() === 0) {
-    writeLocationCaches({
-      lockLocation: true,
-      locationData: {
-        latitude: parseFloat(input.textFieldValue(0)),
-        longitude: parseFloat(input.textFieldValue(1)),
-        locality: input.textFieldValue(2),
-        subLocality: input.textFieldValue(3),
-        street: input.textFieldValue(4),
-        name: input.textFieldValue(4),
-        resolvedAt: Date.now(),
-      },
-    })
-    reloadWidgets()
+  try{
+
+      const l =
+      await requestCurrentLocationInfo()
+
+      if(!l)
+      throw new Error(
+      "无法获取GPS"
+      )
+
+      const g=
+      await Location.reverseGeocode({
+          latitude:l.latitude,
+          longitude:l.longitude,
+          locale:"zh_cn"
+      })
+
+      const geo=g?.[0]||{}
+
+      const street=
+      [
+      geo.thoroughfare,
+      geo.subThoroughfare,
+      geo.name
+      ]
+      .filter(Boolean)
+      .join(" ")
+
+      writeLocationCaches({
+
+        lockLocation:true,
+
+        locationData:{
+
+            latitude:l.latitude,
+
+            longitude:l.longitude,
+
+            administrativeArea:
+            geo.administrativeArea,
+
+            locality:
+            geo.locality,
+
+            subLocality:
+            geo.subLocality,
+
+            neighborhood:
+            geo.neighborhood,
+
+            street,
+
+            subThoroughfare:
+            geo.subThoroughfare,
+
+            horizontalAccuracy:
+            l.horizontalAccuracy,
+
+            name:street,
+
+            resolvedAt:Date.now()
+
+        }
+
+      })
+
+      const ok=new Alert()
+
+      ok.title="定位成功"
+
+      ok.message=
+`${street}
+
+精度 ±${Math.round(
+l.horizontalAccuracy||0
+)}m`
+
+      ok.addAction("确定")
+
+      await ok.presentAlert()
+
+      reloadWidgets()
+
+  }catch(e){
+
+      const err=
+      new Alert()
+
+      err.title="定位失败"
+
+      err.message=String(e)
+
+      err.addAction("确定")
+
+      await err.presentAlert()
+
   }
 }
 
