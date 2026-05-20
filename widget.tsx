@@ -1436,7 +1436,7 @@ function CalendarView() {
 
 function MediumWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
-    <HStack alignment="center" spacing={5} padding={{ top: 10, leading: 8, trailing: 10, bottom: 6 }}>
+    <HStack alignment="center" spacing={5} padding={{ top: 6, leading: 8, trailing: 10, bottom: 6 }}>
       <VStack frame={{ width: 202, alignment: "leading" }}>
         <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="medium" />
       </VStack>
