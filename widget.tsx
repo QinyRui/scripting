@@ -40,7 +40,7 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
       nativeResult = await nativeFn(options)
       const native = nativeResult?.[0]
       const hasDistrict = isMeaningfulName(native?.subLocality) || isMeaningfulName(native?.subAdministrativeArea) || /[区县旗]$/.test(String(native?.locality || "")) || isMeaningfulName(native?.locality)
-      if (placemarkHasDetailedAddress(native) && hasDistrict) return nativeResult
+      if (placemarkHasDetailedAddress(native) && hasDistrict && native?.subThoroughfare) return nativeResult
     } catch {}
   }
 
@@ -163,13 +163,14 @@ const yellowBlackDays = ["建", "除", "满", "平", "定", "执", "破", "危",
 const twentyEightMansions = ["角", "亢", "氐", "房", "心", "尾", "箕", "斗", "牛", "女", "虚", "危", "室", "壁", "奎", "娄", "胃", "昴", "毕", "觜", "参", "井", "鬼", "柳", "星", "张", "翼", "轸"]
 const solarTerms = ["小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"]
 const solarTermOffsets = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758]
+// 问候语
 const greetingText = {
-  nightGreeting: "努力加油",
-  morningGreeting: "    早上",
-  noonGreeting: "     中午",
-  afternoonGreeting: "     下午",
-  eveningGreeting: "     傍晚",
-  nightText: "     晚上",
+  nightGreeting: "😈, QinyRui~",
+  morningGreeting: "💫,早上心情美美哒~",
+  noonGreeting: "🥳,中午好呀~",
+  afternoonGreeting: "🐡,下午好呀~",
+  eveningGreeting: "🐳,傍晚好呀!",
+  nightText: "🌙,晚上好呀!"
 }
 const weatherIcos: Record<string, string> = {
   CLEAR_DAY: "sun.max.fill",
@@ -219,17 +220,21 @@ async function getCurrentLocationInfo() {
   if (globalLocation && typeof globalLocation.latitude === "number" && typeof globalLocation.longitude === "number") {
     return globalLocation
   }
+  return null
+}
+
+async function requestCurrentLocationInfo() {
   try {
-    const requestedLocation = await Location.requestCurrent({ forceRequest: true })
-    if (requestedLocation && typeof requestedLocation.latitude === "number" && typeof requestedLocation.longitude === "number") {
-      return requestedLocation
+    const reqLoc = await Location.requestCurrent({ forceRequest: true })
+    if (reqLoc && typeof reqLoc.latitude === "number" && typeof reqLoc.longitude === "number") {
+      return reqLoc
     }
   } catch (error) {
     appendDebugLog("request current location failed", {
       message: String((error as any)?.message || error),
     })
   }
-  return null
+  return getCurrentLocationInfo()
 }
 
 const Cache = {
@@ -339,10 +344,14 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
   const neighborhoodName = [placemark.neighborhood, placemark.quarter]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName)) || base.neighborhood || base.quarter || ""
-  const streetName = [placemark.thoroughfare, placemark.subThoroughfare, placemark.name, placemark.subLocality]
+  const t = String(placemark.thoroughfare || "").trim()
+  const st = String(placemark.subThoroughfare || "").trim()
+  const fullStreet = t && st ? (t.includes(st) ? t : (st.includes(t) ? st : t + st)) : (t || st)
+  
+  const streetName = [fullStreet, placemark.name, placemark.subLocality]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || base.street || base.name || ""
-  const fineName = [placemark.name, placemark.thoroughfare, placemark.subThoroughfare, placemark.subLocality]
+  const fineName = [placemark.name, fullStreet, placemark.subLocality]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || streetName || neighborhoodName || districtName || cityName || provinceName
 
@@ -361,6 +370,7 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
 }
 
 async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
+  force = true;
   if (!hasValidCoordinates(data)) return data
   if (!force && hasFullLocationName(data)) return data
   try {
@@ -521,9 +531,9 @@ async function ensureBackgroundMigrated() {
 function getDisplayLocationText() {
   const loc = locationData
   if (!loc) return "未知位置"
-  const province = (loc.administrativeArea || "").replace(/市$/, "")
-  let city = (loc.locality || "").replace(/市$/, "")
-  let district = loc.subLocality || loc.subAdministrativeArea || ""
+  const province = String(loc.administrativeArea || "").replace(/市$/, "")
+  let city = String(loc.locality || "").replace(/市$/, "")
+  let district = String(loc.subLocality || loc.subAdministrativeArea || "")
   const neighborhood = loc.neighborhood || loc.quarter || ""
   let street = loc.name || loc.street || ""
 
@@ -539,15 +549,18 @@ function getDisplayLocationText() {
 
   const parts = [province]
   if (city && city !== province) parts.push(city)
-  if (district && district !== city) parts.push(district)
+  if (district && district !== city && !parts.includes(district)) parts.push(district)
 
-  const detailedParts = []
-  if (neighborhood) detailedParts.push(neighborhood)
-  if (street && street !== neighborhood) detailedParts.push(street)
-
-  const detailStr = detailedParts.join("")
-  if (detailStr && !parts.includes(detailStr)) {
-    parts.push(detailStr)
+  let name = String(loc.name || "")
+  let fineAddress = ""
+  if (street && name) {
+    fineAddress = name.includes(street) ? name : (street.includes(name) ? street : street + name)
+  } else {
+    fineAddress = street || name || neighborhood
+  }
+  
+  if (fineAddress && !parts.includes(fineAddress)) {
+    parts.push(fineAddress)
   }
 
   if (parts.length === 0) {
@@ -557,7 +570,7 @@ function getDisplayLocationText() {
       : "定位获取中"
   }
 
-  return parts.filter(Boolean).join("•") || "未知位置"
+  return parts.filter(Boolean).join("·") || "未知位置"
 }
 
 async function getJson(url: string) {
@@ -592,7 +605,7 @@ async function getLocation(): Promise<LocationData> {
   }
 
   // 3. 如果锁定位置或无法获取实时 GPS，直接使用缓存
-  const liveLocation = await getCurrentLocationInfo()
+  const liveLocation = await requestCurrentLocationInfo()
   if (lockLocation || !liveLocation) {
     locationData = await resolveLocationNameIfNeeded(locationData)
     appendDebugLog("using cached/saved location only", {
@@ -1423,7 +1436,7 @@ function CalendarView() {
 
 function MediumWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
-    <HStack alignment="center" spacing={5} padding={{ top: 5, leading: 8, trailing: 10, bottom: 6 }}>
+    <HStack alignment="center" spacing={5} padding={{ top: 10, leading: 8, trailing: 10, bottom: 6 }}>
       <VStack frame={{ width: 202, alignment: "leading" }}>
         <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="medium" />
       </VStack>
@@ -1437,7 +1450,7 @@ function MediumWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; p
 
 function LargeWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
-    <VStack alignment="leading" spacing={0} padding={{ top: 0, bottom: 1 }}>
+    <VStack alignment="leading" spacing={0} padding={{ top: 8, bottom: 1 }}>
       <VStack padding={{ leading: 8, trailing: 4 }}>
         <HStack alignment="top" spacing={0} frame={{ minHeight: 110 }}>
           <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
