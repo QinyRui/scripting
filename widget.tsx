@@ -1500,7 +1500,10 @@ async function main() {
   })
   Widget.present(
     <WidgetRoot weatherInfo={weatherInfo} lunarStr={lunarStr} poetry={poetry} schedules={schedules} />,
-    { policy: "after", date: reloadDate } as any,
+    {
+      reloadPolicy: { policy: "after", date: reloadDate },
+      relevance: { score: 50, duration: refreshMinutes * 60 },
+    },
   )
 }
 
