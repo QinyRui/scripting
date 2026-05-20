@@ -1078,35 +1078,24 @@ function SectionText(props: { text: string | string[]; font?: number; color?: st
   )
 }
 
-function ForecastView({ future }: { future: WeatherFuture[] }) {
+function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetType: "medium" | "large" }) {
+  const labelFont = s(widgetType === "medium" ? 12 : 13, "weather")
+  const iconSize = widgetType === "medium" ? 18 : 20
+  const tempFont = s(widgetType === "medium" ? 11 : 12, "weather")
   return (
-    <HStack spacing={7}>
+    <HStack spacing={widgetType === "medium" ? 14 : 18}>
       {future.slice(0, 3).map((item) => (
-        <VStack spacing={1} frame={{ minWidth: 30 }}>
-          <SectionText text={item.week || "-"} font={s(10, "poetry")} color={c("rgba(255,255,255,0.75)", "weather")} />
-          <Image systemName={item.ico} frame={{ width: 14, height: 14 }} />
-          <SectionText text={`${item.min}/${item.max}°`} font={s(9, "poetry")} color={c("rgba(255,255,255,0.8)", "weather")} />
+        <VStack spacing={2} frame={{ minWidth: widgetType === "medium" ? 40 : 48 }}>
+          <SectionText text={item.week || "-"} font={labelFont} color={c("rgba(255,255,255,0.75)", "weather")} />
+          <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
+          <SectionText text={`${item.min}/${item.max}°`} font={tempFont} color={c("rgba(255,255,255,0.8)", "weather")} />
         </VStack>
       ))}
     </HStack>
   )
 }
 
-function PoetryCard({ poetry, widgetType }: { poetry: PoetryInfo; widgetType: "medium" | "large" }) {
-  const content = String(poetry.data?.content || "").replace(/[。，！]$/, "")
-  const author = poetry.data?.origin ? `${poetry.data.origin.dynasty}·${poetry.data.origin.author}` : ""
-  return (
-    <VStack
-      spacing={2}
-      frame={{ width: widgetType === "medium" ? 82 : 92, alignment: "leading" }}
-      padding={{ horizontal: 4, vertical: 3 }}
-      background="rgba(102,102,102,0.26)"
-    >
-      <SectionText text={content} font={s(10, "poetry")} color={c("rgba(255,255,255,0.9)", "poetry")} lineLimit={3} />
-      <SectionText text={`— ${author}`} font={s(8, "poetry")} color={c("rgba(255,255,255,0.6)", "poetry")} lineLimit={1} />
-    </VStack>
-  )
-}
+
 
 function getPrimaryCountdownText(date: Date) {
   const todayTerm = getSolarTerm(date)
@@ -1140,7 +1129,7 @@ function DashedDivider({ widgetType }: { widgetType: "medium" | "large" }) {
 
 function CompactCountdownRow({ icon, text, accent, widgetType }: { icon: string; text: string; accent: string; widgetType: "medium" | "large" }) {
   return (
-    <HStack spacing={3} frame={{ maxWidth: widgetType === "medium" ? 142 : 162, alignment: "leading" }}>
+    <HStack spacing={3} frame={{ maxWidth: widgetType === "medium" ? 200 : 195, alignment: "leading" }}>
       <SectionText
         text={icon}
         font={s(widgetType === "medium" ? 8 : 9, "timeInfo")}
@@ -1229,7 +1218,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
   const wDesc = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
-  const leftWidth = widgetType === "medium" ? 214 : 192
+  const leftWidth = widgetType === "medium" ? 210 : 200
   const dateLineText = [getDateStr(currentDate), weekTitle[currentDate.getDay()], lunarStr || ""]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
@@ -1253,13 +1242,12 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       </HStack>
       <Spacer minLength={widgetType === "medium" ? 0 : 1} />
       <HStack alignment="top" spacing={widgetType === "medium" ? 6 : 8} frame={{ width: leftWidth, alignment: "leading" }}>
-        {weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} /> : <Spacer />}
-        {poetry?.data ? <PoetryCard poetry={poetry} widgetType={widgetType} /> : null}
+        {weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} widgetType={widgetType} /> : <Spacer />}
       </HStack>
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
           text={wDesc} 
-          font={s(widgetType === "medium" ? 11 : 13, "weather")} 
+          font={s(widgetType === "medium" ? 12 : 14, "weather")} 
           color={c("#ffffff", "weather")} 
           lineLimit={2} 
           minScaleFactor={0.5}
@@ -1300,7 +1288,7 @@ function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherInfo; wi
   const updateFont = s(widgetType === "medium" ? 8 : 9, "weather")
   const updateText = `更新 ${formatUpdateTime(weatherInfo.updatedAt)}`
   return (
-    <VStack alignment="trailing" spacing={widgetType === "medium" ? 3 : 4} frame={{ minWidth: widgetType === "medium" ? 100 : 140, alignment: "trailing" }} {...offsetStyle(widgetType, "right")}>
+    <VStack alignment="trailing" spacing={widgetType === "medium" ? 3 : 4} frame={{ minWidth: widgetType === "medium" ? 100 : 120, alignment: "trailing" }} {...offsetStyle(widgetType, "right")}>
       <HStack spacing={5} padding={{ bottom: widgetType === "medium" ? 1 : 2 }}>
         <Image
           systemName={wIco}
@@ -1503,11 +1491,11 @@ async function main() {
   const now = new Date()
   const forceRefreshRequested = hasRecentForceReloadRequest(now.getTime())
   const reloadDate = getNextWidgetReloadDate(now, refreshMinutes, forceRefreshRequested)
-  const [weatherInfo, poetry, schedules] = await Promise.all([
+  const [weatherInfo, schedules] = await Promise.all([
     safeGetWeather(forceRefreshRequested),
-    safeGetPoetry(),
     safeGetSchedules(),
   ])
+  const poetry = null
   const lunarStr = safeGetLunarStr()
   appendDebugLog("widget render payload", {
     weatherInfo,
