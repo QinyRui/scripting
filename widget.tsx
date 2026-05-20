@@ -1259,10 +1259,10 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
           text={wDesc} 
-          font={s(widgetType === "medium" ? 9 : 11, "weather")} 
+          font={s(widgetType === "medium" ? 11 : 13, "weather")} 
           color={c("#ffffff", "weather")} 
-          lineLimit={1} 
-          minScaleFactor={0.4}
+          lineLimit={2} 
+          minScaleFactor={0.5}
         />
       </VStack>
       <Spacer minLength={widgetType === "medium" ? 1 : 2} />
