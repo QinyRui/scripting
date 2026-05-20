@@ -1233,7 +1233,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
 
   return (
     <VStack alignment="leading" spacing={widgetType === "medium" ? 1 : 2} frame={{ width: leftWidth, alignment: "leading" }} {...offsetStyle(widgetType, "left")}>
-      <SectionText text={provideGreeting(currentDate)} font={s(widgetType === "medium" ? 21 : 22, "greeting")} color={c("#ffffff", "greeting")} lineLimit={1} />
+      <SectionText text={provideGreeting(currentDate)} font={s(widgetType === "medium" ? 21 : 19, "greeting")} color={c("#ffffff", "greeting")} lineLimit={1} />
       <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
         <SectionText text={dateLineText} font={s(widgetType === "medium" ? 12 : 13, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
       </HStack>
@@ -1371,7 +1371,7 @@ function CalendarView() {
   const month = currentDate.getMonth()
   const monthGrid = getMonthGrid(year, month)
   return (
-    <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+    <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
       <HStack spacing={0} frame={{ maxWidth: "infinity" }}>
         {weekTitleShort.map((day, idx) => (
           <VStack frame={{ maxWidth: "infinity" }} alignment="center">
@@ -1437,17 +1437,17 @@ function MediumWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; p
 
 function LargeWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
-    <VStack alignment="leading" spacing={1} padding={{ top: 13, bottom: 3 }}>
+    <VStack alignment="leading" spacing={0} padding={{ top: 0, bottom: 1 }}>
       <VStack padding={{ leading: 8, trailing: 4 }}>
-        <HStack alignment="top" spacing={0} frame={{ minHeight: 120 }}>
+        <HStack alignment="top" spacing={0} frame={{ minHeight: 110 }}>
           <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
           <Spacer minLength={4} />
           <WeatherSide weatherInfo={props.weatherInfo} widgetType="large" />
         </HStack>
-        <VStack frame={{ height: 4 }} />
+        <VStack frame={{ height: 2 }} />
         <TimeInfoBar />
       </VStack>
-      <VStack frame={{ height: 2 }} />
+      <VStack frame={{ height: 1 }} />
       <VStack padding={{ leading: 4, trailing: 4 }}>
         <CalendarView />
       </VStack>
