@@ -164,12 +164,12 @@ const twentyEightMansions = ["角", "亢", "氐", "房", "心", "尾", "箕", "�
 const solarTerms = ["小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"]
 const solarTermOffsets = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758]
 const greetingText = {
-  nightGreeting: "☀️   彩云天气☀️~ ",
-  morningGreeting: "🥱,早上心情美美哒~",
-  noonGreeting: "🫩,中午好呀",
-  afternoonGreeting: "🫨,下午好呀",
-  eveningGreeting: "😈,傍晚好呀!",
-  nightText: "🌙,晚上好呀!",
+  nightGreeting: "努力加油",
+  morningGreeting: "    早上",
+  noonGreeting: "     中午",
+  afternoonGreeting: "     下午",
+  eveningGreeting: "     傍晚",
+  nightText: "     晚上",
 }
 const weatherIcos: Record<string, string> = {
   CLEAR_DAY: "sun.max.fill",
@@ -519,37 +519,45 @@ async function ensureBackgroundMigrated() {
 }
 
 function getDisplayLocationText() {
-  let province = String(locationData.administrativeArea || "").trim()
-  let city = String(locationData.locality || "").trim()
-  let district = String(locationData.subLocality || locationData.subAdministrativeArea || "").trim()
-  const country = String((locationData as any).country || "").trim()
+  const loc = locationData
+  if (!loc) return "未知位置"
+  const province = (loc.administrativeArea || "").replace(/市$/, "")
+  let city = (loc.locality || "").replace(/市$/, "")
+  let district = loc.subLocality || loc.subAdministrativeArea || ""
+  const neighborhood = loc.neighborhood || loc.quarter || ""
+  let street = loc.name || loc.street || ""
 
-  // 直辖市常见缓存：administrativeArea=上海市，locality=宝山区。
-  // 显示时归一为：上海市/宝山区/地点名称。
-  if (province && province.endsWith("市") && city && /[区县旗]$/.test(city) && !district) {
-    district = city
-    city = province
+  if (/[镇乡街道]$/.test(city) && /[区县市]$/.test(district)) {
+    const temp = city
+    city = district
+    district = temp
   }
 
-  const street = String(locationData.street || "").trim()
-  const neighborhood = String(locationData.neighborhood || locationData.quarter || "").trim()
-  const name = String(locationData.name || "").trim()
-  const region = (province || city).replace(/市$/u, "")
-  const area = district && district !== region ? district : city
-  const countryNames = [country, "中国", "China", "中华人民共和国"].filter(Boolean)
-  const fineName = [street, name, neighborhood]
-    .map((item) => String(item || "").trim())
-    .find((item) => Boolean(isMeaningfulName(item) && !countryNames.includes(item) && item !== province && item !== city && item !== district))
-  const parts = [region, area, fineName]
-    .map((item) => String(item || "").trim())
-    .filter((item, index, arr) => isMeaningfulName(item) && !countryNames.includes(item) && arr.indexOf(item) === index)
+  if (street === district || street === city || street === province || street === "中国") {
+    street = ""
+  }
+
+  const parts = [province]
+  if (city && city !== province) parts.push(city)
+  if (district && district !== city) parts.push(district)
+
+  const detailedParts = []
+  if (neighborhood) detailedParts.push(neighborhood)
+  if (street && street !== neighborhood) detailedParts.push(street)
+
+  const detailStr = detailedParts.join("")
+  if (detailStr && !parts.includes(detailStr)) {
+    parts.push(detailStr)
+  }
+
   if (parts.length === 0) {
-    const hasCoordinates = Number.isFinite(Number(locationData.latitude)) && Number.isFinite(Number(locationData.longitude))
-    return hasCoordinates && (locationData.latitude !== 0 || locationData.longitude !== 0)
-      ? `${Number(locationData.latitude).toFixed(2)}, ${Number(locationData.longitude).toFixed(2)}`
+    const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
+    return hasCoordinates && (loc.latitude !== 0 || loc.longitude !== 0)
+      ? `${Number(loc.latitude).toFixed(2)}, ${Number(loc.longitude).toFixed(2)}`
       : "定位获取中"
   }
-  return parts.join("•")
+
+  return parts.filter(Boolean).join("•") || "未知位置"
 }
 
 async function getJson(url: string) {
