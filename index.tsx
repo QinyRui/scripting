@@ -726,6 +726,9 @@ function LocationSettingsPage() {
       const l = await requestCurrentLocationInfo()
       if (!l) throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
       const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
+      const acc = (l as any).horizontalAccuracy || (l as any).accuracy || 0
+      const accText = acc ? `\n* GPS精度: ±${Math.round(acc)}m` : ""
+      let subThoroText = ""
       const nextLatitude = String(l.latitude)
       const nextLongitude = String(l.longitude)
       let nextLocality = locality
@@ -742,6 +745,7 @@ function LocationSettingsPage() {
         
         let thoroughfare = g[0].thoroughfare || ""
         let subThoroughfare = g[0].subThoroughfare || ""
+        subThoroText = subThoroughfare ? `\n* 门牌号: ${subThoroughfare}` : ""
         let combinedStreet = [thoroughfare, subThoroughfare].filter(Boolean).join("")
         
         nextStreet = combinedStreet || nextStreet
@@ -762,14 +766,14 @@ function LocationSettingsPage() {
       await safeGetWeather(true)
 
       const successAlert = new Alert()
-      successAlert.title = "已保存手动固定位置"
-      successAlert.message = `${formatLocationDataForDisplay({
+      successAlert.title = "定位成功 (固定位置)"
+      successAlert.message = `* 位置: ${formatLocationDataForDisplay({
         administrativeArea: nextAdministrativeArea,
         locality: nextLocality,
         subLocality: nextSubLocality,
         street: nextStreet,
         name: nextName
-      })}`
+      })}${subThoroText}${accText}`
       successAlert.addCancelAction("好的")
       await successAlert.presentAlert()
     } catch (error) {
@@ -790,6 +794,9 @@ function LocationSettingsPage() {
       const l = await requestCurrentLocationInfo()
       if (!l) throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
       const g = await Location.reverseGeocode({ latitude: l.latitude, longitude: l.longitude, locale: "zh_cn" })
+      const acc = (l as any).horizontalAccuracy || (l as any).accuracy || 0
+      const accText = acc ? `\n* GPS精度: ±${Math.round(acc)}m` : ""
+      let subThoroText = ""
       
       let nextLocality = locality
       let nextSubLocality = subLocality
@@ -805,6 +812,7 @@ function LocationSettingsPage() {
         
         let thoroughfare = g[0].thoroughfare || ""
         let subThoroughfare = g[0].subThoroughfare || ""
+        subThoroText = subThoroughfare ? `\n* 门牌号: ${subThoroughfare}` : ""
         let combinedStreet = [thoroughfare, subThoroughfare].filter(Boolean).join("")
         
         nextStreet = combinedStreet || nextStreet
@@ -826,14 +834,14 @@ function LocationSettingsPage() {
       setRefreshSeed(refreshSeed + 1)
 
       const successAlert = new Alert()
-      successAlert.title = "已保存自动定位"
-      successAlert.message = `${formatLocationDataForDisplay({
+      successAlert.title = "定位成功 (自动跟随)"
+      successAlert.message = `* 位置: ${formatLocationDataForDisplay({
         administrativeArea: nextAdministrativeArea,
         locality: nextLocality,
         subLocality: nextSubLocality,
         street: nextStreet,
         name: nextName
-      })}`
+      })}${subThoroText}${accText}`
       successAlert.addCancelAction("好的")
       await successAlert.presentAlert()
     } catch (error) {
