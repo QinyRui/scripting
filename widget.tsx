@@ -1096,9 +1096,9 @@ function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetT
   const iconSize = widgetType === "medium" ? 18 : 20
   const tempFont = s(widgetType === "medium" ? 11 : 12, "weather")
   return (
-    <HStack spacing={widgetType === "medium" ? 14 : 18}>
+    <HStack spacing={widgetType === "medium" ? 20 : 24}>
       {future.slice(0, 3).map((item) => (
-        <VStack spacing={2} frame={{ minWidth: widgetType === "medium" ? 40 : 48 }}>
+        <VStack spacing={2} alignment="center">
           <SectionText text={item.week || "-"} font={labelFont} color={c("rgba(255,255,255,0.75)", "weather")} />
           <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
           <SectionText text={`${item.min}/${item.max}°`} font={tempFont} color={c("rgba(255,255,255,0.8)", "weather")} />
@@ -1260,7 +1260,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
           text={wDesc} 
-          font={s(widgetType === "medium" ? 12 : 14, "weather")} 
+          font={s(widgetType === "medium" ? 13 : 15, "weather")} 
           color={c("#ffffff", "weather")} 
           lineLimit={2} 
           minScaleFactor={0.5}
