@@ -1,44 +1,48 @@
 {
-  "localizedDescriptions" : {
-    "it" : "",
-    "de" : "",
-    "fr" : "",
-    "pt" : "",
-    "ja" : "",
-    "en" : "",
-    "es" : "",
-    "zh" : "",
-    "ru" : ""
-  },
-  "contributors" : [
-
-  ],
+  "icon" : "cloud.fill",
+  "entry" : "index.tsx",
+  "color" : "rgba(174, 109, 216,1)",
   "description" : "",
-  "localizedNames" : {
-    "de" : "",
-    "pt" : "",
-    "zh" : "",
-    "fr" : "",
-    "ru" : "",
-    "en" : "",
-    "it" : "",
-    "es" : "",
-    "ja" : ""
+  "remoteResource" : {
+    "hash" : "2ec5df2caa83b1d57e30f7ffb344ae2f",
+    "autoUpdateInterval" : null,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
   },
   "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
+    "email" : "602839678@qq.com",
     "name" : "QinyRui",
-    "email" : "602839678@qq.com"
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  },
+  "localizedDescriptions" : {
+    "ja" : "",
+    "en" : "",
+    "zh" : "",
+    "de" : "",
+    "ru" : "",
+    "es" : "",
+    "it" : "",
+    "fr" : "",
+    "pt" : ""
   },
   "name" : "☁️彩云天气(^ᴗ^)☁️",
-  "version" : "1.0.9",
-  "icon" : "cloud.fill",
-  "color" : "rgba(174, 109, 216,1)",
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "localizedNames" : {
+    "pt" : "",
+    "it" : "",
+    "zh" : "",
+    "en" : "",
+    "ru" : "",
+    "ja" : "",
+    "de" : "",
+    "es" : "",
+    "fr" : ""
+  },
   "runInApp" : true,
-  "entry" : "index.tsx",
-  "remoteResource" : null,
   "intentInputTypes" : [
+
+  ],
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "version" : "2.0.0",
+  "contributors" : [
 
   ]
 }
