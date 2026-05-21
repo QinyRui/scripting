@@ -622,10 +622,10 @@ async function getLocation(): Promise<LocationData> {
     const liveResolved = await resolveLocationNameIfNeeded({
       latitude: l.latitude,
       longitude: l.longitude,
-      locality: locationData.locality || "",
-      subLocality: locationData.subLocality || "",
-      street: locationData.street,
-      name: locationData.name,
+      locality: "",
+      subLocality: "",
+      street: "",
+      name: "",
       resolvedAt: Date.now(),
     }, true)
     locationData = {
