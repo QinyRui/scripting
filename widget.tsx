@@ -1131,21 +1131,21 @@ function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetT
   const labelFont = s(widgetType === "medium" ? 12 : 13, "weather")
   const iconSize = widgetType === "medium" ? 18 : 20
   const tempFont = s(widgetType === "medium" ? 10 : 12, "weather")
-  const tempWidth = widgetType === "medium" ? 22 : 22
+  const tempWidth = widgetType === "medium" ? 28 : 28
   const itemSpacing = widgetType === "medium" ? 14 : 24
   return (
     <HStack spacing={itemSpacing}>
       {future.slice(0, 3).map((item) => (
-        <VStack spacing={2} alignment="center">
-          <SectionText text={item.week || "-"} font={13} color="white" />
+        <VStack spacing={4} alignment="center">
+          <SectionText text={item.week || "-"} font={14} color="white" />
           <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
           <HStack spacing={0} alignment="center">
             <VStack frame={{ width: tempWidth, alignment: "trailing" }}>
-              <SectionText text={String(item.min)} font={13} color="white" minScaleFactor={0.7} lineLimit={1} />
+              <SectionText text={String(item.min)} font={14} color="white" minScaleFactor={0.9} lineLimit={1} />
             </VStack>
-            <SectionText text="/" font={13} color="white" />
+            <SectionText text="/" font={14} color="white" />
             <VStack frame={{ width: tempWidth, alignment: "leading" }}>
-              <SectionText text={`${item.max}°`} font={13} color="white" minScaleFactor={0.7} lineLimit={1} />
+              <SectionText text={`${item.max}°`} font={14} color="white" minScaleFactor={0.9} lineLimit={1} />
             </VStack>
           </HStack>
         </VStack>
