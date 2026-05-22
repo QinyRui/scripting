@@ -38,9 +38,7 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
   if (typeof nativeFn === "function") {
     try {
       nativeResult = await nativeFn(options)
-      const native = nativeResult?.[0]
-      const hasDistrict = isMeaningfulName(native?.subLocality) || isMeaningfulName(native?.subAdministrativeArea) || /[区县旗]$/.test(String(native?.locality || "")) || isMeaningfulName(native?.locality)
-      if (placemarkHasDetailedAddress(native) && hasDistrict && native?.subThoroughfare) return nativeResult
+      return nativeResult
     } catch {}
   }
 
@@ -149,6 +147,7 @@ type LocationData = {
   neighborhood?: string
   quarter?: string
   name?: string
+  horizontalAccuracy?: number
   resolvedAt?: number
 }
 
@@ -223,10 +222,39 @@ async function getCurrentLocationInfo() {
   return null
 }
 
+const TARGET_LOCATION_ACCURACY_METERS = 20
+
+function getLocationAccuracyValue(location: any) {
+  const raw = Number(location?.horizontalAccuracy ?? location?.accuracy ?? 0)
+  return Number.isFinite(raw) && raw > 0 ? raw : 0
+}
+
+function getLocationAccuracyStatus(location: any) {
+  const acc = getLocationAccuracyValue(location)
+  if (!acc) return "精度未知"
+  return acc <= TARGET_LOCATION_ACCURACY_METERS ? `20米内` : `约±${Math.round(acc)}m`
+}
+
 async function requestCurrentLocationInfo() {
   try {
+    if (typeof Location?.setAccuracy === "function") {
+      try {
+        await Location.setAccuracy("best")
+        appendDebugLog("set location accuracy", { value: "best", targetMeters: TARGET_LOCATION_ACCURACY_METERS })
+      } catch (setError) {
+        appendDebugLog("set location accuracy failed", {
+          message: String((setError as any)?.message || setError),
+        })
+      }
+    }
     const reqLoc = await Location.requestCurrent({ forceRequest: true })
     if (reqLoc && typeof reqLoc.latitude === "number" && typeof reqLoc.longitude === "number") {
+      appendDebugLog("request current location success", {
+        latitude: reqLoc.latitude,
+        longitude: reqLoc.longitude,
+        accuracy: getLocationAccuracyValue(reqLoc),
+        accuracyStatus: getLocationAccuracyStatus(reqLoc),
+      })
       return reqLoc
     }
   } catch (error) {
@@ -322,6 +350,7 @@ function extractLocationData(raw: any): LocationData | null {
     neighborhood: data.neighborhood ? String(data.neighborhood) : undefined,
     quarter: data.quarter ? String(data.quarter) : undefined,
     name: data.name ? String(data.name) : undefined,
+    horizontalAccuracy: getLocationAccuracyValue(data),
     resolvedAt: data.resolvedAt,
   }
 }
@@ -341,9 +370,7 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
     cityName = provinceName
   }
 
-  const neighborhoodName = [placemark.neighborhood, placemark.quarter]
-    .map((item: any) => String(item || "").trim())
-    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName)) || base.neighborhood || base.quarter || ""
+  const neighborhoodName = "" // 废弃村/镇/片区等干扰地名的展示
   const t = String(placemark.thoroughfare || "").trim()
   const st = String(placemark.subThoroughfare || "").trim()
   const fullStreet = t && st ? (t.includes(st) ? t : (st.includes(t) ? st : t + st)) : (t || st)
@@ -351,9 +378,10 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
   const streetName = [fullStreet, placemark.name, placemark.subLocality]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || base.street || base.name || ""
-  const fineName = [placemark.name, fullStreet, placemark.subLocality]
+  const fineName = [fullStreet, placemark.name]
     .map((item: any) => String(item || "").trim())
-    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || streetName || neighborhoodName || districtName || cityName || provinceName
+    .filter(i => i !== "杨北")
+    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName)) || streetName || districtName || cityName || provinceName
 
   return {
     ...base,
@@ -361,9 +389,9 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
     subAdministrativeArea: String(placemark.subAdministrativeArea || base.subAdministrativeArea || ""),
     locality: cityName,
     subLocality: districtName,
-    neighborhood: neighborhoodName,
-    quarter: String(placemark.quarter || base.quarter || ""),
-    street: streetName || neighborhoodName,
+    neighborhood: "",
+    quarter: "",
+    street: streetName,
     name: fineName,
     resolvedAt: Date.now(),
   }
@@ -531,37 +559,25 @@ async function ensureBackgroundMigrated() {
 function getDisplayLocationText() {
   const loc = locationData
   if (!loc) return "未知位置"
-  const province = String(loc.administrativeArea || "").replace(/市$/, "")
-  let city = String(loc.locality || "").replace(/市$/, "")
-  let district = String(loc.subLocality || loc.subAdministrativeArea || "")
-  const neighborhood = loc.neighborhood || loc.quarter || ""
-  let street = loc.name || loc.street || ""
+  const province = String(loc.administrativeArea || "").trim()
+  const city = String(loc.locality || "").trim()
+  const district = String(loc.subLocality || loc.subAdministrativeArea || "").trim()
+  const town = "" // 彻底废除细碎地名属性
+  const street = String(loc.street || "").trim()
+  const name = String(loc.name || "").trim()
 
-  if (/[镇乡街道]$/.test(city) && /[区县市]$/.test(district)) {
-    const temp = city
-    city = district
-    district = temp
-  }
+  const detail = [street, name]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .filter((item) => !["杨北"].includes(item)) // 临时的硬编码过滤，防止解析污染
+    .find((item, index, arr) => arr.indexOf(item) === index) || ""
 
-  if (street === district || street === city || street === province || street === "中国") {
-    street = ""
-  }
-
-  const parts = [province]
+  const parts = []
+  if (province) parts.push(province)
   if (city && city !== province) parts.push(city)
-  if (district && district !== city && !parts.includes(district)) parts.push(district)
-
-  let name = String(loc.name || "")
-  let fineAddress = ""
-  if (street && name) {
-    fineAddress = name.includes(street) ? name : (street.includes(name) ? street : street + name)
-  } else {
-    fineAddress = street || name || neighborhood
-  }
-  
-  if (fineAddress && !parts.includes(fineAddress)) {
-    parts.push(fineAddress)
-  }
+  if (district && district !== city && district !== province) parts.push(district)
+  if (town && town !== district && town !== city && town !== province) parts.push(town)
+  if (detail && detail !== town && detail !== district && detail !== city && detail !== province) parts.push(detail)
 
   if (parts.length === 0) {
     const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
@@ -570,7 +586,7 @@ function getDisplayLocationText() {
       : "定位获取中"
   }
 
-  return parts.filter(Boolean).join("·") || "未知位置"
+  return parts.join("-") || "未知位置"
 }
 
 async function getJson(url: string) {
@@ -606,33 +622,43 @@ async function getLocation(): Promise<LocationData> {
 
   // 3. 如果锁定位置或无法获取实时 GPS，直接使用缓存
   const liveLocation = await requestCurrentLocationInfo()
-  if (lockLocation || !liveLocation) {
+  if (lockLocation) {
     locationData = await resolveLocationNameIfNeeded(locationData)
-    appendDebugLog("using cached/saved location only", {
+    appendDebugLog("using cached/saved location only (locked)", {
       lockLocation,
-      hasGlobalLocation: Boolean(liveLocation),
       locationData,
     })
+    return locationData
+  }
+
+  // 如果没有锁死，强制尝试获取一次当前位置
+  if (!liveLocation) {
+    locationData = await resolveLocationNameIfNeeded(locationData)
     return locationData
   }
 
   // 4. 自动 GPS 模式：用实时位置更新
   try {
     const l = liveLocation
+    // 强制每次获取最新位置时都进行反编码，确保地址随 GPS 变化
     const liveResolved = await resolveLocationNameIfNeeded({
       latitude: l.latitude,
       longitude: l.longitude,
+      administrativeArea: "",
+      subAdministrativeArea: "",
       locality: "",
       subLocality: "",
       street: "",
+      neighborhood: "",
+      quarter: "",
       name: "",
       resolvedAt: Date.now(),
     }, true)
     locationData = {
-      ...locationData,
       ...liveResolved,
       latitude: l.latitude,
       longitude: l.longitude,
+      horizontalAccuracy: getLocationAccuracyValue(l),
       resolvedAt: Date.now(),
     }
     // 同步写入 appGroup 缓存
@@ -647,7 +673,10 @@ async function getLocation(): Promise<LocationData> {
         locationData,
       }))
     } catch {}
-    appendDebugLog("resolved live location", locationData)
+    appendDebugLog("resolved live location", {
+      ...locationData,
+      accuracyStatus: getLocationAccuracyStatus(locationData),
+    })
     return locationData
   } catch (error) {
     appendDebugLog("location resolve failed", {
@@ -675,6 +704,13 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
   }
 
   if (!data || data.status !== "ok") return cachedWeather
+
+  // 尝试从彩云天气接口获取地名数据
+  if (data.result?.alert?.adcodes?.length > 0) {
+    const adcodes = data.result.alert.adcodes
+    // 修改：避免彩云直接覆盖原本解析出的市、区。这里原本的 name 可能是乡镇名，比如“杨行镇”这种被去除了后反而只剩“杨北”。
+    // 我们在此不再盲目用彩云的 adcode name 强行覆盖 locationData.name，因为系统 reverseGeocode 的精度往往更符合人类预期。
+  }
 
   const info: WeatherInfo = {}
   if (data.result?.alert?.content) info.alertWeatherTitle = data.result.alert.content.title
@@ -1094,21 +1130,22 @@ function SectionText(props: { text: string | string[]; font?: number; color?: st
 function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetType: "medium" | "large" }) {
   const labelFont = s(widgetType === "medium" ? 12 : 13, "weather")
   const iconSize = widgetType === "medium" ? 18 : 20
-  const tempFont = s(widgetType === "medium" ? 11 : 12, "weather")
-  const tempWidth = widgetType === "medium" ? 18 : 22
+  const tempFont = s(widgetType === "medium" ? 10 : 12, "weather")
+  const tempWidth = widgetType === "medium" ? 22 : 22
+  const itemSpacing = widgetType === "medium" ? 14 : 24
   return (
-    <HStack spacing={widgetType === "medium" ? 20 : 24}>
+    <HStack spacing={itemSpacing}>
       {future.slice(0, 3).map((item) => (
         <VStack spacing={2} alignment="center">
-          <SectionText text={item.week || "-"} font={labelFont} color={c("rgba(255,255,255,0.75)", "weather")} />
+          <SectionText text={item.week || "-"} font={13} color="white" />
           <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
           <HStack spacing={0} alignment="center">
             <VStack frame={{ width: tempWidth, alignment: "trailing" }}>
-              <SectionText text={String(item.min)} font={tempFont} color={c("rgba(255,255,255,0.8)", "weather")} />
+              <SectionText text={String(item.min)} font={13} color="white" minScaleFactor={0.7} lineLimit={1} />
             </VStack>
-            <SectionText text="/" font={tempFont} color={c("rgba(255,255,255,0.8)", "weather")} />
+            <SectionText text="/" font={13} color="white" />
             <VStack frame={{ width: tempWidth, alignment: "leading" }}>
-              <SectionText text={`${item.max}°`} font={tempFont} color={c("rgba(255,255,255,0.8)", "weather")} />
+              <SectionText text={`${item.max}°`} font={13} color="white" minScaleFactor={0.7} lineLimit={1} />
             </VStack>
           </HStack>
         </VStack>
