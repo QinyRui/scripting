@@ -225,7 +225,10 @@ async function requestCurrentLocationInfo() {
         appendLocationDebugLog("setAccuracy error", setMessage)
       }
     }
-    const live = await Location.requestCurrent({ forceRequest: true })
+    const live = await Promise.race([
+      Location.requestCurrent({ forceRequest: true }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 10000))
+    ])
     const accuracy = getLocationAccuracyValue(live)
     console.log(`[Location Debug] requestCurrentLocationInfo live=${JSON.stringify(live)}`)
     console.log(`[Location Debug] accuracyStatus=${formatLocationAccuracyText(live)}`)
