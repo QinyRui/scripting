@@ -247,11 +247,14 @@ async function requestCurrentLocationInfo() {
         })
       }
     }
-    const reqLoc = await Location.requestCurrent({ forceRequest: true })
-    if (reqLoc && typeof reqLoc.latitude === "number" && typeof reqLoc.longitude === "number") {
+    const reqLoc = await Promise.race([
+      Location.requestCurrent({ forceRequest: true }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 10000))
+    ])
+    if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
       appendDebugLog("request current location success", {
-        latitude: reqLoc.latitude,
-        longitude: reqLoc.longitude,
+        latitude: (reqLoc as any).latitude,
+        longitude: (reqLoc as any).longitude,
         accuracy: getLocationAccuracyValue(reqLoc),
         accuracyStatus: getLocationAccuracyStatus(reqLoc),
       })
@@ -631,8 +634,8 @@ async function getLocation(): Promise<LocationData> {
     return locationData
   }
 
-  // 如果没有锁死，强制尝试获取一次当前位置
-  if (!liveLocation) {
+  // 如果没有锁死，尝试获取当前位置
+  if (!liveLocation || typeof liveLocation.latitude !== "number") {
     locationData = await resolveLocationNameIfNeeded(locationData)
     return locationData
   }
@@ -1131,22 +1134,17 @@ function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetT
   const labelFont = s(widgetType === "medium" ? 12 : 13, "weather")
   const iconSize = widgetType === "medium" ? 18 : 20
   const tempFont = s(widgetType === "medium" ? 10 : 12, "weather")
-  const tempWidth = widgetType === "medium" ? 28 : 28
-  const itemSpacing = widgetType === "medium" ? 14 : 24
+  const itemSpacing = widgetType === "medium" ? 10 : 20
   return (
     <HStack spacing={itemSpacing}>
-      {future.slice(0, 3).map((item) => (
-        <VStack spacing={4} alignment="center">
+      {future.slice(0, 3).map((item, index) => (
+        <VStack key={index} spacing={4} alignment="center">
           <SectionText text={item.week || "-"} font={14} color="white" />
           <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
-          <HStack spacing={0} alignment="center">
-            <VStack frame={{ width: tempWidth, alignment: "trailing" }}>
-              <SectionText text={String(item.min)} font={14} color="white" minScaleFactor={0.9} lineLimit={1} />
-            </VStack>
-            <SectionText text="/" font={14} color="white" />
-            <VStack frame={{ width: tempWidth, alignment: "leading" }}>
-              <SectionText text={`${item.max}°`} font={14} color="white" minScaleFactor={0.9} lineLimit={1} />
-            </VStack>
+          <HStack spacing={1} alignment="center" frame={{ minWidth: 40 }}>
+            <SectionText text={String(item.min)} font={14} color="white" minScaleFactor={0.8} lineLimit={1} />
+            <SectionText text="/" font={14} color="white" minScaleFactor={0.8} lineLimit={1} />
+            <SectionText text={`${item.max}°`} font={14} color="white" minScaleFactor={0.8} lineLimit={1} />
           </HStack>
         </VStack>
       ))}
