@@ -1149,20 +1149,20 @@ function SectionText(props: { text: string | string[]; font?: number; color?: st
 }
 
 function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetType: "medium" | "large" }) {
-  const labelFont = s(widgetType === "medium" ? 12 : 13, "weather")
-  const iconSize = widgetType === "medium" ? 18 : 20
-  const tempFont = s(widgetType === "medium" ? 10 : 12, "weather")
+  const labelFont = s(widgetType === "medium" ? 9 : 10, "weather")
+  const iconSize = widgetType === "medium" ? 14 : 16
+  const tempFont = s(widgetType === "medium" ? 9 : 10, "weather")
   const itemSpacing = widgetType === "medium" ? 10 : 20
   return (
     <HStack spacing={itemSpacing}>
       {future.slice(0, 3).map((item, index) => (
-        <VStack key={index} spacing={4} alignment="center">
-          <SectionText text={item.week || "-"} font={14} color="white" />
+        <VStack key={index} spacing={2} alignment="center">
+          <SectionText text={item.week || "-"} font={labelFont} color="white" />
           <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
-          <HStack spacing={1} alignment="center" frame={{ minWidth: 40 }}>
-            <SectionText text={String(item.min)} font={14} color="white" minScaleFactor={0.8} lineLimit={1} />
-            <SectionText text="/" font={14} color="white" minScaleFactor={0.8} lineLimit={1} />
-            <SectionText text={`${item.max}°`} font={14} color="white" minScaleFactor={0.8} lineLimit={1} />
+          <HStack spacing={1} alignment="center" frame={{ minWidth: 35 }}>
+            <SectionText text={String(item.min)} font={tempFont} color="white" minScaleFactor={0.8} lineLimit={1} />
+            <SectionText text="/" font={tempFont} color="white" minScaleFactor={0.8} lineLimit={1} />
+            <SectionText text={`${item.max}°`} font={tempFont} color="white" minScaleFactor={0.8} lineLimit={1} />
           </HStack>
         </VStack>
       ))}
@@ -1273,24 +1273,37 @@ function shortenWeatherDesc(text: string, widgetType: "medium" | "large") {
   if (!normalized) return "..."
   const friendlyNoRainText = getNoRainFriendlyText(new Date())
   if (/未来两小时不会有雨|未来两小时不会下雨|2小时内无雨|两小时内无雨/u.test(normalized)) return friendlyNoRainText
-  const restored = normalized
+  let restored = normalized
     .replace(/^2小时内/u, "未来两小时")
     .replace(/^两小时内/u, "未来两小时")
     .replace(/不会下雨/u, "不会有雨")
     .replace(/无雨/u, "不会有雨")
+    
   if (widgetType === "large") return restored
-  return restored
+  
+  // 对于中号组件，如果字数太长（比如超过26个字），自动精简多余句尾词或截断，防止排版挤压
+  restored = restored
     .replace(/还在加班么？/u, "")
     .replace(/您/u, "")
     .replace(/呢\?*/u, "")
     .replace(/[，！？]$/u, "")
-    .trim() || restored
+    .trim()
+    
+  if (restored.length > 25) {
+    // 缩减太累赘的连接词，如“最近的降雨带在西南95公里外，逐渐向东北方向移动”
+    // 中号组件更偏好“西南95公里外有降雨带...”这种精简表达
+    restored = restored
+      .replace(/最近的降雨带在/u, "降雨带在")
+      .replace(/公里外呢/u, "公里外")
+  }
+  
+  return restored
 }
 
 function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[]; widgetType: "medium" | "large" }) {
   const currentDate = new Date()
   const cityStr = getDisplayLocationText()
-  const wDesc = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
+  const wDesc = "💬 " + shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
   const leftWidth = widgetType === "medium" ? 210 : 200
@@ -1322,7 +1335,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
           text={wDesc} 
-          font={s(widgetType === "medium" ? 13 : 15, "weather")} 
+          font={s(widgetType === "medium" ? 15 : 17, "weather")} 
           color={c("#ffffff", "weather")} 
           lineLimit={2} 
           minScaleFactor={0.5}
