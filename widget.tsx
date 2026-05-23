@@ -360,66 +360,35 @@ function extractLocationData(raw: any): LocationData | null {
 }
 
 function applyPlacemarkToLocationData(base: LocationData, placemark: any): LocationData {
-  let provinceName = [placemark.administrativeArea, placemark.state]
-    .map((item: any) => String(item || "").trim())
-    .find(isMeaningfulName) || base.administrativeArea || ""
-  let cityName = [placemark.locality, placemark.city, placemark.municipality]
-    .map((item: any) => String(item || "").trim())
-    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName)) || base.locality || provinceName || ""
-  let districtName = [placemark.subLocality, placemark.subAdministrativeArea, placemark.district]
-    .map((item: any) => String(item || "").trim())
-    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName)) || base.subLocality || base.subAdministrativeArea || ""
+  const province = String(placemark.administrativeArea || "").trim() // 直辖市此字段可能为空，由 locality 承载
+  const city = String(placemark.locality || "").trim()
+  const district = String(placemark.subLocality || "").trim()
+  const street = String(placemark.thoroughfare || "").trim()
+  const streetNumber = String(placemark.subThoroughfare || "").trim()
+  const poiName = String(placemark.name || "").trim()
 
-  // Fix native geocoder returning district as state/city for direct-controlled municipalities
-  if (provinceName === districtName || provinceName === cityName) {
-    if (provinceName.endsWith("区") || provinceName.endsWith("县")) {
-      districtName = provinceName
-      // Fallback heuristics for major municipalities if native API fails to provide it
-      if (base.administrativeArea && !base.administrativeArea.endsWith("区")) {
-        provinceName = base.administrativeArea
-        cityName = base.locality || base.administrativeArea
-      } else {
-         // Generic fallback for Shanghai coordinates specifically or general fallback
-         if (base.latitude > 30.5 && base.latitude < 31.9 && base.longitude > 120.8 && base.longitude < 122.2) {
-             provinceName = "上海市"
-             cityName = "上海市"
-         } else if (base.latitude > 39.4 && base.latitude < 41.1 && base.longitude > 115.4 && base.longitude < 117.5) {
-             provinceName = "北京市"
-             cityName = "北京市"
-         } else {
-             provinceName = "" 
-             cityName = ""
-         }
-      }
-    }
-  }
-  if (provinceName && provinceName.endsWith("市") && cityName && /[区县旗]$/.test(cityName) && !districtName) {
-    districtName = cityName
-    cityName = provinceName
+  // 组装街道门牌 (Thoroughfare + SubThoroughfare)
+  let streetName = street
+  if (streetNumber) {
+    streetName = street.includes(streetNumber) ? street : `${street}${streetNumber}`
   }
 
-  const neighborhoodName = "" // 废弃村/镇/片区等干扰地名的展示
-  const t = String(placemark.thoroughfare || "").trim()
-  const st = String(placemark.subThoroughfare || "").trim()
-  const fullStreet = t && st ? (t.includes(st) ? t : (st.includes(t) ? st : t + st)) : (t || st)
-  
-  const streetName = [fullStreet, placemark.name, placemark.subLocality]
-    .map((item: any) => String(item || "").trim())
-    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || base.street || base.name || ""
-  const fineName = [fullStreet, placemark.name]
-    .map((item: any) => String(item || "").trim())
-    .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName)) || streetName || districtName || cityName || provinceName
+  // 地标名 (PoiName)
+  let fineName = poiName
+  if (!fineName && streetName) {
+    fineName = streetName
+  }
 
   return {
     ...base,
-    administrativeArea: provinceName,
-    subAdministrativeArea: String(placemark.subAdministrativeArea || base.subAdministrativeArea || ""),
-    locality: cityName,
-    subLocality: districtName,
+    administrativeArea: province,
+    subAdministrativeArea: String(placemark.subAdministrativeArea || ""),
+    locality: city,
+    subLocality: district,
     neighborhood: "",
     quarter: "",
     street: streetName,
-    name: fineName,
+    name: fineName || streetName || district || city || province,
     resolvedAt: Date.now(),
   }
 }
@@ -428,7 +397,7 @@ async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
   if (!hasValidCoordinates(data)) return data
   if (!force && hasFullLocationName(data)) return data
   try {
-    const placemarks = await callReverseGeocode({ latitude: Number(data.latitude), longitude: Number(data.longitude), locale: "zh_cn" })
+    const placemarks = await callReverseGeocode({ latitude: Number(data.latitude), longitude: Number(data.longitude), locale: "zh-CN" })
     if (placemarks?.[0]) {
       const resolved = applyPlacemarkToLocationData(data, placemarks[0])
       Cache.write(locationCachePath, resolved)
