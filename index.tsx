@@ -558,7 +558,7 @@ function AboutDetailView() {
             <Text font="subheadline" foregroundStyle="secondaryLabel">精准、实时、美观</Text>
           </VStack>
           <HStack spacing={12} alignment="center">
-            <Text font="caption" fontWeight="bold" foregroundStyle="systemBlue" padding={{ horizontal: 12, vertical: 4 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 8 } }}>v1.0.0</Text>
+            <Text font="caption" fontWeight="bold" foregroundStyle="systemBlue" padding={{ horizontal: 12, vertical: 4 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 8 } }}>v3.1.1</Text>
             <Text font="caption" foregroundStyle="secondaryLabel" padding={{ horizontal: 12, vertical: 4 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 8 } }}>By QinyRui</Text>
           </HStack>
         </VStack>
