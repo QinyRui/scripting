@@ -23,6 +23,8 @@ import {
   RoundedRectangle,
   Image,
   useState,
+  Menu,
+  Picker,
 } from "scripting"
 
 declare const fetch: any
@@ -180,6 +182,12 @@ function writeApiKey(apiKey: string) {
 
 function writeLocationCaches(locationConfig: LocationConfig) {
   writeJson(locCachePath, locationConfig)
+  // Write to both locCachePath and locCachePath for AppGroup to be sure.
+  const appGroupLocConfigPath = `${appGroupDir}/caiyun_location_config.json`
+  if (appGroupDir) {
+    writeJson(appGroupLocConfigPath, locationConfig)
+  }
+  
   // appGroupDir 也写入完整的 locationData，确保 widget 读取时字段一致
   const fullLocationData = {
     ...(locationConfig.locationData || {}),
@@ -450,13 +458,26 @@ function ConfigPage() {
             <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.locationModeText}</Text>
             <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
           </HStack>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<RefreshSettingsPage />)}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="clock.fill" foregroundStyle="systemGreen" font={16} /></ZStack>
-            <Text fontWeight="bold">刷新频率</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.refreshText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
+        </Section>
+
+        <Section header={<Text font="headline">小组件</Text>} footer={<Text font="caption" foregroundStyle="secondaryLabel">· 实际刷新频率由系统决定</Text>}>
+          <Picker
+            title="刷新时间间隔"
+            pickerStyle="menu"
+            value={statusInfo.refreshText === "默认" ? 0 : (statusInfo.refreshText === "60 分钟" ? 0 : parseInt(statusInfo.refreshText))}
+            onChanged={(val: number) => {
+              const next = val === 0 ? 60 : val
+              const styleConfig = ensureStyleConfig()
+              styleConfig.refreshInterval = next
+              writeStyleConfig(styleConfig)
+              reloadWidgets()
+              setStatusInfo(loadStatusInfo())
+            }}
+          >
+            {[0, 5, 10, 15, 30].map((item) => (
+              <Text key={item} tag={item}>{item === 0 ? "自动" : `${item} 分钟`}</Text>
+            ))}
+          </Picker>
         </Section>
 
         <Section header={<Text font="headline">外观设计</Text>}>
@@ -706,30 +727,38 @@ function RefreshSettingsPage() {
   const currentVal = String(styleConfig.refreshInterval || "60")
   const [minutes, setMinutes] = useState(currentVal)
 
-  function save() {
-    const next = parseInt(minutes.trim())
-    if (Number.isNaN(next)) return
-    styleConfig.refreshInterval = Math.max(15, next)
-    writeStyleConfig(styleConfig)
-    reloadWidgets()
-    dismiss()
+  function save(val: string) {
+    const next = parseInt(val.trim())
+    if (!Number.isNaN(next)) {
+      styleConfig.refreshInterval = next
+      writeStyleConfig(styleConfig)
+      reloadWidgets()
+      setMinutes(val)
+    }
   }
 
   return (
     <NavigationStack>
       <List
-        navigationTitle="刷新频率"
+        navigationTitle="刷新时间间隔"
         navigationBarTitleDisplayMode="inline"
         toolbar={{
           cancellationAction: <Button title="取消" action={dismiss} />,
-          confirmationAction: <Button title="保存" action={save} />,
         }}
       >
         <Section>
-          <VStack alignment="leading" spacing={6}>
-            <Text>建议填写 15 分钟或更高。iOS 仍会根据系统策略决定实际刷新时机。</Text>
-            <TextField title="刷新分钟数" prompt="例如 30 / 60" value={minutes} onChanged={setMinutes} />
-          </VStack>
+          {["自动", "5 分钟", "10 分钟", "15 分钟", "30 分钟"].map((label) => (
+            <Button key={label} action={() => {
+              const val = label === "自动" ? "60" : label.replace(" 分钟", "")
+              save(val)
+            }}>
+              <HStack>
+                <Text>{label}</Text>
+                <Spacer />
+                { (label === "自动" && minutes === "60") || (label.replace(" 分钟", "") === minutes) ? <Image systemName="checkmark" foregroundStyle="systemBlue" /> : null }
+              </HStack>
+            </Button>
+          ))}
         </Section>
       </List>
     </NavigationStack>
@@ -767,22 +796,41 @@ function LocationSettingsPage() {
 
   function persistLocation(nextLockLocation: boolean, nextLatitude: string, nextLongitude: string, nextLocality: string, nextSubLocality: string, nextStreet: string, extra?: { administrativeArea?: string; neighborhood?: string; quarter?: string; name?: string; horizontalAccuracy?: number }) {
     const administrativeArea = extra?.administrativeArea || nextLocality.trim()
+    const newLocationData = {
+      latitude: parseFloat(nextLatitude) || 0,
+      longitude: parseFloat(nextLongitude) || 0,
+      administrativeArea: extra?.administrativeArea || administrativeArea,
+      locality: nextLocality.trim(),
+      subLocality: nextSubLocality.trim(),
+      neighborhood: "",
+      quarter: "",
+      street: nextStreet.trim(),
+      horizontalAccuracy: extra?.horizontalAccuracy,
+      name: extra?.name || nextStreet.trim() || nextSubLocality.trim() || nextLocality.trim(),
+      resolvedAt: Date.now(),
+    }
     writeLocationCaches({
       lockLocation: nextLockLocation,
-      locationData: {
-        latitude: parseFloat(nextLatitude) || 0,
-        longitude: parseFloat(nextLongitude) || 0,
-        administrativeArea: extra?.administrativeArea || administrativeArea,
-        locality: nextLocality.trim(),
-        subLocality: nextSubLocality.trim(),
-        neighborhood: "",
-        quarter: "",
-        street: nextStreet.trim(),
-        horizontalAccuracy: extra?.horizontalAccuracy,
-        name: extra?.name || nextStreet.trim() || nextSubLocality.trim() || nextLocality.trim(),
-        resolvedAt: Date.now(),
-      },
+      locationData: newLocationData,
     })
+    
+    // Write directly to app group cache to make sure widget picks up the change immediately
+    try {
+      const appGroupDir = fm.appGroupDocumentsDirectory
+      if (appGroupDir) {
+        const cacheLocPath = `${appGroupDir}/cache_loc.json`
+        fm.writeAsStringSync(cacheLocPath, JSON.stringify({
+          locationData: newLocationData,
+          lockLocation: nextLockLocation
+        }))
+        const configPath = `${appGroupDir}/caiyun_location_config.json`
+        fm.writeAsStringSync(configPath, JSON.stringify({
+          locationData: newLocationData,
+          lockLocation: nextLockLocation
+        }))
+      }
+    } catch (e) {}
+    
     reloadWidgets()
   }
 
@@ -1716,6 +1764,9 @@ async function previewWidget(family: "systemMedium" | "systemLarge") {
     alert.message = String(error)
     alert.addAction("确定")
     await alert.presentAlert()
+  } finally {
+    // Reload desktop widgets again explicitly after preview finishes or fails, to ensure changes are synced
+    reloadWidgets(`post-preview:${family}`)
   }
 }
 
