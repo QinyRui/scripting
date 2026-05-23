@@ -861,16 +861,18 @@ function LocationSettingsPage() {
       let nextName = ""
       const acc = getLocationAccuracyValue(location)
 
-      const geocode = await Location.reverseGeocode({ latitude: location.latitude, longitude: location.longitude, locale: "zh_cn" })
+      const geocode = await Location.reverseGeocode({ latitude: location.latitude, longitude: location.longitude, locale: "zh-CN" })
       if (geocode?.[0]) {
         const g = geocode[0]
-        nextAdministrativeArea = g.administrativeArea || g.state || ""
-        nextLocality = g.locality || g.administrativeArea || ""
-        nextSubLocality = g.subLocality || g.subAdministrativeArea || ""
-        nextNeighborhood = "" // 废弃村/镇/片区等干扰地名的展示
-        nextQuarter = ""      // 废弃村/镇/片区等干扰地名的展示
+        nextAdministrativeArea = g.administrativeArea || ""
+        nextLocality = g.locality || ""
+        nextSubLocality = g.subLocality || ""
+        nextNeighborhood = ""
+        nextQuarter = ""
         nextName = g.name || ""
-        nextStreet = [g.thoroughfare || "", g.subThoroughfare || ""].filter(Boolean).join("")
+        const t = String(g.thoroughfare || "").trim()
+        const st = String(g.subThoroughfare || "").trim()
+        nextStreet = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
       }
 
       setLockLocation(true) // 手动地图获取的位置，为了防止自动漂移变动，按照预期应该被锁定
@@ -1817,26 +1819,30 @@ async function setupLocation() {
     const g = await Location.reverseGeocode({
       latitude: l.latitude,
       longitude: l.longitude,
-      locale: "zh_cn",
+      locale: "zh-CN",
     })
 
     const geo = g?.[0] || {}
-    const street = [geo.thoroughfare, geo.subThoroughfare].filter(Boolean).join("")
+    const t = String(geo.thoroughfare || "").trim()
+    const st = String(geo.subThoroughfare || "").trim()
+    const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
+    const poiName = geo.name || ""
+    const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
 
     writeLocationCaches({
       lockLocation: false,
       locationData: {
         latitude: l.latitude,
         longitude: l.longitude,
-        administrativeArea: geo.administrativeArea || geo.state || "",
-        locality: geo.locality || geo.administrativeArea || "",
-        subLocality: geo.subLocality || geo.subAdministrativeArea || "",
-        neighborhood: geo.neighborhood || geo.quarter || "",
-        quarter: geo.quarter || "",
+        administrativeArea: geo.administrativeArea || "",
+        locality: geo.locality || "",
+        subLocality: geo.subLocality || "",
+        neighborhood: "",
+        quarter: "",
         street,
-        subThoroughfare: geo.subThoroughfare,
+        subThoroughfare: geo.subThoroughfare || "",
         horizontalAccuracy: l.horizontalAccuracy || 0,
-        name: street || geo.name || geo.subLocality || geo.locality || "已选位置",
+        name: fineName,
         resolvedAt: Date.now(),
       },
     })
