@@ -580,23 +580,12 @@ async function ensureBackgroundMigrated() {
 function getDisplayLocationText() {
   const loc = locationData
   if (!loc) return "未知位置"
-  let province = String(loc.administrativeArea || "").trim()
-  let city = String(loc.locality || "").trim()
+  const province = String(loc.administrativeArea || "").trim()
+  const city = String(loc.locality || "").trim()
   const district = String(loc.subLocality || loc.subAdministrativeArea || "").trim()
+  const town = "" // 彻底废除细碎地名属性
   const street = String(loc.street || "").trim()
   const name = String(loc.name || "").trim()
-
-  // 1. 直辖市变通：北京、上海、天津、重庆
-  const isDirectCity = /北京市|上海市|天津市|重庆市/u.test(city) || /北京市|上海市|天津市|重庆市/u.test(province)
-  if (isDirectCity) {
-    // 确保 province 必有，且 city 保持一致（不重复输出），例如最终输出 "上海市-宝山区-湄星路216号"
-    if (!province) {
-      province = city
-    }
-    if (!city) {
-      city = province
-    }
-  }
 
   const detail = [street, name]
     .map((item) => String(item || "").trim())
@@ -604,22 +593,10 @@ function getDisplayLocationText() {
     .find((item, index, arr) => arr.indexOf(item) === index) || ""
 
   const parts = []
-  if (province && province !== "未知省市") {
-    parts.push(province)
-  }
-  
-  // 2. 如果不是直辖市，且 city 不等于 province，则输出城市名
-  if (city && city !== province && city !== "未知省市" && !isDirectCity) {
-    parts.push(city)
-  }
-  
-  if (district && district !== city && district !== province) {
-    parts.push(district)
-  }
-  
-  if (detail && detail !== district && detail !== city && detail !== province) {
-    parts.push(detail)
-  }
+  if (province && province !== "未知省市") parts.push(province)
+  if (city && city !== province && city !== "未知省市") parts.push(city)
+  if (district && district !== city && district !== province) parts.push(district)
+  if (detail && detail !== district && detail !== city && detail !== province) parts.push(detail)
 
   if (parts.length === 0) {
     const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
@@ -1301,6 +1278,24 @@ function shortenWeatherDesc(text: string, widgetType: "medium" | "large") {
     .replace(/^两小时内/u, "未来两小时")
     .replace(/不会下雨/u, "不会有雨")
     .replace(/无雨/u, "不会有雨")
+    
+  if (widgetType === "large") return restored
+  
+  // 对于中号组件，如果字数太长（比如超过26个字），自动精简多余句尾词或截断，防止排版挤压
+  restored = restored
+    .replace(/还在加班么？/u, "")
+    .replace(/您/u, "")
+    .replace(/呢\?*/u, "")
+    .replace(/[，！？]$/u, "")
+    .trim()
+    
+  if (restored.length > 25) {
+    // 缩减太累赘的连接词，如“最近的降雨带在西南95公里外，逐渐向东北方向移动”
+    // 中号组件更偏好“西南95公里外有降雨带...”这种精简表达
+    restored = restored
+      .replace(/最近的降雨带在/u, "降雨带在")
+      .replace(/公里外呢/u, "公里外")
+  }
   
   return restored
 }
@@ -1340,9 +1335,9 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
           text={wDesc} 
-          font={s(widgetType === "large" ? 14 : 12, "weather")} 
+          font={s(widgetType === "medium" ? 10 : 13, "weather")} 
           color={c("#ffffff", "weather")} 
-          lineLimit={2} 
+          lineLimit={0} 
           minScaleFactor={0.5}
         />
       </VStack>
