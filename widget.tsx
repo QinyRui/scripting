@@ -232,7 +232,7 @@ function getLocationAccuracyValue(location: any) {
 function getLocationAccuracyStatus(location: any) {
   const acc = getLocationAccuracyValue(location)
   if (!acc) return "精度未知"
-  return acc <= TARGET_LOCATION_ACCURACY_METERS ? `20米内` : `约±${Math.round(acc)}m`
+  return acc <= TARGET_LOCATION_ACCURACY_METERS ? `0 米内` : `约±${Math.round(acc)}m`
 }
 
 async function requestCurrentLocationInfo() {
@@ -425,7 +425,6 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
 }
 
 async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
-  force = true;
   if (!hasValidCoordinates(data)) return data
   if (!force && hasFullLocationName(data)) return data
   try {
@@ -459,23 +458,49 @@ function getSavedApiKey() {
 
 function getSavedLocationConfig() {
   const documentConfig = readJson<{ lockLocation?: boolean; locationData?: LocationData }>(locCachePath)
-  const appGroupRaw = readJson<any>(locationCachePath)
-  const documentLocation = extractLocationData(documentConfig)
-  const appGroupLocation = extractLocationData(appGroupRaw)
+  const appGroupConfig = readJson<{ lockLocation?: boolean; locationData?: LocationData }>(`${appGroupDir}/caiyun_location_config.json`)
+  
+  // AppGroup is the only truly shared sandbox between the app and the widget. 
+  // Main app writes lockLocation here. Widget never changes lockLocation.
+  // So appGroupConfig is the absolute source of truth for lockLocation.
+  const lockLocation = appGroupConfig?.lockLocation ?? documentConfig?.lockLocation ?? false
+  
+  const docLoc = extractLocationData(documentConfig)
+  const appLoc = extractLocationData(appGroupConfig)
+  const cachedLoc = extractLocationData(readJson<any>(locationCachePath))
+  
+  let bestLocation = appLoc || docLoc || cachedLoc || undefined
+  
+  // If locked, we strictly use the saved config from the main app.
+  if (lockLocation) {
+    const savedLocs = [appLoc, docLoc].filter(Boolean) as LocationData[]
+    if (savedLocs.length > 0) {
+      bestLocation = savedLocs.reduce((a, b) => (a.resolvedAt || 0) > (b.resolvedAt || 0) ? a : b)
+    }
+  } else {
+    // If not locked, use the newest available location (including auto-refreshed cached GPS)
+    const allLocs = [cachedLoc, appLoc, docLoc].filter(Boolean) as LocationData[]
+    if (allLocs.length > 0) {
+      bestLocation = allLocs.reduce((a, b) => (a.resolvedAt || 0) > (b.resolvedAt || 0) ? a : b)
+    }
+  }
+
   return {
-    lockLocation: Boolean(documentConfig?.lockLocation),
-    locationData: documentLocation || appGroupLocation || undefined,
+    lockLocation,
+    locationData: bestLocation,
   }
 }
 
 function getSavedStyleConfig(): StyleConfig {
-  const appGroupStyle = readJson<StyleConfig>(styleCachePathAppGroup)
-  if (appGroupStyle) return appGroupStyle
   const documentStyle = readJson<StyleConfig>(styleCachePath)
+  const appGroupStyle = readJson<StyleConfig>(styleCachePathAppGroup)
+  
   if (documentStyle) {
     Cache.write(styleCachePathAppGroup, documentStyle)
     return documentStyle
   }
+  if (appGroupStyle) return appGroupStyle
+  
   return { global: { size: 1.0 } }
 }
 
@@ -487,7 +512,7 @@ if (savedLocConfig) {
   lockLocation = !!savedLocConfig.lockLocation
   if (savedLocConfig.locationData) locationData = savedLocConfig.locationData
 }
-const styleConfig = getSavedStyleConfig()
+let styleConfig = getSavedStyleConfig()
 
 function s(size: number, type?: string) {
   let scale = 1.0
@@ -633,7 +658,8 @@ async function getLocation(): Promise<LocationData> {
 
   // 2. 如果 appGroup 缓存有更新的数据，合并坐标和地名
   const cached = Cache.read<LocationData>(locationCachePath)
-  if (cached && hasValidCoordinates(cached)) {
+  // 如果锁定了位置，直接忽略 appGroup 中的自动定位缓存
+  if (cached && hasValidCoordinates(cached) && !lockLocation) {
     // 只在缓存比 savedConfig 更新时才采用
     const cachedTime = cached.resolvedAt || 0
     const savedTime = savedConfig?.locationData?.resolvedAt || 0
@@ -646,7 +672,6 @@ async function getLocation(): Promise<LocationData> {
   }
 
   // 3. 如果锁定位置或无法获取实时 GPS，直接使用缓存
-  const liveLocation = await requestCurrentLocationInfo()
   if (lockLocation) {
     locationData = await resolveLocationNameIfNeeded(locationData)
     appendDebugLog("using cached/saved location only (locked)", {
@@ -655,6 +680,8 @@ async function getLocation(): Promise<LocationData> {
     })
     return locationData
   }
+
+  const liveLocation = await requestCurrentLocationInfo()
 
   // 如果没有锁死，尝试获取当前位置
   if (!liveLocation || typeof liveLocation.latitude !== "number") {
@@ -1559,6 +1586,17 @@ function WidgetRoot(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry:
 
 async function main() {
   await ensureBackgroundMigrated()
+  // Re-read configuration on run to ensure widget has the freshest values when loaded by iOS background system
+  apiKey = getSavedApiKey()
+  const savedLocConfig = getSavedLocationConfig()
+  if (savedLocConfig) {
+    lockLocation = !!savedLocConfig.lockLocation
+    if (savedLocConfig.locationData) {
+      locationData = savedLocConfig.locationData
+    }
+  }
+  styleConfig = getSavedStyleConfig()
+  
   appendDebugLog("widget render start", {
     styleConfig,
     lockLocation,
