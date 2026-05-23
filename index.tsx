@@ -14,7 +14,11 @@ import {
   Spacer,
   fetch,
   VStack,
-  Divider
+  Divider,
+  ZStack,
+  Circle,
+  Image,
+  ScrollView
 } from "scripting"
 
 declare const Storage: any
@@ -241,87 +245,110 @@ function AboutView() {
   }
   
   return (
-    <NavigationStack>
-      <List
-        navigationTitle="关于"
-        navigationBarTitleDisplayMode="inline"
-        toolbar={{
-          topBarTrailing: [
-            <Button title="完成" action={dismiss} />
-          ]
-        }}
-      >
-        <Section>
-          <VStack alignment="center" spacing={12} padding={20} frame={{ maxWidth: 'infinity' }}>
-            <Text font={48} multilineTextAlignment="center">🛴</Text>
-            <Text font={20} fontWeight="bold" foregroundStyle="#1E90FF" multilineTextAlignment="center">
-              九号电动车助手
-            </Text>
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2" multilineTextAlignment="center">
-              Ninebot Assistant
-            </Text>
+    <ScrollView frame={{ maxWidth: "infinity", maxHeight: "infinity" }} background="systemBackground">
+      <VStack spacing={0}>
+        <HStack padding={16} alignment="center">
+          <Button action={dismiss}>
+            <HStack padding={{ horizontal: 16, vertical: 8 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 20 } }}>
+              <Text font="headline">关闭</Text>
+            </HStack>
+          </Button>
+          <Spacer />
+          <Text font="headline">详情介绍</Text>
+          <Spacer />
+          <Spacer frame={{ width: 60 }} />
+        </HStack>
+
+        <VStack spacing={40} padding={20}>
+          <VStack spacing={16} alignment="center">
+            <ZStack frame={{ width: 100, height: 100 }}>
+              <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
+              <Text font={48}>🛴</Text>
+            </ZStack>
+            <VStack spacing={4} alignment="center">
+              <Text font="title" fontWeight="bold">九号电动车助手</Text>
+              <Text font="subheadline" foregroundStyle="secondaryLabel">Ninebot Assistant</Text>
+            </VStack>
+            <HStack spacing={12} alignment="center">
+              <Text font="caption" fontWeight="bold" foregroundStyle="systemBlue" padding={{ horizontal: 12, vertical: 4 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 8 } }}>v{VERSION}</Text>
+              <Text font="caption" foregroundStyle="secondaryLabel" padding={{ horizontal: 12, vertical: 4 }} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 8 } }}>By QinyRui</Text>
+            </HStack>
           </VStack>
-        </Section>
-        
-        <Section header={<Text font="body" fontWeight="semibold">📱 版本信息</Text>}>
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">版本号</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">v{VERSION}</Text>
-          </HStack>
-          
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">构建日期</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">{BUILD_DATE}</Text>
-          </HStack>
-          
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">适配系统</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">iOS 17+</Text>
-          </HStack>
-        </Section>
-        
-        <Section header={<Text font="body" fontWeight="semibold">👨‍💻 作者信息</Text>}>
-          <HStack spacing={12} padding={{ vertical: 8, horizontal: 16 }}>
-            <Text font={14} fontWeight="medium" foregroundStyle="secondaryLabel">开发者</Text>
-            <Spacer />
-            <Text font={14} fontWeight="semibold" foregroundStyle="#4A90E2">QinyRui</Text>
-          </HStack>
-        </Section>
-        
-        <Section 
-          header={<Text font="body" fontWeight="semibold">🔗 相关链接</Text>}
-          footer={
-            <Text font="footnote" foregroundStyle="secondaryLabel">
-              点击链接可跳转至相应页面
-            </Text>
-          }
-        >
-          <Button title="Telegram 频道" systemImage="paperplane.fill" action={openTelegram} />
-          <Button title="GitHub 仓库" systemImage="chevron.left.forwardslash.chevron.right" action={openGithub} />
-        </Section>
-        
-        <Section header={<Text font="body" fontWeight="semibold">💝 致谢</Text>}>
-          <VStack alignment="center" spacing={8} padding={16} frame={{ maxWidth: 'infinity' }}>
-            <Text font={13} foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-              感谢所有使用和支持本项目的用户！
-            </Text>
-            <Text font={13} foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-              如有问题或建议，欢迎通过 Telegram 或 GitHub 反馈。
-            </Text>
+
+          <VStack spacing={24}>
+            <HStack spacing={20} alignment="top">
+              <HStack spacing={16} frame={{ maxWidth: "infinity" }} alignment="center">
+                <ZStack frame={{ width: 44, height: 44 }}><Circle fill="yellow" opacity={0.2} /><Image systemName="bolt.fill" foregroundStyle="yellow" /></ZStack>
+                <VStack alignment="leading" spacing={2}><Text fontWeight="bold">智能签到</Text><Text font="caption" foregroundStyle="secondaryLabel">全自动打卡领积分</Text></VStack>
+              </HStack>
+              <HStack spacing={16} frame={{ maxWidth: "infinity" }} alignment="center">
+                <ZStack frame={{ width: 44, height: 44 }}><Circle fill="green" opacity={0.2} /><Image systemName="gift.fill" foregroundStyle="green" /></ZStack>
+                <VStack alignment="leading" spacing={2}><Text fontWeight="bold">盲盒开启</Text><Text font="caption" foregroundStyle="secondaryLabel">自动开盲盒不错过</Text></VStack>
+              </HStack>
+            </HStack>
+            <HStack spacing={20} alignment="top">
+              <HStack spacing={16} frame={{ maxWidth: "infinity" }} alignment="center">
+                <ZStack frame={{ width: 44, height: 44 }}><Circle fill="blue" opacity={0.2} /><Image systemName="shippingbox.fill" foregroundStyle="blue" /></ZStack>
+                <VStack alignment="leading" spacing={2}><Text fontWeight="bold">云端同步</Text><Text font="caption" foregroundStyle="secondaryLabel">BoxJs 配置无缝同步</Text></VStack>
+              </HStack>
+              <HStack spacing={16} frame={{ maxWidth: "infinity" }} alignment="center">
+                <ZStack frame={{ width: 44, height: 44 }}><Circle fill="purple" opacity={0.2} /><Image systemName="puzzlepiece.extension.fill" foregroundStyle="purple" /></ZStack>
+                <VStack alignment="leading" spacing={2}><Text fontWeight="bold">生态扩展</Text><Text font="caption" foregroundStyle="secondaryLabel">支持各类网络代理插件</Text></VStack>
+              </HStack>
+            </HStack>
           </VStack>
-        </Section>
-        
-        <Section>
-          <VStack alignment="center" spacing={4} padding={12} frame={{ maxWidth: 'infinity' }}>
-            <Text font={11} foregroundStyle="tertiaryLabel" multilineTextAlignment="center">© 2025 QinyRui</Text>
-            <Text font={11} foregroundStyle="tertiaryLabel" multilineTextAlignment="center">Made with ❤️ for Ninebot Users</Text>
+
+          <VStack alignment="leading" spacing={16} padding={20} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 20 } }}>
+            <HStack alignment="center">
+              <VStack alignment="leading" spacing={4}>
+                <Text font="headline">加入社区</Text>
+                <Text font="caption" foregroundStyle="secondaryLabel">获取技术支持</Text>
+              </VStack>
+              <Spacer />
+              <Image systemName="bubble.left.and.bubble.right.fill" font={24} foregroundStyle="systemBlue" />
+            </HStack>
+            
+            <HStack spacing={8} alignment="center" onTapGesture={openTelegram}>
+              <Image systemName="paperplane.fill" foregroundStyle="systemBlue" />
+              <Text fontWeight="bold" foregroundStyle="systemBlue">Telegram 频道</Text>
+            </HStack>
+            
+            <HStack spacing={0} padding={{ top: 12 }}>
+              <Spacer />
+              <VStack frame={{ maxWidth: "infinity", height: 1 }} background="separator" />
+              <Spacer />
+            </HStack>
+            
+            <HStack spacing={8} alignment="center" onTapGesture={openGithub}>
+              <Image systemName="chevron.left.forwardslash.chevron.right" foregroundStyle="label" />
+              <Text fontWeight="bold" foregroundStyle="label">GitHub 仓库</Text>
+            </HStack>
           </VStack>
-        </Section>
-      </List>
-    </NavigationStack>
+        </VStack>
+
+        <Spacer />
+        <VStack frame={{ maxWidth: "infinity" }} alignment="center" padding={20}>
+          <Text font="caption2" foregroundStyle="tertiaryLabel">© 2025 QinyRui. All rights reserved.</Text>
+          <Text font="caption2" foregroundStyle="tertiaryLabel">Made with ❤️ for Ninebot Users</Text>
+        </VStack>
+      </VStack>
+    </ScrollView>
+  )
+}
+
+// ==================== 辅助组件 ====================
+function HomeQuickButton({ icon, title, subtitle, action, tint }: { icon: string; title: string; subtitle: string; action: () => void; tint: string }) {
+  return (
+    <HStack spacing={12} frame={{ maxWidth: "infinity" }} alignment="center" padding={{ vertical: 8, horizontal: 4 }} onTapGesture={action}>
+      <ZStack frame={{ width: 44, height: 44 }}>
+        <Circle fill={tint as any} opacity={0.2} />
+        <Image systemName={icon} foregroundStyle={tint as any} font={20} />
+      </ZStack>
+      <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+        <Text fontWeight="bold" foregroundStyle="label" lineLimit={1}>{title}</Text>
+        <Text font="caption" foregroundStyle="secondaryLabel" lineLimit={1}>{subtitle}</Text>
+      </VStack>
+    </HStack>
   )
 }
 
@@ -353,6 +380,13 @@ function SettingsView() {
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+
+  // 计算配置完成度
+  const hasAuth = !!authorization && !!deviceId
+  const configCount = [hasAuth, enableBoxJs].filter(Boolean).length
+  const readinessBadge = hasAuth ? "已就绪" : "待完善"
+  const authStatusText = hasAuth ? "已配置" : "未配置"
+  const boxJsStatusText = enableBoxJs ? "已启用" : "未启用"
 
   const handleSave = () => {
     const newSettings: NinebotSettings = {
@@ -524,95 +558,174 @@ function SettingsView() {
   }
 
   return (
+    <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
     <NavigationStack>
       <List
-        navigationTitle={"九号电动车助手"}
-        navigationBarTitleDisplayMode={"inline"}
+        navigationBarTitleDisplayMode="inline"
         toolbar={{
-          topBarLeading: [<Button title="关闭" action={dismiss} />],
-          topBarTrailing: [
-            <Button
-              title={fullscreenPref ? "页面" : "弹层"}
-              systemImage={fullscreenPref ? "rectangle.arrowtriangle.2.outward" : "rectangle"}
-              action={toggleFullscreen}
-            />,
-            <Button title="完成" action={handleSave} />,
+          topBarLeading: [
+            <Button action={dismiss}>
+              <HStack spacing={6} padding={{ horizontal: 12, vertical: 6 }} background={{ style: "secondarySystemFill", shape: { type: "capsule", style: "continuous" } }}>
+                <ZStack frame={{ width: 20, height: 20 }}>
+                  <Circle fill="systemRed" opacity={0.2} />
+                  <Image systemName="xmark" font={10} foregroundStyle="systemRed" fontWeight="bold" />
+                </ZStack>
+                <Text font="subheadline" foregroundStyle="label">关闭</Text>
+              </HStack>
+            </Button>
           ],
-          bottomBar: [
-            <Button 
-              systemImage="info.circle.fill" 
-              title="关于" 
-              action={handleAbout} 
-              foregroundStyle="#1E90FF"
-            />
+          topBarTrailing: [
+            <HStack spacing={12} background={{ style: "secondarySystemFill", shape: { type: "capsule", style: "continuous" } }} padding={{ horizontal: 12, vertical: 6 }}>
+              <Button action={toggleFullscreen}>
+                <ZStack frame={{ width: 20, height: 20 }}>
+                  <Circle fill="systemBlue" opacity={0.2} />
+                  <Image systemName={fullscreenPref ? "rectangle.arrowtriangle.2.outward" : "rectangle.arrowtriangle.2.inward"} font={10} foregroundStyle="systemBlue" fontWeight="bold" />
+                </ZStack>
+              </Button>
+              <Button action={handleSave}>
+                <HStack spacing={6}>
+                  <ZStack frame={{ width: 20, height: 20 }}>
+                    <Circle fill="systemGreen" opacity={0.2} />
+                    <Image systemName="checkmark" font={10} foregroundStyle="systemGreen" fontWeight="bold" />
+                  </ZStack>
+                  <Text font="subheadline" fontWeight="medium" foregroundStyle="label">完成</Text>
+                </HStack>
+              </Button>
+            </HStack>,
           ],
         }}
       >
-        <Section 
-          header={<Text font="body" fontWeight="semibold">📦 模块安装</Text>}
-          footer={
-            <VStack alignment="center" spacing={4} padding={{ vertical: 8 }}>
-              <Text font="footnote" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-使用前建议按顺序完成：
-              </Text>
-              <Text font="footnote" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-                1）在 BoxJS 中订阅配置（可同步鉴权信息）
-              </Text>
-              <Text font="footnote" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
-                2）安装九号签到插件到 Loon 等客户端
-              </Text>
+        {/* ==================== 顶部视觉区域 ==================== */}
+        <Section>
+          <VStack spacing={24} padding={{ vertical: 20 }}>
+            {/* 应用图标和标题 */}
+            <VStack spacing={16} alignment="center">
+              <ZStack frame={{ width: 100, height: 100 }}>
+                <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
+                <Text font={48}>🛴</Text>
+              </ZStack>
+              <VStack spacing={4} alignment="center">
+                <Text font="title" fontWeight="bold">九号电动车助手</Text>
+                <Text font="subheadline" foregroundStyle="secondaryLabel">Ninebot Assistant</Text>
+              </VStack>
             </VStack>
-          }
-        >
-          <Button title="订阅 BoxJS 配置" systemImage="shippingbox" action={openBoxJsSubscription} />
-          <Button title="安装 Loon 插件" systemImage="puzzlepiece.extension" action={installLoonPlugin} />
+
+            {/* 状态卡片 */}
+            <VStack spacing={16} padding={16} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 16 } }}>
+              <HStack alignment="center" spacing={8}>
+                <Text font="title3" fontWeight="bold">配置状态</Text>
+                <Spacer />
+                <HStack spacing={6} padding={{ horizontal: 12, vertical: 4 }} background={{ style: readinessBadge === "待完善" ? "systemRed" : "systemGreen", shape: { type: "rect", cornerRadius: 8 } }}>
+                  <Image systemName={readinessBadge === "待完善" ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"} font={10} foregroundStyle="white" />
+                  <Text font="caption" fontWeight="bold" foregroundStyle="white">{readinessBadge}</Text>
+                </HStack>
+              </HStack>
+              
+              <VStack spacing={12}>
+                <HStack alignment="center">
+                  <HStack spacing={8}>
+                    <ZStack frame={{ width: 24, height: 24 }}>
+                      <Circle fill={hasAuth ? "systemGreen" : "systemGray"} opacity={0.2} />
+                      <Image systemName="key.fill" font={12} foregroundStyle={hasAuth ? "systemGreen" : "systemGray"} />
+                    </ZStack>
+                    <Text font="subheadline">鉴权信息</Text>
+                  </HStack>
+                  <Spacer />
+                  <Text font="caption" foregroundStyle="secondaryLabel">{authStatusText}</Text>
+                </HStack>
+                
+                <HStack alignment="center">
+                  <HStack spacing={8}>
+                    <ZStack frame={{ width: 24, height: 24 }}>
+                      <Circle fill={enableBoxJs ? "systemBlue" : "systemGray"} opacity={0.2} />
+                      <Image systemName="shippingbox.fill" font={12} foregroundStyle={enableBoxJs ? "systemBlue" : "systemGray"} />
+                    </ZStack>
+                    <Text font="subheadline">BoxJs 同步</Text>
+                  </HStack>
+                  <Spacer />
+                  <Text font="caption" foregroundStyle="secondaryLabel">{boxJsStatusText}</Text>
+                </HStack>
+              </VStack>
+            </VStack>
+
+            {/* 快捷操作按钮 */}
+            <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
+              <HomeQuickButton 
+                icon="shippingbox" 
+                title="BoxJs 配置" 
+                subtitle="订阅与同步" 
+                action={openBoxJsSubscription} 
+                tint="systemBlue" 
+              />
+              <HomeQuickButton 
+                icon="puzzlepiece.extension" 
+                title="Loon 插件" 
+                subtitle="安装与使用" 
+                action={installLoonPlugin} 
+                tint="systemPurple" 
+              />
+            </HStack>
+          </VStack>
         </Section>
 
-        <Section header={<Text font="body" fontWeight="semibold">🔗 BoxJs 配置</Text>}>
-          <Toggle
-            title="启用 BoxJs 读取鉴权"
-            value={enableBoxJs}
-            onChanged={(value) => {
-              setEnableBoxJs(value)
-              if (value && !boxJsUrl) setBoxJsUrl("https://boxjs.com")
-            }}
-          />
+        {/* ==================== BoxJs 配置 ==================== */}
+        <Section header={<Text font="headline">BoxJs 配置</Text>}>
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="switch.2" foregroundStyle="systemGreen" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+              <Toggle
+                title="启用 BoxJs 读取鉴权"
+                value={enableBoxJs}
+                onChanged={(value) => {
+                  setEnableBoxJs(value)
+                  if (value && !boxJsUrl) setBoxJsUrl("https://boxjs.com")
+                }}
+              />
+            </VStack>
+          </HStack>
+
           {enableBoxJs ? (
             <>
-              <HStack spacing={8} padding={{ vertical: 4 }}>
-                <TextField 
-                  title="BoxJs 地址" 
-                  value={boxJsUrl} 
-                  onChanged={setBoxJsUrl}
-                  prompt="例如: https://boxjs.com"
-                  frame={{ maxWidth: 'infinity' }}
-                />
-                <Button 
-                  title="测试" 
-                  systemImage="wifi" 
-                  action={handleTestBoxJs}
-                  padding={{ horizontal: 8 }}
-                />
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemBlue" opacity={0.15} /><Image systemName="link" foregroundStyle="systemBlue" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+                  <HStack alignment="center">
+                    <Text fontWeight="bold">BoxJs 地址</Text>
+                    <Spacer />
+                    <HStack alignment="center" spacing={4} onTapGesture={handleTestBoxJs}>
+                      <Image systemName="wifi" font={12} foregroundStyle="systemBlue" />
+                      <Text font="subheadline" foregroundStyle="systemBlue">测试</Text>
+                    </HStack>
+                  </HStack>
+                  <TextField 
+                    label={<Text>{""}</Text>}
+                    value={boxJsUrl} 
+                    onChanged={setBoxJsUrl}
+                    prompt="例如: https://boxjs.com"
+                    frame={{ maxWidth: 'infinity' }}
+                  />
+                  <Text font="caption2" foregroundStyle="secondaryLabel">
+                    点击右上角测试 BoxJs 连接状态
+                  </Text>
+                </VStack>
               </HStack>
-              <Text font="caption2" foregroundStyle="secondaryLabel">
-                点击右侧按钮可测试 BoxJs 连接状态
-              </Text>
               
-              <Button
-                title={syncing ? "同步中..." : "📥 从 BoxJS 同步鉴权信息"}
-                systemImage="arrow.triangle.2.circlepath"
-                action={handleSyncFromBoxJs}
-                disabled={syncing}
-              />
-              <Text font="caption2" foregroundStyle="secondaryLabel">
-                点击此按钮可自动从 BoxJS 拉取并填充鉴权信息
-              </Text>
+              <HStack padding={16} spacing={12} alignment="center" onTapGesture={syncing ? undefined : handleSyncFromBoxJs}>
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill={syncing ? "systemGray" : "systemBlue"} opacity={0.15} /><Image systemName="arrow.triangle.2.circlepath" foregroundStyle={syncing ? "systemGray" : "systemBlue"} font={16} /></ZStack>
+                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="bold" foregroundStyle={syncing ? "secondaryLabel" : "systemBlue"}>{syncing ? "同步中..." : "从 BoxJS 同步鉴权信息"}</Text>
+                  <Text font="caption2" foregroundStyle="secondaryLabel">自动拉取并填充下方鉴权信息</Text>
+                </VStack>
+                <Spacer />
+                <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
+              </HStack>
             </>
           ) : null}
         </Section>
 
+        {/* ==================== 鉴权信息 ==================== */}
         <Section 
-          header={<Text font="body" fontWeight="semibold">🔑 鉴权信息</Text>}
+          header={<Text font="headline">鉴权信息</Text>}
           footer={
             <>
               <Text font="footnote" foregroundStyle="secondaryLabel">
@@ -628,55 +741,67 @@ function SettingsView() {
             </>
           }
         >
-          <HStack spacing={4} padding={{ vertical: 4 }}>
-            <TextField
-              title="Authorization 鉴权Token"
-              value={authorization}
-              prompt="直接粘贴抓包获取的令牌（无需 Bearer 前缀）"
-              onChanged={setAuthorization}
-              frame={{ maxWidth: 'infinity' }}
-            />
-            <Button 
-              title="清除" 
-              systemImage="trash" 
-              action={clearAuth}
-              padding={{ horizontal: 4 }}
-            />
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="lock.fill" foregroundStyle="systemOrange" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+              <HStack alignment="center">
+                <Text fontWeight="bold">Authorization</Text>
+                <Spacer />
+                {!!authorization && <Button action={clearAuth}><Image systemName="trash.circle.fill" foregroundStyle="systemRed" font={20} /></Button>}
+              </HStack>
+              <TextField
+                label={<Text>{""}</Text>}
+                value={authorization}
+                prompt="直接粘贴抓包获取的令牌"
+                onChanged={setAuthorization}
+                frame={{ maxWidth: 'infinity' }}
+              />
+            </VStack>
           </HStack>
 
-          <HStack spacing={4} padding={{ vertical: 4 }}>
-            <TextField
-              title="DeviceId 设备标识"
-              value={deviceId}
-              prompt="例如: 06965B02-DE89-45AB-9116-9B69923BFxxx"
-              onChanged={setDeviceId}
-              frame={{ maxWidth: 'infinity' }}
-            />
-            <Button 
-              title="清除" 
-              systemImage="trash" 
-              action={clearDeviceId}
-              padding={{ horizontal: 4 }}
-            />
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="iphone" foregroundStyle="systemGreen" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+              <HStack alignment="center">
+                <Text fontWeight="bold">DeviceId</Text>
+                <Spacer />
+                {!!deviceId && <Button action={clearDeviceId}><Image systemName="trash.circle.fill" foregroundStyle="systemRed" font={20} /></Button>}
+              </HStack>
+              <TextField
+                label={<Text>{""}</Text>}
+                value={deviceId}
+                prompt="例如: 06965B02-DE89..."
+                onChanged={setDeviceId}
+                frame={{ maxWidth: 'infinity' }}
+              />
+            </VStack>
           </HStack>
 
-          <TextField
-            title="User-Agent 请求头"
-            value={userAgent}
-            prompt="留空使用默认值"
-            onChanged={setUserAgent}
-          />
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="network" foregroundStyle="systemTeal" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+              <Text fontWeight="bold">User-Agent</Text>
+              <TextField
+                label={<Text>{""}</Text>}
+                value={userAgent}
+                prompt="留空使用默认值"
+                onChanged={setUserAgent}
+                frame={{ maxWidth: 'infinity' }}
+              />
+            </VStack>
+          </HStack>
 
-          <Button
-            title={testing ? "测试中..." : "测试 API 连接"}
-            systemImage="network"
-            action={handleTestApi}
-            disabled={testing}
-          />
+          <HStack padding={16} spacing={12} alignment="center" onTapGesture={handleTestApi}>
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill={testing ? "systemGray" : "systemBlue"} opacity={0.15} /><Image systemName="bolt.horizontal.fill" foregroundStyle={testing ? "systemGray" : "systemBlue"} font={16} /></ZStack>
+            <Text fontWeight="bold" foregroundStyle={testing ? "secondaryLabel" : "systemBlue"}>{testing ? "测试中..." : "测试 API 连接"}</Text>
+            <Spacer />
+            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
+          </HStack>
         </Section>
 
+        {/* ==================== 小组件配置 ==================== */}
         <Section 
-          header={<Text font="body" fontWeight="semibold">⚙️ 小组件配置</Text>}
+          header={<Text font="headline">小组件配置</Text>}
           footer={
             <Text font="footnote" foregroundStyle="secondaryLabel">
               刷新间隔：小组件自动刷新的时间间隔（分钟），建议不小于15分钟{"\n"}
@@ -684,70 +809,77 @@ function SettingsView() {
             </Text>
           }
         >
-          <HStack spacing={8} padding={{ vertical: 4 }} alignment="center">
-            <TextField
-              title="刷新间隔（分钟）"
-              value={String(refreshInterval)}
-              onChanged={(v) => setRefreshInterval(Number(v) || 15)}
-              keyboardType="numberPad"
-              frame={{ maxWidth: 'infinity' }}
-            />
-            <Text font="caption2" foregroundStyle="secondaryLabel">
-              当前：{refreshInterval} 分钟
-            </Text>
-          </HStack>
-          
-          <Toggle
-            title="自动签到"
-            value={autoSign}
-            onChanged={setAutoSign}
-          />
-          {autoSign && (
-            <HStack spacing={8} padding={{ vertical: 4 }} alignment="center">
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemIndigo" opacity={0.15} /><Image systemName="clock.arrow.2.circlepath" foregroundStyle="systemIndigo" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+              <HStack alignment="center">
+                <Text fontWeight="bold">刷新间隔 (分钟)</Text>
+                <Spacer />
+                <Text font="caption2" foregroundStyle="secondaryLabel">当前: {refreshInterval}</Text>
+              </HStack>
               <TextField
-                title="签到时间"
-                value={autoSignTime}
-                onChanged={setAutoSignTime}
-                prompt="例如: 08:30"
+                label={<Text>{""}</Text>}
+                value={String(refreshInterval)}
+                onChanged={(v) => setRefreshInterval(Number(v) || 15)}
+                keyboardType="numberPad"
                 frame={{ maxWidth: 'infinity' }}
               />
-              <Text font="caption2" foregroundStyle="secondaryLabel">
-                (格式 HH:mm)
-              </Text>
-            </HStack>
-          )}
-          <Text font="caption2" foregroundStyle="secondaryLabel">
-            🗓 启用后，小组件将在每天设定的时间（或之后第一次刷新时）执行签到
-          </Text>
+            </VStack>
+          </HStack>
           
-          <Toggle
-            title="自动开启盲盒"
-            value={autoOpenBlindBox}
-            onChanged={setAutoOpenBlindBox}
-          />
-          <Text font="caption2" foregroundStyle="secondaryLabel">
-            🎁 启用后，小组件刷新时会自动开启所有可开启的盲盒
-          </Text>
-        </Section>
-
-        <Section>
-          <VStack alignment="center" spacing={4} padding={12} frame={{ maxWidth: "infinity" }}>
-            <Text font="caption2" foregroundStyle="tertiaryLabel" multilineTextAlignment="center">
-              v{VERSION} · {BUILD_DATE}
-            </Text>
-            <Text font="caption2" foregroundStyle="tertiaryLabel" multilineTextAlignment="center">
-              适配 iOS 17+
-            </Text>
-          </VStack>
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPink" opacity={0.15} /><Image systemName="calendar.badge.clock" foregroundStyle="systemPink" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+              <Toggle
+                title="自动签到"
+                value={autoSign}
+                onChanged={setAutoSign}
+              />
+              {autoSign && (
+                <TextField
+                  label={<Text>{""}</Text>}
+                  value={autoSignTime}
+                  onChanged={setAutoSignTime}
+                  prompt="签到时间 (例如 08:30)"
+                  frame={{ maxWidth: 'infinity' }}
+                />
+              )}
+            </VStack>
+          </HStack>
+          
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemYellow" opacity={0.15} /><Image systemName="gift.fill" foregroundStyle="systemYellow" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+              <Toggle
+                title="自动开启盲盒"
+                value={autoOpenBlindBox}
+                onChanged={setAutoOpenBlindBox}
+              />
+            </VStack>
+          </HStack>
         </Section>
 
       </List>
     </NavigationStack>
+      <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={20}>
+        <Spacer />
+        <HStack frame={{ maxWidth: "infinity" }}>
+          <Spacer />
+          <Button action={handleAbout}>
+            <ZStack frame={{ width: 44, height: 44 }}>
+              <Circle fill="#333333" />
+              <Image systemName="info.circle.fill" font={24} foregroundStyle="white" />
+            </ZStack>
+          </Button>
+          <Spacer />
+        </HStack>
+      </VStack>
+    </ZStack>
   )
 }
 
 type AppProps = { interactiveDismissDisabled?: boolean }
-function App(_props: AppProps) {
+export default function App(_props: AppProps) {
   return <SettingsView />
 }
 
