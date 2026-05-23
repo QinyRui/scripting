@@ -889,10 +889,6 @@ function LocationSettingsPage() {
                     <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>{coordinateStatusText}</Text>
                   </HStack>
                   <HStack spacing={6}>
-                    <Image systemName="scope" font={11} foregroundStyle="#5a6470" />
-                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>{currentAccuracyText}</Text>
-                  </HStack>
-                  <HStack spacing={6}>
                     <Image systemName="clock.fill" font={11} foregroundStyle="#5a6470" />
                     <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>更新：{resolvedTimeText}</Text>
                   </HStack>
