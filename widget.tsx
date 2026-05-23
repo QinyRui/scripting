@@ -285,6 +285,7 @@ const Cache = {
 function appendDebugLog(message: string, payload?: unknown) {
   try {
     const line = `[${new Date().toISOString()}] ${message}${payload !== undefined ? ` ${JSON.stringify(payload)}` : ""}`
+    console.log(line)
     const current = FileManager.existsSync(widgetDebugLogPath) ? FileManager.readAsStringSync(widgetDebugLogPath) : ""
     const next = `${current}${current ? "\n" : ""}${line}`
     const rows = next.split("\n")
@@ -368,6 +369,30 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
   let districtName = [placemark.subLocality, placemark.subAdministrativeArea, placemark.district]
     .map((item: any) => String(item || "").trim())
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName)) || base.subLocality || base.subAdministrativeArea || ""
+
+  // Fix native geocoder returning district as state/city for direct-controlled municipalities
+  if (provinceName === districtName || provinceName === cityName) {
+    if (provinceName.endsWith("区") || provinceName.endsWith("县")) {
+      districtName = provinceName
+      // Fallback heuristics for major municipalities if native API fails to provide it
+      if (base.administrativeArea && !base.administrativeArea.endsWith("区")) {
+        provinceName = base.administrativeArea
+        cityName = base.locality || base.administrativeArea
+      } else {
+         // Generic fallback for Shanghai coordinates specifically or general fallback
+         if (base.latitude > 30.5 && base.latitude < 31.9 && base.longitude > 120.8 && base.longitude < 122.2) {
+             provinceName = "上海市"
+             cityName = "上海市"
+         } else if (base.latitude > 39.4 && base.latitude < 41.1 && base.longitude > 115.4 && base.longitude < 117.5) {
+             provinceName = "北京市"
+             cityName = "北京市"
+         } else {
+             provinceName = "" 
+             cityName = ""
+         }
+      }
+    }
+  }
   if (provinceName && provinceName.endsWith("市") && cityName && /[区县旗]$/.test(cityName) && !districtName) {
     districtName = cityName
     cityName = provinceName
@@ -383,7 +408,6 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName && item !== neighborhoodName)) || base.street || base.name || ""
   const fineName = [fullStreet, placemark.name]
     .map((item: any) => String(item || "").trim())
-    .filter(i => i !== "杨北")
     .find((item: string) => Boolean(isMeaningfulName(item) && item !== provinceName && item !== cityName && item !== districtName)) || streetName || districtName || cityName || provinceName
 
   return {
@@ -572,15 +596,13 @@ function getDisplayLocationText() {
   const detail = [street, name]
     .map((item) => String(item || "").trim())
     .filter(Boolean)
-    .filter((item) => !["杨北"].includes(item)) // 临时的硬编码过滤，防止解析污染
     .find((item, index, arr) => arr.indexOf(item) === index) || ""
 
   const parts = []
-  if (province) parts.push(province)
-  if (city && city !== province) parts.push(city)
+  if (province && province !== "未知省市") parts.push(province)
+  if (city && city !== province && city !== "未知省市") parts.push(city)
   if (district && district !== city && district !== province) parts.push(district)
-  if (town && town !== district && town !== city && town !== province) parts.push(town)
-  if (detail && detail !== town && detail !== district && detail !== city && detail !== province) parts.push(detail)
+  if (detail && detail !== district && detail !== city && detail !== province) parts.push(detail)
 
   if (parts.length === 0) {
     const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
