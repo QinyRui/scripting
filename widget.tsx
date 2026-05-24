@@ -53,7 +53,8 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
     if (!response.ok) throw new Error(`位置名称解析失败 HTTP ${response.status}`)
     const json = await response.json()
     const address = json?.address || {}
-    const city = address.city || address.town || address.village || address.municipality || ""
+    const city = address.city || address.municipality || ""
+    const town = address.town || address.village || ""
     const area = address.city_district || address.district || address.county || ""
     const block = address.neighbourhood || address.quarter || address.suburb || address.residential || address.city_block || address.hamlet || ""
     const road = address.road || address.pedestrian || address.footway || address.cycleway || address.path || ""
@@ -66,6 +67,7 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
       administrativeArea: address.state || city || "",
       subAdministrativeArea: address.county || "",
       subLocality: area,
+      town: town,
       neighborhood: block,
       quarter: address.quarter || "",
       thoroughfare: road,
@@ -143,6 +145,7 @@ type LocationData = {
   subAdministrativeArea?: string
   locality: string
   subLocality: string
+  town?: string
   street?: string
   neighborhood?: string
   quarter?: string
@@ -350,6 +353,7 @@ function extractLocationData(raw: any): LocationData | null {
     subAdministrativeArea: data.subAdministrativeArea ? String(data.subAdministrativeArea) : undefined,
     locality: String(data.locality || ""),
     subLocality: String(data.subLocality || ""),
+    town: data.town ? String(data.town) : undefined,
     street: data.street ? String(data.street) : undefined,
     neighborhood: data.neighborhood ? String(data.neighborhood) : undefined,
     quarter: data.quarter ? String(data.quarter) : undefined,
@@ -385,6 +389,7 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
     subAdministrativeArea: String(placemark.subAdministrativeArea || ""),
     locality: city,
     subLocality: district,
+    town: String(placemark.town || "").trim(),
     neighborhood: "",
     quarter: "",
     street: streetName,
@@ -588,6 +593,9 @@ function getDisplayLocationText() {
   if (province && province !== "未知省市") parts.push(province)
   if (city && city !== province && city !== "未知省市") parts.push(city)
   if (district && district !== city && district !== province) parts.push(district)
+  
+  const town = String(loc.town || "").trim()
+  if (town && !parts.includes(town)) parts.push(town)
 
   const candidates = [
     String(loc.neighborhood || "").trim(),
