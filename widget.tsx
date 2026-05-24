@@ -583,20 +583,36 @@ function getDisplayLocationText() {
   const province = String(loc.administrativeArea || "").trim()
   const city = String(loc.locality || "").trim()
   const district = String(loc.subLocality || loc.subAdministrativeArea || "").trim()
-  const town = "" // 彻底废除细碎地名属性
-  const street = String(loc.street || "").trim()
-  const name = String(loc.name || "").trim()
-
-  const detail = [street, name]
-    .map((item) => String(item || "").trim())
-    .filter(Boolean)
-    .find((item, index, arr) => arr.indexOf(item) === index) || ""
 
   const parts = []
   if (province && province !== "未知省市") parts.push(province)
   if (city && city !== province && city !== "未知省市") parts.push(city)
   if (district && district !== city && district !== province) parts.push(district)
-  if (detail && detail !== district && detail !== city && detail !== province) parts.push(detail)
+
+  const candidates = [
+    String(loc.neighborhood || "").trim(),
+    String(loc.quarter || "").trim(),
+    String(loc.street || "").trim(),
+    String(loc.name || "").trim()
+  ].filter(Boolean)
+
+  const uniqueCandidates: string[] = []
+  for (const item of candidates) {
+    if (parts.includes(item)) continue
+    if (uniqueCandidates.includes(item)) continue
+    
+    if (uniqueCandidates.some(existing => existing.includes(item))) {
+      continue
+    }
+    const idx = uniqueCandidates.findIndex(existing => item.includes(existing))
+    if (idx !== -1) {
+      uniqueCandidates[idx] = item
+    } else {
+      uniqueCandidates.push(item)
+    }
+  }
+
+  parts.push(...uniqueCandidates)
 
   if (parts.length === 0) {
     const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
@@ -1169,9 +1185,6 @@ function ForecastView({ future, widgetType }: { future: WeatherFuture[]; widgetT
     </HStack>
   )
 }
-
-
-
 function getPrimaryCountdownText(date: Date) {
   const todayTerm = getSolarTerm(date)
   const nextTermInfo = getNextSolarTermInfo(date)
@@ -1303,7 +1316,7 @@ function shortenWeatherDesc(text: string, widgetType: "medium" | "large") {
 function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[]; widgetType: "medium" | "large" }) {
   const currentDate = new Date()
   const cityStr = getDisplayLocationText()
-  const wDesc = "💬 " + shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
+  const wDescText = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
   const leftWidth = widgetType === "medium" ? 210 : 200
@@ -1334,7 +1347,7 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       </HStack>
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
-          text={wDesc} 
+          text={wDescText} 
           font={s(widgetType === "medium" ? 10 : 13, "weather")} 
           color={c("#ffffff", "weather")} 
           lineLimit={0} 
