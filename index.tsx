@@ -233,9 +233,9 @@ function AboutView() {
   
   const openGithub = async () => {
     try {
-      await Safari.openURL("https://github.com/QinyRui/QYR-/tree/jiuhao")
+      await Safari.openURL("https://github.com/QinyRui/scripting/tree/JH")
     } catch (error) {
-      await Pasteboard.setString("https://github.com/QinyRui/QYR-/tree/jiuhao")
+      await Pasteboard.setString("https://github.com/QinyRui/scripting/tree/JH")
       await Dialog.alert({
         title: "已复制链接",
         message: "GitHub 仓库链接已复制到剪贴板",
