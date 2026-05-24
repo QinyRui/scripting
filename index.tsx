@@ -42,7 +42,7 @@ const NINEBOT_BOXJS_SUB_URL =
   `http://boxjs.com/#/sub/add/${encodeURIComponent(NINEBOT_BOXJS_JSON_URL)}`
 
 const NINEBOT_LOON_PLUGIN_URL =
-  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/NinebotSign2.9.plugin"
+  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/九号智能电动车.plugin"
 
 const NINEBOT_LOON_INSTALL_URL =
   `loon://import?plugin=${encodeURIComponent(NINEBOT_LOON_PLUGIN_URL)}`
