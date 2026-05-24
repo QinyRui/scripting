@@ -1346,7 +1346,8 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
         <SectionText text={dateLineText} font={s(widgetType === "medium" ? 12 : 13, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
       </HStack>
-      <HStack spacing={0} alignment="top" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
+      <HStack spacing={2} alignment="center" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
+        <Image systemName="mappin.and.ellipse" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
         <SectionText text={cityStr} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} />
       </HStack>
       <Spacer minLength={widgetType === "medium" ? 0 : 1} />
