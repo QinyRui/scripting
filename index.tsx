@@ -1,4 +1,6 @@
+import { SettingView, profile } from "./pages/setting"
 import { safeGetWeather } from "./widget"
+import { RainNotification, AlertNotification } from "./notification_logic"
 import {
   Script,
   Navigation,
@@ -25,7 +27,12 @@ import {
   useState,
   Menu,
   Picker,
+  DisclosureGroup,
+  Divider,
+  Notification,
 } from "scripting"
+
+declare const openURL: (url: string) => Promise<boolean>
 
 declare const fetch: any
 declare const FileManager: any
@@ -71,6 +78,9 @@ type LayoutOffset = { x?: number; y?: number }
 
 type StyleConfig = {
   refreshInterval?: string | number
+  weatherChart?: {
+    style?: "apple" | "caiyun"
+  }
   layout?: {
     medium?: {
       left?: LayoutOffset
@@ -118,6 +128,7 @@ type StatusInfo = {
   fontSizeText: string
   fontColorText: string
   layoutText: string
+  chartStyleText: string
   recommendations: string[]
   cachedWeather?: WeatherInfo | null
 }
@@ -139,6 +150,7 @@ const getBgPath = (family: string) => `${documentsDir}/${scriptName}_${family}.j
 const getWidgetBgPath = (family: string) => `${appGroupDir}/${scriptName}_${family}.jpg`
 const getWidgetBgMetaPath = (family: string) => `${appGroupDir}/${scriptName}_background_${family}.json`
 const locationDebugLogPath = `${documentsDir}/caiyun_location_debug.log`
+const SETTING_KEY = "ColorfulCloudsSetting"
 
 function appendLocationDebugLog(title: string, payload?: any) {
   try {
@@ -317,6 +329,73 @@ function ConfigPage() {
   const dismiss = Navigation.useDismiss()
   const [statusInfo, setStatusInfo] = useState(() => loadStatusInfo())
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [chartStyle, setChartStyle] = useState<"apple" | "caiyun">(() => {
+    const styleConfig = ensureStyleConfig() as any
+    return styleConfig.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
+  })
+
+  // 通知相关的状态
+  const [isPrecipitationEnabled, setIsPrecipitationEnabled] = useState(profile.notification.Precipitation)
+  const [isExtremeWeatherEnabled, setIsExtremeWeatherEnabled] = useState(profile.notification.ExtremeWeather)
+  const [isUselessNotificationEnabled, setIsUselessNotificationEnabled] = useState(profile.notification.isUselessNotify)
+  const [isLocalNotifyEnabled, setIsLocalNotifyEnabled] = useState(profile.notification.isLocalNotify)
+  const [isSurroundNotifyEnabled, setIsSurroundNotifyEnabled] = useState(profile.notification.isSurroundNotify)
+  const [notificationInterval, setNotificationInterval] = useState<number>(profile.notification.NotificationInterval)
+
+  const timeGapList = [0, 5, 10, 15, 30]
+
+  async function triggerTestNotification() {
+    try {
+      await Notification.schedule({
+        title: "彩云天气：测试通知",
+        body: "这是一条来自主应用的立即测试通知，用于确认通知权限与样式是否正常。",
+        threadIdentifier: Script.name,
+      })
+
+      if (isLocalNotifyEnabled) {
+        await RainNotification("当前位置", "降水状况", "预计 30 分钟后有短时小雨，请记得带伞。")
+      }
+
+      if (isExtremeWeatherEnabled) {
+        await AlertNotification("暴雨蓝色预警测试，请关注最新天气变化。", "当前位置")
+      }
+
+      await showMessage("测试通知已发送", "请返回系统通知中心查看是否收到通知。")
+    } catch (error) {
+      await showMessage("测试通知失败", String((error as any)?.message || error))
+    }
+  }
+
+  function updateChartStyle(nextStyle: "apple" | "caiyun") {
+    const styleConfig = ensureStyleConfig() as any
+    styleConfig.weatherChart = {
+      ...(styleConfig.weatherChart || {}),
+      style: nextStyle,
+    }
+    writeStyleConfig(styleConfig)
+    setChartStyle(nextStyle)
+    reloadWidgets()
+    setStatusInfo(loadStatusInfo())
+  }
+
+  const saveNotificationProfile = (
+    precip: boolean,
+    extreme: boolean,
+    local: boolean,
+    surround: boolean,
+    useless: boolean,
+    interval: number
+  ) => {
+    profile.notification = {
+      Precipitation: precip,
+      ExtremeWeather: extreme,
+      isLocalNotify: local,
+      isSurroundNotify: surround,
+      isUselessNotify: useless,
+      NotificationInterval: interval
+    }
+    Storage.set(SETTING_KEY, profile)
+  }
 
   async function refreshWeather() {
     if (isRefreshing) return
@@ -461,23 +540,154 @@ function ConfigPage() {
         </Section>
 
         <Section header={<Text font="headline">小组件</Text>} footer={<Text font="caption" foregroundStyle="secondaryLabel">· 实际刷新频率由系统决定</Text>}>
-          <Picker
-            title="刷新时间间隔"
-            pickerStyle="menu"
-            value={statusInfo.refreshText === "默认" ? 0 : (statusInfo.refreshText === "60 分钟" ? 0 : parseInt(statusInfo.refreshText))}
-            onChanged={(val: number) => {
-              const next = val === 0 ? 60 : val
-              const styleConfig = ensureStyleConfig()
-              styleConfig.refreshInterval = next
-              writeStyleConfig(styleConfig)
-              reloadWidgets()
-              setStatusInfo(loadStatusInfo())
-            }}
-          >
-            {[0, 5, 10, 15, 30].map((item) => (
-              <Text key={item} tag={item}>{item === 0 ? "自动" : `${item} 分钟`}</Text>
-            ))}
-          </Picker>
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}>
+              <Circle fill="systemBlue" opacity={0.15} />
+              <Image systemName="clock.fill" foregroundStyle="systemBlue" font={16} />
+            </ZStack>
+            <Text fontWeight="bold">刷新时间间隔</Text>
+            <Spacer />
+            <Picker
+              title=""
+              pickerStyle="menu"
+              value={statusInfo.refreshText === "自动" ? 0 : parseInt(statusInfo.refreshText)}
+              onChanged={(val: number) => {
+                const styleConfig = ensureStyleConfig()
+                styleConfig.refreshInterval = val
+                writeStyleConfig(styleConfig)
+                reloadWidgets()
+                setStatusInfo(loadStatusInfo())
+              }}
+            >
+              {[0, 5, 10, 15, 30, 60].map((item) => (
+                <Text key={item} tag={item}>{item === 0 ? "自动" : `${item} 分钟`}</Text>
+              ))}
+            </Picker>
+          </HStack>
+        </Section>
+
+        <Section
+          header={<Text font="headline">通知</Text>}
+          footer={
+            isPrecipitationEnabled ? (
+              <VStack alignment="leading" spacing={4} padding={{ top: 8 }}>
+                <HStack spacing={0}>
+                  <Text font="caption" foregroundStyle="secondaryLabel">· 极端天气：其定义可查看 </Text>
+                  <Link url="https://open.caiyunapp.com/彩云天气数据格式速查表#.E5.A4.A9.E6.B0.94.E9.A2.84.E8.AD.A6.E4.BF.A1.E6.81.AF">
+                    <Text font="caption" foregroundStyle="systemBlue">官方文档</Text>
+                  </Link>
+                </HStack>
+                <Text font="caption" foregroundStyle="secondaryLabel">· 提示通知：指内容不包含数字，仅提示作用，例如“深夜了”</Text>
+              </VStack>
+            ) : undefined
+          }>
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}>
+              <Circle fill="systemGreen" opacity={0.15} />
+              <Image systemName="bell.badge.fill" foregroundStyle="systemGreen" font={16} />
+            </ZStack>
+            <Text fontWeight="bold">通知开关</Text>
+            <Spacer />
+            <Toggle
+              title=""
+              value={isPrecipitationEnabled}
+              onChanged={(val) => {
+                setIsPrecipitationEnabled(val)
+                saveNotificationProfile(val, isExtremeWeatherEnabled, isLocalNotifyEnabled, isSurroundNotifyEnabled, isUselessNotificationEnabled, notificationInterval)
+              }}
+            />
+          </HStack>
+
+          {isPrecipitationEnabled && (
+            <>
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}>
+                  <Circle fill="systemOrange" opacity={0.15} />
+                  <Image systemName="timer" foregroundStyle="systemOrange" font={16} />
+                </ZStack>
+                <Text fontWeight="bold">通知时间间隔</Text>
+                <Spacer />
+                <Picker
+                  title=""
+                  pickerStyle="menu"
+                  value={notificationInterval}
+                  onChanged={(val: number) => {
+                    setNotificationInterval(val)
+                    saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, isLocalNotifyEnabled, isSurroundNotifyEnabled, isUselessNotificationEnabled, val)
+                  }}>
+                  {[0, 5, 10, 15, 30].map((item) => (
+                    <Text key={item} tag={item}>{item === 0 ? "自动" : `${item} 分钟`}</Text>
+                  ))}
+                </Picker>
+              </HStack>
+
+              <HStack padding={16} spacing={12} alignment="center" onTapGesture={triggerTestNotification}>
+                <ZStack frame={{ width: 32, height: 32 }}>
+                  <Circle fill="systemPink" opacity={0.15} />
+                  <Image systemName="bell.and.waves.left.and.right.fill" foregroundStyle="systemPink" font={16} />
+                </ZStack>
+                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="bold">立即测试通知</Text>
+                  <Text font="caption" foregroundStyle="secondaryLabel">点按后立刻发送一条本地测试通知</Text>
+                </VStack>
+                <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
+              </HStack>
+
+              <DisclosureGroup
+                title="通知类型"
+                label={
+                  <HStack spacing={12} alignment="center">
+                    <ZStack frame={{ width: 32, height: 32 }}>
+                      <Circle fill="systemIndigo" opacity={0.15} />
+                      <Image systemName="checklist" foregroundStyle="systemIndigo" font={16} />
+                    </ZStack>
+                    <Text fontWeight="bold">通知类型</Text>
+                  </HStack>
+                }>
+                <VStack spacing={0}>
+                  <Toggle
+                    title="极端天气"
+                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
+                    value={isExtremeWeatherEnabled}
+                    onChanged={(val) => {
+                      setIsExtremeWeatherEnabled(val)
+                      saveNotificationProfile(isPrecipitationEnabled, val, isLocalNotifyEnabled, isSurroundNotifyEnabled, isUselessNotificationEnabled, notificationInterval)
+                    }}
+                  />
+                  <Divider padding={{ leading: 44 }} />
+                  <Toggle
+                    title="降水通知"
+                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
+                    value={isLocalNotifyEnabled}
+                    onChanged={(val) => {
+                      setIsLocalNotifyEnabled(val)
+                      saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, val, isSurroundNotifyEnabled, isUselessNotificationEnabled, notificationInterval)
+                    }}
+                  />
+                  <Divider padding={{ leading: 44 }} />
+                  <Toggle
+                    title="周边通知"
+                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
+                    value={isSurroundNotifyEnabled}
+                    onChanged={(val) => {
+                      setIsSurroundNotifyEnabled(val)
+                      saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, isLocalNotifyEnabled, val, isUselessNotificationEnabled, notificationInterval)
+                    }}
+                  />
+                  <Divider padding={{ leading: 44 }} />
+                  <Toggle
+                    title="提示通知"
+                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
+                    value={isUselessNotificationEnabled}
+                    onChanged={(val) => {
+                      setIsUselessNotificationEnabled(val)
+                      saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, isLocalNotifyEnabled, isSurroundNotifyEnabled, val, notificationInterval)
+                    }}
+                  />
+                </VStack>
+              </DisclosureGroup>
+            </>
+          )}
         </Section>
 
         <Section header={<Text font="headline">外观设计</Text>}>
@@ -502,6 +712,40 @@ function ConfigPage() {
             <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.layoutText}</Text>
             <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
           </HStack>
+          <VStack alignment="leading" spacing={12} padding={16}>
+            <HStack spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}>
+                <Circle fill="systemIndigo" opacity={0.15} />
+                <Image systemName="chart.bar.xaxis" foregroundStyle="systemIndigo" font={16} />
+              </ZStack>
+              <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                <Text fontWeight="bold">实时图表风格</Text>
+                <Text font="caption" foregroundStyle="secondaryLabel">选择更像 Apple 天气或更像彩云天气的动态降水图</Text>
+              </VStack>
+            </HStack>
+
+            <HStack spacing={12} frame={{ maxWidth: "infinity" }}>
+              <ChartStylePreviewCard
+                title="A · Apple"
+                subtitle="克制、平滑"
+                selected={chartStyle === "apple"}
+                accent="#7dd3fc"
+                bars={[10, 12, 11, 9, 8, 9, 11, 13, 12, 10]}
+                labelTone="rgba(255,255,255,0.42)"
+                onTap={() => updateChartStyle("apple")}
+              />
+              <ChartStylePreviewCard
+                title="B · 彩云"
+                subtitle="明亮、突出"
+                selected={chartStyle === "caiyun"}
+                accent="#38bdf8"
+                bars={[8, 10, 9, 8, 10, 14, 16, 13, 12, 14]}
+                labelTone="rgba(255,255,255,0.5)"
+                onTap={() => updateChartStyle("caiyun")}
+              />
+            </HStack>
+          </VStack>
+
           <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<BackgroundSettingsPage />)}>
             <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="photo.on.rectangle.angled" foregroundStyle="systemTeal" font={16} /></ZStack>
             <Text fontWeight="bold">透明壁纸</Text>
@@ -655,6 +899,80 @@ function HomeQuickButton({ icon, title, subtitle, action, tint }: { icon: string
 
 
 
+
+function ChartStylePreviewCard({
+  title,
+  subtitle,
+  selected,
+  accent,
+  bars,
+  labelTone,
+  onTap,
+}: {
+  title: string
+  subtitle: string
+  selected: boolean
+  accent: string
+  bars: number[]
+  labelTone: string
+  onTap: () => void
+}) {
+  return (
+    <ZStack frame={{ maxWidth: "infinity" }} onTapGesture={onTap}>
+      <RoundedRectangle
+        cornerRadius={16}
+        fill={selected ? "rgba(99,102,241,0.14)" as any : "secondarySystemBackground" as any}
+        frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
+      />
+      {selected ? (
+        <RoundedRectangle
+          cornerRadius={16}
+          fill={{ color: "#6366f1", opacity: 0.18 }}
+          frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
+        />
+      ) : null}
+      <VStack spacing={10} frame={{ maxWidth: "infinity" }} padding={12}>
+        <ZStack frame={{ maxWidth: "infinity", height: 72 }}>
+          <RoundedRectangle cornerRadius={12} fill={{ colors: ["#2b1f38", "#1c1630"], startPoint: "top", endPoint: "bottom" }} />
+          <VStack spacing={0} padding={{ horizontal: 8, vertical: 8 }} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+            <Spacer />
+            <HStack spacing={2} alignment="bottom" frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+              {bars.map((height, index) => (
+                <RoundedRectangle
+                  key={index}
+                  cornerRadius={1.4}
+                  fill={accent as any}
+                  opacity={selected ? 1 : 0.88}
+                  frame={{ maxWidth: "infinity", height }}
+                />
+              ))}
+            </HStack>
+            <HStack padding={{ top: 6 }}>
+              <Text font={{ name: "system", size: 7 }} foregroundStyle={labelTone as any}>现在</Text>
+              <Spacer />
+              <Text font={{ name: "system", size: 7 }} foregroundStyle={labelTone as any}>30分钟</Text>
+              <Spacer />
+              <Text font={{ name: "system", size: 7 }} foregroundStyle={labelTone as any}>60分钟</Text>
+            </HStack>
+          </VStack>
+        </ZStack>
+
+        <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+          <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+            <Text fontWeight="bold">{title}</Text>
+            <Text font="caption" foregroundStyle="secondaryLabel">{subtitle}</Text>
+          </VStack>
+          {selected ? (
+            <ZStack frame={{ width: 22, height: 22 }}>
+              <Circle fill="#6366f1" />
+              <Image systemName="checkmark" font={11} foregroundStyle="white" />
+            </ZStack>
+          ) : null}
+        </HStack>
+      </VStack>
+    </ZStack>
+  )
+}
 
 function renderLinkRow(item: MenuItem) {
   const url = item.url || actionUrl(item.action || "")
@@ -1648,7 +1966,7 @@ function loadStatusInfo(): StatusInfo {
   const apiKeyText = hasApiKey ? "已设置" : "未设置"
   const locationModeText = locationConfig?.lockLocation ? "固定 GPS" : "自动 GPS"
 
-  const refreshText = styleConfig.refreshInterval ? `${styleConfig.refreshInterval} 分钟` : "默认"
+  const refreshText = styleConfig.refreshInterval ? `${styleConfig.refreshInterval} 分钟` : "自动"
   const backgroundText = hasBackground ? "已更换" : "默认"
 
   const sizeKeys = ["global", "greeting", "date", "lunar", "info", "weather", "weatherLarge", "poetry", "timeInfo", "calendar", "solar"]
@@ -1666,6 +1984,8 @@ function loadStatusInfo(): StatusInfo {
   const fontSizeText = customSizeCount > 0 ? `${customSizeCount} 项已调整` : "默认"
   const fontColorText = customColorCount > 0 ? `${customColorCount} 项已调整` : "默认"
   const layoutText = customLayoutCount > 0 ? `${customLayoutCount} 处已偏移` : "默认"
+  
+  const chartStyleText = styleConfig.weatherChart?.style === "caiyun" ? "B · 彩云" : "A · Apple"
   
   const recommendations: string[] = []
   if (!hasApiKey) recommendations.push("先设置 API Key，用以加载天气数据。")
@@ -1690,6 +2010,7 @@ function loadStatusInfo(): StatusInfo {
     fontSizeText,
     fontColorText,
     layoutText,
+    chartStyleText,
     recommendations,
     cachedWeather,
   }
