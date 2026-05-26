@@ -46,13 +46,22 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
   }
 
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(options.latitude))}&lon=${encodeURIComponent(String(options.longitude))}&accept-language=zh-CN&zoom=18&addressdetails=1`
+  
+  // 添加超时处理
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("请求超时")), 10000) // 10秒超时
+  })
+  
   try {
-    const response = await fetch(url, {
+    const fetchPromise = fetch(url, {
       headers: {
         "User-Agent": "Scripting-CaiyunWeather-Widget/1.0",
         "Accept-Language": "zh-CN,zh;q=0.9",
       },
     })
+    
+    const response = await Promise.race([fetchPromise, timeoutPromise])
+    
     if (!response.ok) throw new Error(`位置名称解析失败 HTTP ${response.status}`)
     const json = await response.json()
     const address = json?.address || {}
@@ -78,6 +87,47 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
       name: displayName,
     }]
   } catch (error) {
+    appendDebugLog("OpenStreetMap reverse geocode failed, trying backup service", {
+      latitude: options.latitude,
+      longitude: options.longitude,
+      error: String(error),
+    })
+    
+    // 尝试备用服务：腾讯位置服务
+    try {
+      const backupUrl = `https://apis.map.qq.com/ws/geocoder/v1/?location=${options.latitude},${options.longitude}&key=OB4BZ-D4WMT-UUUQA-MSPIE-6T6E5-KABBR&get_poi=0`
+      const backupTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("备用服务请求超时")), 5000) // 5秒超时
+      })
+      
+      const backupFetchPromise = fetch(backupUrl, {
+        headers: {
+          "User-Agent": "Scripting-CaiyunWeather-Widget/1.0",
+          "Accept-Language": "zh-CN,zh;q=0.9",
+        },
+      })
+      
+      const backupResponse = await Promise.race([backupFetchPromise, backupTimeoutPromise])
+      
+      if (backupResponse.ok) {
+        const backupJson = await backupResponse.json()
+        if (backupJson?.result?.address_component) {
+          const comp = backupJson.result.address_component
+          return [{
+            locality: comp.city || comp.province || "",
+            administrativeArea: comp.province || comp.city || "",
+            subAdministrativeArea: comp.county || "",
+            subLocality: comp.district || "",
+            name: backupJson.result.formatted_addresses?.recommend || "",
+          }]
+        }
+      }
+    } catch (backupError) {
+      appendDebugLog("Backup geocode service also failed", {
+        error: String(backupError),
+      })
+    }
+    
     if (nativeResult) return nativeResult
     throw error
   }
@@ -593,6 +643,23 @@ async function ensureBackgroundMigrated() {
 function getDisplayLocationText() {
   const loc = locationData
   if (!loc) return "未知位置"
+  
+  // 检查是否有有效的地名信息
+  const hasLocationName = isMeaningfulName(loc.administrativeArea) || 
+                          isMeaningfulName(loc.locality) || 
+                          isMeaningfulName(loc.subLocality) ||
+                          isMeaningfulName(loc.name)
+  
+  if (!hasLocationName) {
+    // 没有地名信息，检查是否有坐标
+    const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
+    if (hasCoordinates && (loc.latitude !== 0 || loc.longitude !== 0)) {
+      // 返回更友好的坐标显示
+      return `📍 ${Number(loc.latitude).toFixed(3)}, ${Number(loc.longitude).toFixed(3)}`
+    }
+    return "定位获取中..."
+  }
+  
   const province = String(loc.administrativeArea || "").trim()
   const city = String(loc.locality || "").trim()
   const district = String(loc.subLocality || loc.subAdministrativeArea || "").trim()
@@ -629,13 +696,6 @@ function getDisplayLocationText() {
   }
 
   parts.push(...uniqueCandidates)
-
-  if (parts.length === 0) {
-    const hasCoordinates = Number.isFinite(Number(loc.latitude)) && Number.isFinite(Number(loc.longitude))
-    return hasCoordinates && (loc.latitude !== 0 || loc.longitude !== 0)
-      ? `${Number(loc.latitude).toFixed(2)}, ${Number(loc.longitude).toFixed(2)}`
-      : "定位获取中"
-  }
 
   return parts.join("-") || "未知位置"
 }
