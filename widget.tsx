@@ -1,3 +1,5 @@
+import { handleNotifications } from "./notification_logic"
+import { profile } from "./pages/setting"
 import {
   Widget,
   Script,
@@ -9,6 +11,7 @@ import {
   Image,
   Circle,
   Rectangle,
+  RoundedRectangle,
 } from "scripting"
 
 declare const FileManager: any
@@ -54,7 +57,7 @@ async function callReverseGeocode(options: { latitude: number; longitude: number
     const json = await response.json()
     const address = json?.address || {}
     const city = address.city || address.municipality || ""
-    const town = address.town || address.village || ""
+    const town = address.town || address.village || address.suburb || ""
     const area = address.city_district || address.district || address.county || ""
     const block = address.neighbourhood || address.quarter || address.suburb || address.residential || address.city_block || address.hamlet || ""
     const road = address.road || address.pedestrian || address.footway || address.cycleway || address.path || ""
@@ -84,6 +87,9 @@ type LayoutOffset = { x?: number; y?: number }
 
 type StyleConfig = {
   refreshInterval?: string | number
+  weatherChart?: {
+    style?: "apple" | "caiyun"
+  }
   layout?: {
     medium?: {
       left?: LayoutOffset
@@ -121,6 +127,8 @@ type WeatherInfo = {
   sunrise?: string
   sunset?: string
   updatedAt?: number
+  precipitation?: number[]
+  precipitationDesc?: string
 }
 
 type PoetryInfo = {
@@ -687,22 +695,17 @@ async function getLocation(): Promise<LocationData> {
     const l = liveLocation
     // 强制每次获取最新位置时都进行反编码，确保地址随 GPS 变化
     const liveResolved = await resolveLocationNameIfNeeded({
+      ...locationData, // 传入当前已有的位置数据作为基准，避免解析失败时返回空数据
       latitude: l.latitude,
       longitude: l.longitude,
-      administrativeArea: "",
-      subAdministrativeArea: "",
-      locality: "",
-      subLocality: "",
-      street: "",
-      neighborhood: "",
-      quarter: "",
-      name: "",
       resolvedAt: Date.now(),
     }, true)
+    
+    // 如果返回的数据中没有任何地名信息（说明解析完全失败且没能找回旧数据），则保留旧的名称字段
+    const hasName = isMeaningfulName(liveResolved.locality) || isMeaningfulName(liveResolved.name)
+    
     locationData = {
-      ...liveResolved,
-      latitude: l.latitude,
-      longitude: l.longitude,
+      ...(hasName ? liveResolved : { ...locationData, latitude: l.latitude, longitude: l.longitude }),
       horizontalAccuracy: getLocationAccuracyValue(l),
       resolvedAt: Date.now(),
     }
@@ -758,6 +761,14 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
   }
 
   const info: WeatherInfo = {}
+  if (data.result?.forecast_keypoint) info.weatherDesc = data.result.forecast_keypoint
+
+  // 提取分钟级降水数据
+  if (data.result?.minutely) {
+    info.precipitation = data.result.minutely.precipitation || []
+    info.precipitationDesc = data.result.minutely.description || ""
+  }
+
   if (data.result?.alert?.content) info.alertWeatherTitle = data.result.alert.content.title
 
   const daily = data.result?.daily
@@ -794,7 +805,7 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
     if (rt.life_index?.ultraviolet) info.ultraviolet = rt.life_index.ultraviolet.desc
     if (rt.air_quality?.aqi?.chn !== undefined) info.aqiInfo = airQuality(rt.air_quality.aqi.chn)
   }
-  if (data.result?.forecast_keypoint) info.weatherDesc = data.result.forecast_keypoint
+
   if (daily?.astro?.[0]) {
     info.sunrise = daily.astro[0].sunrise.time
     info.sunset = daily.astro[0].sunset.time
@@ -802,6 +813,16 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
 
   info.updatedAt = Date.now()
   Cache.write(weatherCachePath, info)
+
+  // 处理通知逻辑
+  try {
+    handleNotifications(data, true, profile.notification).catch(err => {
+      appendDebugLog("handleNotifications background error", { message: String(err) })
+    })
+  } catch (err) {
+    appendDebugLog("handleNotifications error", { message: String(err) })
+  }
+
   return info
 }
 
@@ -1135,7 +1156,30 @@ function getYiJiSimple(date: Date, type: number) {
   return type === 0 ? t.yi : t.ji
 }
 
-function BackgroundLayer({ family }: { family: string }) {
+const weatherBackgrounds: Record<string, string[]> = {
+  CLEAR_DAY: ["#4facfe", "#00f2fe"], // 晴天蓝
+  CLEAR_NIGHT: ["#1e3c72", "#2a5298"], // 深夜蓝
+  PARTLY_CLOUDY_DAY: ["#89f7fe", "#66a6ff"], // 多云蓝
+  PARTLY_CLOUDY_NIGHT: ["#485563", "#29323c"], // 阴云夜
+  CLOUDY: ["#757f9a", "#adadad"], // 阴天灰
+  LIGHT_HAZE: ["#a8a096", "#7d7569"], // 霾
+  MODERATE_HAZE: ["#a8a096", "#7d7569"],
+  HEAVY_HAZE: ["#a8a096", "#7d7569"],
+  LIGHT_RAIN: ["#6190e8", "#a7bfe8"], // 小雨
+  MODERATE_RAIN: ["#4b6cb7", "#182848"], // 中雨
+  HEAVY_RAIN: ["#2c3e50", "#000000"], // 大雨
+  STORM_RAIN: ["#0f2027", "#203a43", "#2c5364"], // 暴雨
+  FOG: ["#e6e9f0", "#eef1f5"], // 雾
+  LIGHT_SNOW: ["#e6e9f0", "#eef1f5"], // 小雪
+  MODERATE_SNOW: ["#cfd9df", "#e2ebf0"], // 中雪
+  HEAVY_SNOW: ["#bdc3c7", "#2c3e50"], // 大雪
+  STORM_SNOW: ["#2c3e50", "#000000"], // 暴雪
+  DUST: ["#ba8b02", "#181818"], // 尘
+  SAND: ["#ba8b02", "#181818"], // 沙
+  WIND: ["#556270", "#4ecdc4"], // 风
+}
+
+function BackgroundLayer({ family, skycon }: { family: string; skycon?: string }) {
   const backgroundPath = getBackgroundPath(family)
   if (!colorMode && backgroundPath) {
     return (
@@ -1147,10 +1191,16 @@ function BackgroundLayer({ family }: { family: string }) {
       />
     )
   }
+
+  const colors = (skycon && weatherBackgrounds[skycon]) || ["#000000", "#000000"]
   return (
-    <ZStack
+    <Rectangle
+      fill={{
+        colors: colors as any,
+        startPoint: "top",
+        endPoint: "bottom",
+      }}
       frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
-      background={bgColorStr}
     />
   )
 }
@@ -1321,10 +1371,82 @@ function shortenWeatherDesc(text: string, widgetType: "medium" | "large") {
   return restored
 }
 
+function RainingBarChart({ precipitation, widgetType }: { precipitation: number[]; widgetType: "medium" | "large" }) {
+  if (!precipitation || precipitation.length === 0) return null
+  
+  // 仅取前 60 分钟数据
+  const data = precipitation.slice(0, 60)
+  const chartHeight = widgetType === "medium" ? 38 : 42
+  const chartStyle = styleConfig.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
+  const barSpacing = chartStyle === "caiyun" ? 0.45 : 0.5
+  const barWidth = chartStyle === "caiyun" ? 2.5 : 2.4
+  const labelColor = chartStyle === "caiyun" ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.42)"
+  
+  const getBarColor = (val: number) => {
+    if (val <= 0) return "transparent"
+    if (chartStyle === "caiyun") {
+      if (val < 0.1) return "rgba(120, 210, 255, 0.5)"
+      if (val < 0.3) return "rgba(94, 201, 255, 0.82)"
+      if (val < 1.0) return "rgba(40, 170, 255, 0.96)"
+      return "rgba(0, 132, 255, 1)"
+    }
+    if (val < 0.1) return "rgba(112, 200, 255, 0.42)"
+    if (val < 0.3) return "rgba(112, 200, 255, 0.72)"
+    if (val < 1.0) return "rgba(64, 156, 255, 0.92)"
+    return "rgba(24, 118, 255, 1)"
+  }
+
+  const getSmoothedValue = (index: number) => {
+    const prev = data[Math.max(0, index - 1)] ?? data[index] ?? 0
+    const curr = data[index] ?? 0
+    const next = data[Math.min(data.length - 1, index + 1)] ?? curr
+    return chartStyle === "caiyun"
+      ? prev * 0.16 + curr * 0.68 + next * 0.16
+      : prev * 0.22 + curr * 0.56 + next * 0.22
+  }
+
+  return (
+    <VStack alignment="leading" spacing={chartStyle === "caiyun" ? 2 : 3} padding={{ top: 2 }}>
+      <ZStack alignment="bottomLeading" frame={{ height: chartHeight }}>
+        {/* 降水柱状图 */}
+        <HStack spacing={barSpacing} alignment="bottom">
+          {data.map((_, i) => {
+            const smoothed = getSmoothedValue(i)
+            let h = Math.min(chartHeight, smoothed * (chartHeight / (chartStyle === "caiyun" ? 1.35 : 1.5)))
+            if (smoothed > 0 && h < (chartStyle === "caiyun" ? 3 : 2.5)) h = chartStyle === "caiyun" ? 3 : 2.5
+            return (
+              <RoundedRectangle
+                key={i}
+                cornerRadius={chartStyle === "caiyun" ? 1.6 : 1.2}
+                fill={getBarColor(smoothed) as any}
+                frame={{ width: barWidth, height: h }}
+              />
+            )
+          })}
+        </HStack>
+      </ZStack>
+      
+      {/* 时间轴刻度 */}
+      <HStack frame={{ width: barWidth * 60 + barSpacing * 59 }}>
+        <SectionText text="现在" font={s(7, "weather")} color={labelColor} />
+        <Spacer />
+        <SectionText text="30分钟" font={s(7, "weather")} color={labelColor} />
+        <Spacer />
+        <SectionText text="60分钟" font={s(7, "weather")} color={labelColor} />
+      </HStack>
+    </VStack>
+  )
+}
+
 function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[]; widgetType: "medium" | "large" }) {
   const currentDate = new Date()
   const cityStr = getDisplayLocationText()
   const wDescText = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
+  
+  // 检查是否有雨，如果有雨则展示降雨图，否则展示未来 3 天预报
+  const isRaining = weatherInfo.precipitation && weatherInfo.precipitation.some(v => v > 0.02)
+  const showPrecipitationChart = isRaining && weatherInfo.precipitationDesc && !weatherInfo.precipitationDesc.includes("无雨")
+
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
   const leftWidth = widgetType === "medium" ? 210 : 200
@@ -1352,7 +1474,11 @@ function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { we
       </HStack>
       <Spacer minLength={widgetType === "medium" ? 0 : 1} />
       <HStack alignment="top" spacing={widgetType === "medium" ? 6 : 8} frame={{ width: leftWidth, alignment: "leading" }}>
-        {weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} widgetType={widgetType} /> : <Spacer />}
+        {showPrecipitationChart ? (
+          <RainingBarChart precipitation={weatherInfo.precipitation!} widgetType={widgetType} />
+        ) : (
+          weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} widgetType={widgetType} /> : <Spacer />
+        )}
       </HStack>
       <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText 
@@ -1576,9 +1702,11 @@ function ErrorWidgetView({ message }: { message: string }) {
 
 function WidgetRoot(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   const family = Widget.family
+  const skycon = props.weatherInfo.weatherIco ? Object.keys(weatherIcos).find(k => weatherIcos[k] === props.weatherInfo.weatherIco) : "CLEAR_DAY"
+  
   return (
     <ZStack alignment="topLeading" widgetURL={Script.createOpenURLScheme(scriptName)}>
-      <BackgroundLayer family={family} />
+      <BackgroundLayer family={family} skycon={skycon} />
       {family === "systemLarge" ? (
         <LargeWidgetView {...props} />
       ) : (
