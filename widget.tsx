@@ -321,6 +321,12 @@ function isWeatherCacheValid(cachedWeather: WeatherInfo | null, currentLat: numb
 async function getCurrentLocationInfo() {
   const globalLocation = (globalThis as any)?.location
   if (globalLocation && typeof globalLocation.latitude === "number" && typeof globalLocation.longitude === "number") {
+    // 同样检查精度：精度为 0 或无精度信息表示缓存/估算数据，不可靠
+    const acc = getLocationAccuracyValue(globalLocation)
+    if (acc === 0) {
+      appendDebugLog("globalThis.location accuracy is 0, skipping")
+      return null
+    }
     return globalLocation
   }
   return null
@@ -358,13 +364,20 @@ async function requestCurrentLocationInfo() {
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 8000))
       ])
       if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
+        const accuracy = getLocationAccuracyValue(reqLoc)
         appendDebugLog("request current location success", {
           latitude: (reqLoc as any).latitude,
           longitude: (reqLoc as any).longitude,
-          accuracy: getLocationAccuracyValue(reqLoc),
+          accuracy,
           accuracyStatus: getLocationAccuracyStatus(reqLoc),
           attempt,
         })
+        // 精度为 0 意味着 iOS 返回了缓存/估算坐标而非真实 GPS 修复
+        // 在小组件上下文中这很常见，坐标不可靠，不应直接使用
+        if (accuracy === 0) {
+          appendDebugLog("GPS accuracy is 0 (cached/estimated), skipping unreliable result")
+          continue
+        }
         return reqLoc
       }
     } catch (error) {
