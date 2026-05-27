@@ -344,28 +344,6 @@ function ConfigPage() {
 
   const timeGapList = [0, 5, 10, 15, 30]
 
-  async function triggerTestNotification() {
-    try {
-      await Notification.schedule({
-        title: "彩云天气：测试通知",
-        body: "这是一条来自主应用的立即测试通知，用于确认通知权限与样式是否正常。",
-        threadIdentifier: Script.name,
-      })
-
-      if (isLocalNotifyEnabled) {
-        await RainNotification("当前位置", "降水状况", "预计 30 分钟后有短时小雨，请记得带伞。")
-      }
-
-      if (isExtremeWeatherEnabled) {
-        await AlertNotification("暴雨蓝色预警测试，请关注最新天气变化。", "当前位置")
-      }
-
-      await showMessage("测试通知已发送", "请返回系统通知中心查看是否收到通知。")
-    } catch (error) {
-      await showMessage("测试通知失败", String((error as any)?.message || error))
-    }
-  }
-
   function updateChartStyle(nextStyle: "apple" | "caiyun") {
     const styleConfig = ensureStyleConfig() as any
     styleConfig.weatherChart = {
@@ -530,7 +508,10 @@ function ConfigPage() {
             <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.apiKeyText}</Text>
             <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
           </HStack>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<LocationSettingsPage />)}>
+          <HStack padding={16} spacing={12} alignment="center" onTapGesture={async () => {
+            await Navigation.present(<LocationSettingsPage />)
+            setStatusInfo(loadStatusInfo())
+          }}>
             <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemBlue" opacity={0.15} /><Image systemName="location.fill" foregroundStyle="systemBlue" font={16} /></ZStack>
             <Text fontWeight="bold">定位模式</Text>
             <Spacer />
@@ -619,18 +600,6 @@ function ConfigPage() {
                     <Text key={item} tag={item}>{item === 0 ? "自动" : `${item} 分钟`}</Text>
                   ))}
                 </Picker>
-              </HStack>
-
-              <HStack padding={16} spacing={12} alignment="center" onTapGesture={triggerTestNotification}>
-                <ZStack frame={{ width: 32, height: 32 }}>
-                  <Circle fill="systemPink" opacity={0.15} />
-                  <Image systemName="bell.and.waves.left.and.right.fill" foregroundStyle="systemPink" font={16} />
-                </ZStack>
-                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
-                  <Text fontWeight="bold">立即测试通知</Text>
-                  <Text font="caption" foregroundStyle="secondaryLabel">点按后立刻发送一条本地测试通知</Text>
-                </VStack>
-                <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
               </HStack>
 
               <DisclosureGroup
@@ -1146,7 +1115,19 @@ function LocationSettingsPage() {
           locationData: newLocationData,
           lockLocation: nextLockLocation
         }))
+        // 清除天气缓存，避免旧位置的通知数据残留
+        const weatherCachePath = `${appGroupDir}/cache_weather.json`
+        if (fm.existsSync(weatherCachePath)) {
+          fm.removeItemSync(weatherCachePath)
+          console.log("[main] cleared weather cache due to location change")
+        }
       }
+    } catch (e) {}
+    
+    // 清除通知缓存，避免旧位置的预警通知重复触发
+    try {
+      Storage.set("CurrentWeather", {})
+      console.log("[main] cleared notification cache due to location change")
     } catch (e) {}
     
     reloadWidgets()
@@ -1277,10 +1258,12 @@ function LocationSettingsPage() {
             const nextLock = !val
             setLockLocation(nextLock)
             persistLocation(nextLock, latitude, longitude, locality, subLocality, street)
+            setRefreshSeed((v) => v + 1)
           }} />
           <Toggle title="固定使用当前位置" systemImage="lock.fill" value={lockLocation} onChanged={(val) => {
             setLockLocation(val)
             persistLocation(val, latitude, longitude, locality, subLocality, street)
+            setRefreshSeed((v) => v + 1)
           }} />
         </Section>
 
