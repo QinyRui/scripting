@@ -1,52 +1,52 @@
 {
-  "remoteResource" : {
-    "hash" : "7bbae4ba2a5e442e66133915c3a1dc1a",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "autoUpdateInterval" : null
+  "localizedNames" : {
+    "en" : "",
+    "ru" : "",
+    "pt" : "",
+    "de" : "",
+    "es" : "",
+    "fr" : "",
+    "ja" : "",
+    "it" : "",
+    "zh" : ""
   },
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
   "color" : "rgba(174, 109, 216,1)",
-  "name" : "☁️彩云天气(^ᴗ^)☁️",
-  "runInApp" : true,
-  "icon" : "cloud.fill",
+  "intentInputTypes" : [
+
+  ],
+  "remoteResource" : {
+    "hash" : "1bce70162d3aa038690f0da87fbefa66",
+    "autoUpdateInterval" : null,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
+  },
+  "version" : "4.1.3",
   "contributors" : [
     {
       "name" : "QinyRui",
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "email" : "602839678@qq.com"
     }
   ],
+  "localizedDescriptions" : {
+    "fr" : "",
+    "ja" : "",
+    "pt" : "",
+    "de" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "it" : "",
+    "zh" : ""
+  },
+  "runInApp" : true,
+  "description" : "",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "entry" : "index.tsx",
+  "icon" : "cloud.fill",
   "author" : {
-    "email" : "602839678@qq.com",
     "name" : "QinyRui",
+    "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
   },
-  "localizedNames" : {
-    "ru" : "",
-    "de" : "",
-    "it" : "",
-    "en" : "",
-    "es" : "",
-    "zh" : "",
-    "ja" : "",
-    "fr" : "",
-    "pt" : ""
-  },
-  "localizedDescriptions" : {
-    "en" : "",
-    "it" : "",
-    "de" : "",
-    "ru" : "",
-    "zh" : "",
-    "fr" : "",
-    "es" : "",
-    "ja" : "",
-    "pt" : ""
-  },
-  "entry" : "index.tsx",
-  "description" : "",
-  "version" : "4.1.3",
-  "intentInputTypes" : [
-
-  ]
+  "name" : "☁️彩云天气(^ᴗ^)☁️"
 }
