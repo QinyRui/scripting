@@ -1,52 +1,52 @@
 {
-  "icon" : "cloud.fill",
-  "runInApp" : true,
-  "contributors" : [
-    {
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "name" : "QinyRui"
-    }
-  ],
-  "entry" : "index.tsx",
-  "intentInputTypes" : [
-
-  ],
-  "version" : "4.1.1",
   "remoteResource" : {
-    "autoUpdateInterval" : null,
+    "hash" : "7bbae4ba2a5e442e66133915c3a1dc1a",
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "110368ffc3061488c43e050fa694e38c"
-  },
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui"
-  },
-  "description" : "",
-  "name" : "☁️彩云天气(^ᴗ^)☁️",
-  "localizedNames" : {
-    "zh" : "",
-    "es" : "",
-    "it" : "",
-    "en" : "",
-    "fr" : "",
-    "pt" : "",
-    "ja" : "",
-    "ru" : "",
-    "de" : ""
+    "autoUpdateInterval" : null
   },
   "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
-  "localizedDescriptions" : {
-    "pt" : "",
-    "fr" : "",
-    "ja" : "",
-    "zh" : "",
-    "it" : "",
-    "en" : "",
+  "color" : "rgba(174, 109, 216,1)",
+  "name" : "☁️彩云天气(^ᴗ^)☁️",
+  "runInApp" : true,
+  "icon" : "cloud.fill",
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "localizedNames" : {
     "ru" : "",
     "de" : "",
-    "es" : ""
+    "it" : "",
+    "en" : "",
+    "es" : "",
+    "zh" : "",
+    "ja" : "",
+    "fr" : "",
+    "pt" : ""
   },
-  "color" : "rgba(174, 109, 216,1)"
+  "localizedDescriptions" : {
+    "en" : "",
+    "it" : "",
+    "de" : "",
+    "ru" : "",
+    "zh" : "",
+    "fr" : "",
+    "es" : "",
+    "ja" : "",
+    "pt" : ""
+  },
+  "entry" : "index.tsx",
+  "description" : "",
+  "version" : "4.1.2",
+  "intentInputTypes" : [
+
+  ]
 }
