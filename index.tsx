@@ -1,6 +1,11 @@
 import { SettingView, profile } from "./pages/setting"
 import { safeGetWeather } from "./utils/weather"
 import { RainNotification, AlertNotification } from "./notification_logic"
+import { ApiKeySettingsPage } from "./pages/api-key-settings"
+import { FontSettingsPage } from "./pages/font-settings"
+import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
+import { NotificationSettingsPage } from "./pages/notification-settings"
+import { LayoutSettingsPage } from "./pages/layout-settings"
 import {
   Script,
   Navigation,
@@ -503,13 +508,14 @@ function ConfigPage() {
         </Section>
 
         <Section header={<Text font="headline">基础配置</Text>}>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<ApiKeySettingsPage />)}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemYellow" opacity={0.15} /><Image systemName="key.fill" foregroundStyle="systemYellow" font={16} /></ZStack>
-            <Text fontWeight="bold">API Key</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.apiKeyText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
+          <NavigationLink destination={<ApiKeySettingsPage />}>
+            <HStack padding={16} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemYellow" opacity={0.15} /><Image systemName="key.fill" foregroundStyle="systemYellow" font={16} /></ZStack>
+              <Text fontWeight="bold">API Key</Text>
+              <Spacer />
+              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.apiKeyText}</Text>
+            </HStack>
+          </NavigationLink>
         </Section>
 
         {/* 与 Colorful Clouds 一致的「获取位置」板块 */}
@@ -588,140 +594,42 @@ function ConfigPage() {
           </HStack>
         </Section>
 
-        <Section
-          header={<Text font="headline">通知</Text>}
-          footer={
-            isPrecipitationEnabled ? (
-              <VStack alignment="leading" spacing={4} padding={{ top: 8 }}>
-                <HStack spacing={0}>
-                  <Text font="caption" foregroundStyle="secondaryLabel">· 极端天气：其定义可查看 </Text>
-                  <Link url="https://open.caiyunapp.com/彩云天气数据格式速查表#.E5.A4.A9.E6.B0.94.E9.A2.84.E8.AD.A6.E4.BF.A1.E6.81.AF">
-                    <Text font="caption" foregroundStyle="systemBlue">官方文档</Text>
-                  </Link>
-                </HStack>
-                <Text font="caption" foregroundStyle="secondaryLabel">· 提示通知：指内容不包含数字，仅提示作用，例如“深夜了”</Text>
-              </VStack>
-            ) : undefined
-          }>
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}>
-              <Circle fill="systemGreen" opacity={0.15} />
-              <Image systemName="bell.badge.fill" foregroundStyle="systemGreen" font={16} />
-            </ZStack>
-            <Text fontWeight="bold">通知开关</Text>
-            <Spacer />
-            <Toggle
-              title=""
-              value={isPrecipitationEnabled}
-              onChanged={(val) => {
-                setIsPrecipitationEnabled(val)
-                saveNotificationProfile(val, isExtremeWeatherEnabled, isLocalNotifyEnabled, isSurroundNotifyEnabled, isUselessNotificationEnabled, notificationInterval)
-              }}
-            />
-          </HStack>
-
-          {isPrecipitationEnabled && (
-            <>
-              <HStack padding={16} spacing={12} alignment="center">
-                <ZStack frame={{ width: 32, height: 32 }}>
-                  <Circle fill="systemOrange" opacity={0.15} />
-                  <Image systemName="timer" foregroundStyle="systemOrange" font={16} />
-                </ZStack>
-                <Text fontWeight="bold">通知时间间隔</Text>
-                <Spacer />
-                <Picker
-                  title=""
-                  pickerStyle="menu"
-                  value={notificationInterval}
-                  onChanged={(val: number) => {
-                    setNotificationInterval(val)
-                    saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, isLocalNotifyEnabled, isSurroundNotifyEnabled, isUselessNotificationEnabled, val)
-                  }}>
-                  {[0, 5, 10, 15, 30].map((item) => (
-                    <Text key={item} tag={item}>{item === 0 ? "自动" : `${item} 分钟`}</Text>
-                  ))}
-                </Picker>
-              </HStack>
-
-              <DisclosureGroup
-                title="通知类型"
-                label={
-                  <HStack spacing={12} alignment="center">
-                    <ZStack frame={{ width: 32, height: 32 }}>
-                      <Circle fill="systemIndigo" opacity={0.15} />
-                      <Image systemName="checklist" foregroundStyle="systemIndigo" font={16} />
-                    </ZStack>
-                    <Text fontWeight="bold">通知类型</Text>
-                  </HStack>
-                }>
-                <VStack spacing={0}>
-                  <Toggle
-                    title="极端天气"
-                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
-                    value={isExtremeWeatherEnabled}
-                    onChanged={(val) => {
-                      setIsExtremeWeatherEnabled(val)
-                      saveNotificationProfile(isPrecipitationEnabled, val, isLocalNotifyEnabled, isSurroundNotifyEnabled, isUselessNotificationEnabled, notificationInterval)
-                    }}
-                  />
-                  <Divider padding={{ leading: 44 }} />
-                  <Toggle
-                    title="降水通知"
-                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
-                    value={isLocalNotifyEnabled}
-                    onChanged={(val) => {
-                      setIsLocalNotifyEnabled(val)
-                      saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, val, isSurroundNotifyEnabled, isUselessNotificationEnabled, notificationInterval)
-                    }}
-                  />
-                  <Divider padding={{ leading: 44 }} />
-                  <Toggle
-                    title="周边通知"
-                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
-                    value={isSurroundNotifyEnabled}
-                    onChanged={(val) => {
-                      setIsSurroundNotifyEnabled(val)
-                      saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, isLocalNotifyEnabled, val, isUselessNotificationEnabled, notificationInterval)
-                    }}
-                  />
-                  <Divider padding={{ leading: 44 }} />
-                  <Toggle
-                    title="提示通知"
-                    padding={{ leading: 44, trailing: 16, vertical: 12 }}
-                    value={isUselessNotificationEnabled}
-                    onChanged={(val) => {
-                      setIsUselessNotificationEnabled(val)
-                      saveNotificationProfile(isPrecipitationEnabled, isExtremeWeatherEnabled, isLocalNotifyEnabled, isSurroundNotifyEnabled, val, notificationInterval)
-                    }}
-                  />
-                </VStack>
-              </DisclosureGroup>
-            </>
-          )}
+        <Section header={<Text font="headline">通知</Text>}>
+          <NavigationLink destination={<NotificationSettingsPage />}>
+            <HStack padding={16} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="bell.badge.fill" foregroundStyle="systemGreen" font={16} /></ZStack>
+              <Text fontWeight="bold">通知设置</Text>
+              <Spacer />
+              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{isPrecipitationEnabled ? "已开启" : "已关闭"}</Text>
+            </HStack>
+          </NavigationLink>
         </Section>
 
         <Section header={<Text font="headline">外观设计</Text>}>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<FontSizeSettingsPage />)}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPurple" opacity={0.15} /><Image systemName="textformat.size" foregroundStyle="systemPurple" font={16} /></ZStack>
-            <Text fontWeight="bold">字体大小</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.fontSizeText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<FontColorSettingsPage />)}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPink" opacity={0.15} /><Image systemName="paintpalette.fill" foregroundStyle="systemPink" font={16} /></ZStack>
-            <Text fontWeight="bold">字体颜色</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.fontColorText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<LayoutSettingsPage />)}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="slider.horizontal.3" foregroundStyle="systemOrange" font={16} /></ZStack>
-            <Text fontWeight="bold">布局偏移</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.layoutText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
+          <NavigationLink destination={<FontSettingsPage />}>
+            <HStack padding={16} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPurple" opacity={0.15} /><Image systemName="textformat.abc" foregroundStyle="systemPurple" font={16} /></ZStack>
+              <Text fontWeight="bold">字体设置</Text>
+              <Spacer />
+              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.fontSizeText} / {statusInfo.fontColorText}</Text>
+            </HStack>
+          </NavigationLink>
+          <NavigationLink destination={<WallpaperSettingsPage />}>
+            <HStack padding={16} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="photo.on.rectangle" foregroundStyle="systemTeal" font={16} /></ZStack>
+              <Text fontWeight="bold">壁纸设置</Text>
+              <Spacer />
+              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.backgroundText}</Text>
+            </HStack>
+          </NavigationLink>
+          <NavigationLink destination={<LayoutSettingsPage />}>
+            <HStack padding={16} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="slider.horizontal.3" foregroundStyle="systemOrange" font={16} /></ZStack>
+              <Text fontWeight="bold">布局偏移</Text>
+              <Spacer />
+              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.layoutText}</Text>
+            </HStack>
+          </NavigationLink>
           <VStack alignment="leading" spacing={12} padding={16}>
             <HStack spacing={12} alignment="center">
               <ZStack frame={{ width: 32, height: 32 }}>
@@ -756,13 +664,7 @@ function ConfigPage() {
             </HStack>
           </VStack>
 
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={() => Navigation.present(<BackgroundSettingsPage />)}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="photo.on.rectangle.angled" foregroundStyle="systemTeal" font={16} /></ZStack>
-            <Text fontWeight="bold">透明壁纸</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.backgroundText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
+
         </Section>
 
       </List>
@@ -1017,37 +919,6 @@ function renderActionValueRow(icon: string, title: string, value: string, action
   )
 }
 
-function ApiKeySettingsPage() {
-  const dismiss = Navigation.useDismiss()
-  const current = readJson<{ apiKey?: string }>(keyCachePath)?.apiKey || ""
-  const [apiKey, setApiKey] = useState(current)
-
-  function save() {
-    writeApiKey(apiKey)
-    reloadWidgets()
-    dismiss()
-  }
-
-  return (
-    <NavigationStack>
-      <List
-        navigationTitle="API Key"
-        navigationBarTitleDisplayMode="inline"
-        toolbar={{
-          cancellationAction: <Button title="取消" action={dismiss} />,
-          confirmationAction: <Button title="保存" action={save} />,
-        }}
-      >
-        <Section>
-          <VStack alignment="leading" spacing={6}>
-            <Text>请输入彩云天气 Token，保存后会立即同步到桌面组件。</Text>
-            <TextField title="API Key" prompt="请输入 Token" value={apiKey} onChanged={setApiKey} autofocus />
-          </VStack>
-        </Section>
-      </List>
-    </NavigationStack>
-  )
-}
 
 function RefreshSettingsPage() {
   const dismiss = Navigation.useDismiss()
@@ -1170,39 +1041,6 @@ function LocationSettingsPage() {
   )
 }
 
-function LayoutSettingsPage() {
-  const dismiss = Navigation.useDismiss()
-  const styleConfig = ensureStyleConfig() as any
-  const mediumLeft = styleConfig.layout?.medium?.left || { x: 0, y: 0 }
-  const mediumRight = styleConfig.layout?.medium?.right || { x: 0, y: 0 }
-  const largeLeft = styleConfig.layout?.large?.left || { x: 0, y: 0 }
-  const largeRight = styleConfig.layout?.large?.right || { x: 0, y: 0 }
-
-  return (
-    <NavigationStack>
-      <List
-        navigationTitle="布局偏移"
-        navigationBarTitleDisplayMode="inline"
-        toolbar={{
-          cancellationAction: <Button title="返回" action={dismiss} />,
-        }}
-      >
-        <Section title="中号组件">
-          <Button title={`左侧区域  X:${mediumLeft.x || 0}  Y:${mediumLeft.y || 0}`} action={() => adjustLayoutOffset("medium", "left")} />
-          <Button title={`右侧区域  X:${mediumRight.x || 0}  Y:${mediumRight.y || 0}`} action={() => adjustLayoutOffset("medium", "right")} />
-        </Section>
-        <Section title="大号组件">
-          <Button title={`左侧区域  X:${largeLeft.x || 0}  Y:${largeLeft.y || 0}`} action={() => adjustLayoutOffset("large", "left")} />
-          <Button title={`右侧区域  X:${largeRight.x || 0}  Y:${largeRight.y || 0}`} action={() => adjustLayoutOffset("large", "right")} />
-        </Section>
-        <Section>
-          <Button title="恢复全部默认偏移" action={resetAllLayoutOffsets} />
-          <Text>修改后会自动刷新桌面组件。若桌面仍显示旧画面，请长按组件编辑后返回，或删除后重新添加。</Text>
-        </Section>
-      </List>
-    </NavigationStack>
-  )
-}
 
 function hasBackgroundForFamily(family: string) {
   const meta = readJson<{ path?: string }>(getWidgetBgMetaPath(family))
