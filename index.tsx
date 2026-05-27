@@ -1,5 +1,5 @@
 import { SettingView, profile } from "./pages/setting"
-import { safeGetWeather } from "./widget"
+import { safeGetWeather } from "./utils/weather"
 import { RainNotification, AlertNotification } from "./notification_logic"
 import {
   Script,
@@ -539,7 +539,7 @@ function ConfigPage() {
                 },
               })
               // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
-              Storage.set("CloudyWeatherLocation", {
+              Storage.set("Location", {
                 latitude: location.latitude,
                 longitude: location.longitude,
                 locality: "",
@@ -1128,7 +1128,7 @@ function LocationSettingsPage() {
         },
       })
       // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
-      Storage.set("CloudyWeatherLocation", {
+      Storage.set("Location", {
         latitude: location.latitude,
         longitude: location.longitude,
         locality: "",
@@ -2025,7 +2025,7 @@ async function setupLocation() {
       },
     })
     // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
-    Storage.set("CloudyWeatherLocation", {
+    Storage.set("Location", {
       latitude: l.latitude,
       longitude: l.longitude,
       locality: geo.locality || "",
