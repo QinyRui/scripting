@@ -59,6 +59,10 @@ export function SectionText(props: { text: string | string[]; font?: number; col
 
 // ─── 背景层 ───
 export function BackgroundLayer({ family, skycon }: { family: string; skycon?: string }) {
+  // 透明背景模式：当用户在 Scripting 中开启透明背景时，不渲染任何背景
+  if (Widget.isTransparentBackground) {
+    return <></>
+  }
   const backgroundPath = getBackgroundPath(family)
   if (!colorMode && backgroundPath) {
     return (
