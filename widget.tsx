@@ -1046,8 +1046,11 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
   // isCurrentLocation：未锁定位置时为当前位置，锁定位置时为指定位置
   // 关键：Colorful Clouds 传入的是 data.result（内层对象），不是整个 data
   const isCurrentLocation = !lockLocation
+  // 从 Storage 读取用户通知设置配置（与主应用 SETTING_KEY 一致）
+  const appProfile = (Storage.get("ColorfulCloudsSetting") as any) || {}
+  const notificationSettings = appProfile.notification || {}
   try {
-    handleNotifications(data.result, isCurrentLocation).catch(err => {
+    handleNotifications(data.result, isCurrentLocation, notificationSettings).catch(err => {
       appendDebugLog("handleNotifications background error", { message: String(err) })
     })
   } catch (err) {
