@@ -52,7 +52,7 @@ export async function handleNotifications(result: any, isCurrentLocation: boolea
 
     const rainContent = result.minutely?.description || "";
     const storedRainContent = stored.rain.content || "";
-    const storedTime = stored.rain.time || 0;
+    const storedTime = stored.alert.time || 0;
     const now = Date.now();
 
     // 检查时间间隔 (分钟转毫秒)
@@ -87,7 +87,7 @@ export async function handleNotifications(result: any, isCurrentLocation: boolea
         const newTitles = alertContent.map((item: any) => item.title);
         const storedTitles = stored.alert.content || [];
 
-        if (ExtremeWeather) {
+        if (ExtremeWeather && isCurrentLocation) {
             const unseenTitles = newTitles.filter((title: string) => !storedTitles.includes(title));
             if (unseenTitles.length > 0) {
                 const content = unseenTitles.join("\n");
