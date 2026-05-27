@@ -193,17 +193,20 @@ function writeApiKey(apiKey: string) {
 }
 
 function writeLocationCaches(locationConfig: LocationConfig) {
-  writeJson(locCachePath, locationConfig)
-  // Write to both locCachePath and locCachePath for AppGroup to be sure.
+  // 附加设备指纹，widget 读取时可校验是否同一台设备
+  const ownerDeviceId = `${Device.model}-${Device.screen.width}x${Device.screen.height}@${Device.screen.scale}-${Device.systemVersion}`
+  const configWithFingerprint = { ...locationConfig, ownerDeviceId }
+  writeJson(locCachePath, configWithFingerprint)
+  // Write to both locCachePath and AppGroup to be sure.
   const appGroupLocConfigPath = `${appGroupDir}/caiyun_location_config.json`
   if (appGroupDir) {
-    writeJson(appGroupLocConfigPath, locationConfig)
+    writeJson(appGroupLocConfigPath, configWithFingerprint)
   }
   
   // appGroupDir 也写入完整的 locationData，确保 widget 读取时字段一致
   const fullLocationData = {
     ...(locationConfig.locationData || {}),
-    // 确保 widget 的 extractLocationData 能正确解析
+    ownerDeviceId,
   }
   writeJson(locationCachePath, fullLocationData)
 }
@@ -1104,16 +1107,20 @@ function LocationSettingsPage() {
     // Write directly to app group cache to make sure widget picks up the change immediately
     try {
       const appGroupDir = fm.appGroupDocumentsDirectory
+      // 生成设备指纹，防止分享脚本后别人的 widget 读到旧 config
+      const ownerDeviceId = `${Device.model}-${Device.screen.width}x${Device.screen.height}@${Device.screen.scale}-${Device.systemVersion}`
       if (appGroupDir) {
         const cacheLocPath = `${appGroupDir}/cache_loc.json`
         fm.writeAsStringSync(cacheLocPath, JSON.stringify({
           locationData: newLocationData,
-          lockLocation: nextLockLocation
+          lockLocation: nextLockLocation,
+          ownerDeviceId,
         }))
         const configPath = `${appGroupDir}/caiyun_location_config.json`
         fm.writeAsStringSync(configPath, JSON.stringify({
           locationData: newLocationData,
-          lockLocation: nextLockLocation
+          lockLocation: nextLockLocation,
+          ownerDeviceId,
         }))
         // 清除天气缓存，避免旧位置的通知数据残留
         const weatherCachePath = `${appGroupDir}/cache_weather.json`
@@ -2528,21 +2535,34 @@ async function setupLayout() {
   await adjustLayoutOffset(widgetType, sideIdx === 0 ? "left" : "right")
 }
 
+/** 需要在设置完成后自动弹出预览的 action 列表 */
+const AUTO_PREVIEW_ACTIONS = new Set([
+  "font-size",
+  "font-color",
+  "layout",
+  "change-background",
+  "clear-background",
+  "transparent-background",
+])
+
 async function handleAction(action: string) {
   if (action === "preview-medium") return previewWidget("systemMedium")
   if (action === "preview-large") return previewWidget("systemLarge")
   if (action === "api-key") return inputApiKey()
   if (action === "location") return setupLocation()
   if (action === "refresh") return setupRefreshInterval()
-  if (action === "font-size") return setupFontSize()
-  if (action === "font-color") return setupFontColor()
-  if (action === "layout") return setupLayout()
-  if (action === "change-background") return changeBackground()
-  if (action === "clear-background") return clearBackground()
-  if (action === "transparent-background") return transparentBackground()
-  if (action === "refresh-weather-background") {
+  if (action === "font-size") await setupFontSize()
+  else if (action === "font-color") await setupFontColor()
+  else if (action === "layout") await setupLayout()
+  else if (action === "change-background") await changeBackground()
+  else if (action === "clear-background") await clearBackground()
+  else if (action === "transparent-background") await transparentBackground()
+  else if (action === "refresh-weather-background") {
     reloadWidgets("force-refresh")
-    return
+  }
+  // 设置完成后自动弹出组件预览，让用户立即看到效果
+  if (AUTO_PREVIEW_ACTIONS.has(action)) {
+    await previewWidget("systemMedium")
   }
 }
 
