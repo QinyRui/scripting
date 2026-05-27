@@ -538,6 +538,15 @@ function ConfigPage() {
                   resolvedAt: Date.now(),
                 },
               })
+              // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
+              Storage.set("CloudyWeatherLocation", {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                locality: "",
+                subLocality: "",
+                name: "",
+                resolvedAt: Date.now(),
+              })
               reloadWidgets()
               await Pasteboard.setString(JSON.stringify(location))
               await Dialog.alert({
@@ -1117,6 +1126,15 @@ function LocationSettingsPage() {
           name: "",
           resolvedAt: Date.now(),
         },
+      })
+      // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
+      Storage.set("CloudyWeatherLocation", {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        locality: "",
+        subLocality: "",
+        name: "",
+        resolvedAt: Date.now(),
       })
       reloadWidgets()
 
@@ -2005,6 +2023,21 @@ async function setupLocation() {
         name: fineName,
         resolvedAt: Date.now(),
       },
+    })
+    // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
+    Storage.set("CloudyWeatherLocation", {
+      latitude: l.latitude,
+      longitude: l.longitude,
+      locality: geo.locality || "",
+      subLocality: geo.subLocality || "",
+      administrativeArea: geo.administrativeArea || "",
+      subAdministrativeArea: "",
+      town: "",
+      street: street || "",
+      neighborhood: "",
+      quarter: "",
+      name: fineName,
+      resolvedAt: Date.now(),
     })
 
     appendLocationDebugLog("Map Pick Location", {
