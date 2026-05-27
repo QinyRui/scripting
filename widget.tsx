@@ -179,6 +179,9 @@ type WeatherInfo = {
   updatedAt?: number
   precipitation?: number[]
   precipitationDesc?: string
+  /** 缓存时的坐标，用于验证缓存是否有效 */
+  cachedLatitude?: number
+  cachedLongitude?: number
 }
 
 type PoetryInfo = {
@@ -275,6 +278,45 @@ const locationCachePath = `${appGroupDir}/cache_loc.json`
 const widgetDebugLogPath = `${appGroupDir}/widget_debug.log`
 const widgetReloadControlPath = `${appGroupDir}/widget_reload_control.json`
 
+/** 计算两个坐标之间的距离（米） */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000 // 地球半径（米）
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+/** 检查缓存的天气是否对当前坐标有效（5公里内视为有效） */
+function isWeatherCacheValid(cachedWeather: WeatherInfo | null, currentLat: number, currentLon: number): boolean {
+  if (!cachedWeather || !cachedWeather.cachedLatitude || !cachedWeather.cachedLongitude) return false
+  if (!cachedWeather.updatedAt) return false
+  
+  // 检查时间：超过30分钟则无效
+  const age = Date.now() - cachedWeather.updatedAt
+  if (age > 30 * 60 * 1000) return false
+  
+  // 检查距离：超过5公里则无效
+  const distance = calculateDistance(
+    cachedWeather.cachedLatitude,
+    cachedWeather.cachedLongitude,
+    currentLat,
+    currentLon
+  )
+  appendDebugLog("weather cache location check", {
+    cachedLat: cachedWeather.cachedLatitude,
+    cachedLon: cachedWeather.cachedLongitude,
+    currentLat,
+    currentLon,
+    distance: Math.round(distance),
+    valid: distance < 5000
+  })
+  return distance < 5000
+}
+
 async function getCurrentLocationInfo() {
   const globalLocation = (globalThis as any)?.location
   if (globalLocation && typeof globalLocation.latitude === "number" && typeof globalLocation.longitude === "number") {
@@ -310,7 +352,7 @@ async function requestCurrentLocationInfo() {
     }
     const reqLoc = await Promise.race([
       Location.requestCurrent({ forceRequest: true }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 10000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 15000))
     ])
     if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
       appendDebugLog("request current location success", {
@@ -327,6 +369,22 @@ async function requestCurrentLocationInfo() {
     })
   }
   return getCurrentLocationInfo()
+}
+
+/** 通过 IP 获取粗略位置（GPS 失败时的后备方案） */
+async function getIPLocationInfo(): Promise<{ latitude: number; longitude: number; locality?: string } | null> {
+  try {
+    appendDebugLog("trying IP-based geolocation fallback")
+    const response = await fetch("http://ip-api.com/json/?fields=status,lat,lon,city&lang=zh-CN")
+    const data = await response.json()
+    if (data?.status === "success" && typeof data.lat === "number" && typeof data.lon === "number") {
+      appendDebugLog("IP geolocation success", { latitude: data.lat, longitude: data.lon, city: data.city })
+      return { latitude: data.lat, longitude: data.lon, locality: data.city || "" }
+    }
+  } catch (error) {
+    appendDebugLog("IP geolocation failed", { message: String((error as any)?.message || error) })
+  }
+  return null
 }
 
 const Cache = {
@@ -707,91 +765,150 @@ async function getJson(url: string) {
 }
 
 async function getLocation(): Promise<LocationData> {
-  // 1. 以 documentsDir 的 config 为权威来源（主应用写入）
   const savedConfig = getSavedLocationConfig()
-  if (savedConfig?.locationData) {
-    locationData = {
-      ...locationData,
-      ...savedConfig.locationData,
-    }
-    lockLocation = !!savedConfig.lockLocation
-  }
+  const savedLocation = savedConfig?.locationData
+  lockLocation = !!savedConfig?.lockLocation
 
-  // 2. 如果 appGroup 缓存有更新的数据，合并坐标和地名
-  const cached = Cache.read<LocationData>(locationCachePath)
-  // 如果锁定了位置，直接忽略 appGroup 中的自动定位缓存
-  if (cached && hasValidCoordinates(cached) && !lockLocation) {
-    // 只在缓存比 savedConfig 更新时才采用
-    const cachedTime = cached.resolvedAt || 0
-    const savedTime = savedConfig?.locationData?.resolvedAt || 0
-    if (cachedTime > savedTime) {
-      locationData = {
-        ...locationData,
-        ...cached,
+  // 尽量贴近 Colorful Clouds：参数优先
+  const widgetParameter = String((Widget as any)?.parameter || "").trim()
+  if (widgetParameter && widgetParameter !== "dev") {
+    try {
+      const parsed = JSON.parse(widgetParameter)
+      if (typeof parsed?.latitude === "number" && typeof parsed?.longitude === "number") {
+        const parameterLocation: LocationData = {
+          ...locationData,
+          latitude: parsed.latitude,
+          longitude: parsed.longitude,
+          resolvedAt: Date.now(),
+        }
+        locationData = await resolveLocationNameIfNeeded(parameterLocation)
+        Cache.write(locationCachePath, locationData)
+        appendDebugLog("using widget parameter location", locationData)
+        return locationData
       }
+    } catch (error) {
+      appendDebugLog("invalid widget parameter location", {
+        parameter: widgetParameter,
+        message: String((error as any)?.message || error),
+      })
     }
   }
 
-  // 3. 如果锁定位置或无法获取实时 GPS，直接使用缓存
-  if (lockLocation) {
-    locationData = await resolveLocationNameIfNeeded(locationData)
-    appendDebugLog("using cached/saved location only (locked)", {
+  // 锁定位置时才使用已保存位置
+  if (lockLocation && savedLocation && hasValidCoordinates(savedLocation)) {
+    locationData = await resolveLocationNameIfNeeded({
+      ...locationData,
+      ...savedLocation,
+    })
+    appendDebugLog("using locked saved location", {
       lockLocation,
       locationData,
     })
     return locationData
   }
 
-  const liveLocation = await requestCurrentLocationInfo()
+  // 自动定位：像 Colorful Clouds 一样，先直接请求当前位置
+  try {
+    const liveLocation = await requestCurrentLocationInfo()
+    if (liveLocation && typeof liveLocation.latitude === "number" && typeof liveLocation.longitude === "number") {
+      // 关键：Colorful Clouds 的做法 —— 拿到新坐标后，创建一个干净的 LocationData
+      // 不展开旧的地名缓存，这样如果 reverse geocode 失败，旧地名不会污染新坐标
+      const liveBaseLocation: LocationData = {
+        latitude: liveLocation.latitude,
+        longitude: liveLocation.longitude,
+        locality: "",
+        subLocality: "",
+        name: "",
+        horizontalAccuracy: getLocationAccuracyValue(liveLocation),
+        resolvedAt: Date.now(),
+      }
 
-  // 如果没有锁死，尝试获取当前位置
-  if (!liveLocation || typeof liveLocation.latitude !== "number") {
-    locationData = await resolveLocationNameIfNeeded(locationData)
-    return locationData
+      appendDebugLog("request current location success", {
+        latitude: liveBaseLocation.latitude,
+        longitude: liveBaseLocation.longitude,
+        accuracy: liveBaseLocation.horizontalAccuracy,
+        accuracyStatus: getLocationAccuracyStatus(liveBaseLocation),
+      })
+
+      // 名称解析失败不阻塞实时坐标使用
+      try {
+        locationData = await resolveLocationNameIfNeeded(liveBaseLocation, true)
+      } catch (error) {
+        locationData = liveBaseLocation
+        appendDebugLog("resolve live location name failed, keep coordinates only", {
+          message: String((error as any)?.message || error),
+          locationData,
+        })
+      }
+
+      Cache.write(locationCachePath, locationData)
+      appendDebugLog("using current location", locationData)
+      return locationData
+    }
+  } catch (error) {
+    appendDebugLog("request current location failed", {
+      message: String((error as any)?.message || error),
+    })
   }
 
-  // 4. 自动 GPS 模式：用实时位置更新
-  try {
-    const l = liveLocation
-    // 强制每次获取最新位置时都进行反编码，确保地址随 GPS 变化
-    const liveResolved = await resolveLocationNameIfNeeded({
-      ...locationData, // 传入当前已有的位置数据作为基准，避免解析失败时返回空数据
-      latitude: l.latitude,
-      longitude: l.longitude,
-      resolvedAt: Date.now(),
-    }, true)
-    
-    // 如果返回的数据中没有任何地名信息（说明解析完全失败且没能找回旧数据），则保留旧的名称字段
-    const hasName = isMeaningfulName(liveResolved.locality) || isMeaningfulName(liveResolved.name)
-    
-    locationData = {
-      ...(hasName ? liveResolved : { ...locationData, latitude: l.latitude, longitude: l.longitude }),
-      horizontalAccuracy: getLocationAccuracyValue(l),
+  // GPS 失败后，先尝试 IP 定位（自动模式下）
+  const ipLocation = await getIPLocationInfo()
+  if (ipLocation && typeof ipLocation.latitude === "number" && typeof ipLocation.longitude === "number") {
+    const ipBaseLocation: LocationData = {
+      latitude: ipLocation.latitude,
+      longitude: ipLocation.longitude,
+      locality: ipLocation.locality || "",
+      subLocality: "",
+      name: "",
+      horizontalAccuracy: 5000, // IP 定位精度较低
       resolvedAt: Date.now(),
     }
-    // 同步写入 appGroup 缓存
-    Cache.write(locationCachePath, locationData)
-    // 同步写回 documentsDir config，但不改变 lockLocation 设置
     try {
-      const current = FileManager.existsSync(locCachePath) ? FileManager.readAsStringSync(locCachePath) : "{}"
-      const config = current ? JSON.parse(current) : {}
-      FileManager.writeAsStringSync(locCachePath, JSON.stringify({
-        ...config,
-        lockLocation: config.lockLocation ?? false,
-        locationData,
-      }))
-    } catch {}
-    appendDebugLog("resolved live location", {
-      ...locationData,
-      accuracyStatus: getLocationAccuracyStatus(locationData),
-    })
+      locationData = await resolveLocationNameIfNeeded(ipBaseLocation, true)
+    } catch {
+      locationData = ipBaseLocation
+    }
+    Cache.write(locationCachePath, locationData)
+    appendDebugLog("using IP geolocation fallback", locationData)
     return locationData
-  } catch (error) {
-    appendDebugLog("location resolve failed", {
-      message: String((error as any)?.message || error),
-      fallbackLocation: locationData,
-    })
   }
+
+  // IP 定位也失败，才回退缓存
+  const cached = Cache.read<LocationData>(locationCachePath)
+  if (cached && hasValidCoordinates(cached)) {
+    try {
+      locationData = await resolveLocationNameIfNeeded({
+        ...locationData,
+        ...cached,
+      })
+    } catch {
+      locationData = {
+        ...locationData,
+        ...cached,
+      }
+    }
+    appendDebugLog("fallback to cached location", locationData)
+    return locationData
+  }
+
+  // 再兜底保存位置
+  if (savedLocation && hasValidCoordinates(savedLocation)) {
+    try {
+      locationData = await resolveLocationNameIfNeeded({
+        ...locationData,
+        ...savedLocation,
+      })
+    } catch {
+      locationData = {
+        ...locationData,
+        ...savedLocation,
+      }
+    }
+    appendDebugLog("fallback to saved location", locationData)
+    return locationData
+  }
+
+  appendDebugLog("location fallback failed, returning default placeholder", locationData)
   return locationData
 }
 
@@ -871,12 +988,23 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
     info.sunset = daily.astro[0].sunset.time
   }
 
+  // 添加坐标到缓存，用于后续验证
+  info.cachedLatitude = location.latitude
+  info.cachedLongitude = location.longitude
   info.updatedAt = Date.now()
   Cache.write(weatherCachePath, info)
+  appendDebugLog("weather cached with location", {
+    latitude: location.latitude,
+    longitude: location.longitude,
+    alertCount: Array.isArray(data.result?.alert?.content) ? data.result.alert.content.length : 0
+  })
 
-  // 处理通知逻辑
+  // 处理通知逻辑（通知模块内部会自行读取最新 Storage 配置，避免使用过期 profile）
+  // isCurrentLocation：未锁定位置时为当前位置，锁定位置时为指定位置
+  // 关键：Colorful Clouds 传入的是 data.result（内层对象），不是整个 data
+  const isCurrentLocation = !lockLocation
   try {
-    handleNotifications(data, true, profile.notification).catch(err => {
+    handleNotifications(data.result, isCurrentLocation).catch(err => {
       appendDebugLog("handleNotifications background error", { message: String(err) })
     })
   } catch (err) {
