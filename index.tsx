@@ -122,7 +122,6 @@ type WeatherInfo = {
 type StatusInfo = {
   readinessBadge: string
   apiKeyText: string
-  locationModeText: string
   refreshText: string
   backgroundText: string
   fontSizeText: string
@@ -511,16 +510,46 @@ function ConfigPage() {
             <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.apiKeyText}</Text>
             <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
           </HStack>
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={async () => {
-            await Navigation.present(<LocationSettingsPage />)
-            setStatusInfo(loadStatusInfo())
+        </Section>
+
+        {/* 与 Colorful Clouds 一致的「获取位置」板块 */}
+        <Section header={<HStack spacing={6} alignment="center"><Image systemName="location.fill" foregroundStyle="systemBlue" font="headline" /><Text font="headline">获取位置</Text></HStack>} footer={<Text attributedString="· 获取后填入桌面小组件参数栏，可为小组件设定天气位置" />}>
+          <Button action={async () => {
+            try {
+              let location = await Location.pickFromMap()
+              if (!location) {
+                location = await Location.requestCurrent()
+              }
+              if (!location) {
+                throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
+              }
+              writeLocationCaches({
+                lockLocation: false,
+                locationData: {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  administrativeArea: "",
+                  locality: "",
+                  subLocality: "",
+                  neighborhood: "",
+                  quarter: "",
+                  street: "",
+                  name: "",
+                  resolvedAt: Date.now(),
+                },
+              })
+              reloadWidgets()
+              await Pasteboard.setString(JSON.stringify(location))
+              await Dialog.alert({
+                title: "已拷贝经纬度",
+                message: `经度: ${location.longitude}\n纬度: ${location.latitude}`,
+              })
+            } catch (error) {
+              await showMessage("定位失败", String((error as any)?.message || error))
+            }
           }}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemBlue" opacity={0.15} /><Image systemName="location.fill" foregroundStyle="systemBlue" font={16} /></ZStack>
-            <Text fontWeight="bold">定位模式</Text>
-            <Spacer />
-            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.locationModeText}</Text>
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
+            <Text>获取经纬度</Text>
+          </Button>
         </Section>
 
         <Section header={<Text font="headline">小组件</Text>} footer={<Text font="caption" foregroundStyle="secondaryLabel">· 实际刷新频率由系统决定</Text>}>
@@ -1059,142 +1088,39 @@ function RefreshSettingsPage() {
 
 function LocationSettingsPage() {
   const dismiss = Navigation.useDismiss()
-  const currentConfig = readJson<LocationConfig>(locCachePath)
-  const currentLocation = currentConfig?.locationData || {}
-  const [lockLocation, setLockLocation] = useState(Boolean(currentConfig?.lockLocation))
-  const [latitude, setLatitude] = useState(String(currentLocation.latitude ?? ""))
-  const [longitude, setLongitude] = useState(String(currentLocation.longitude ?? ""))
-  const [locality, setLocality] = useState(currentLocation.locality || "")
-  const [subLocality, setSubLocality] = useState(currentLocation.subLocality || "")
-  const [street, setStreet] = useState(currentLocation.street || currentLocation.name || "")
-  const [refreshSeed, setRefreshSeed] = useState(0)
-  const [isLocating, setIsLocating] = useState(false)
-
-  const parsedLatitude = Number(latitude)
-  const parsedLongitude = Number(longitude)
-  const coordinateStatusText = Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude) && latitude && longitude ? `${parsedLatitude.toFixed(5)}, ${parsedLongitude.toFixed(5)}` : "等待获取"
-  const modeStatusText = lockLocation ? "固定当前位置" : "自动跟随 GPS"
-  const currentAccuracy = getLocationAccuracyValue(currentLocation)
-  const currentAccuracyText = currentAccuracy
-    ? (currentAccuracy <= TARGET_LOCATION_ACCURACY_METERS
-        ? `当前定位精度：已达到${LOCATION_ACCURACY_LABEL}（±${Math.round(currentAccuracy)}m）`
-        : `当前定位精度：约±${Math.round(currentAccuracy)}m，未达到${LOCATION_ACCURACY_LABEL}`)
-    : "当前定位精度：等待获取"
-  const resolvedTimeText = currentLocation.resolvedAt ? new Date(currentLocation.resolvedAt).toLocaleString("zh-CN") : "尚未保存"
-
-  const locationStatusText = formatLocationDataForDisplay(currentLocation)
-
-  function persistLocation(nextLockLocation: boolean, nextLatitude: string, nextLongitude: string, nextLocality: string, nextSubLocality: string, nextStreet: string, extra?: { administrativeArea?: string; neighborhood?: string; quarter?: string; name?: string; horizontalAccuracy?: number }) {
-    const administrativeArea = extra?.administrativeArea || nextLocality.trim()
-    const newLocationData = {
-      latitude: parseFloat(nextLatitude) || 0,
-      longitude: parseFloat(nextLongitude) || 0,
-      administrativeArea: extra?.administrativeArea || administrativeArea,
-      locality: nextLocality.trim(),
-      subLocality: nextSubLocality.trim(),
-      neighborhood: "",
-      quarter: "",
-      street: nextStreet.trim(),
-      horizontalAccuracy: extra?.horizontalAccuracy,
-      name: extra?.name || nextStreet.trim() || nextSubLocality.trim() || nextLocality.trim(),
-      resolvedAt: Date.now(),
-    }
-    writeLocationCaches({
-      lockLocation: nextLockLocation,
-      locationData: newLocationData,
-    })
-    
-    // Write directly to app group cache to make sure widget picks up the change immediately
-    try {
-      const appGroupDir = fm.appGroupDocumentsDirectory
-      // 生成设备指纹，防止分享脚本后别人的 widget 读到旧 config
-      const ownerDeviceId = `${Device.model}-${Device.screen.width}x${Device.screen.height}@${Device.screen.scale}-${Device.systemVersion}`
-      if (appGroupDir) {
-        const cacheLocPath = `${appGroupDir}/cache_loc.json`
-        fm.writeAsStringSync(cacheLocPath, JSON.stringify({
-          locationData: newLocationData,
-          lockLocation: nextLockLocation,
-          ownerDeviceId,
-        }))
-        const configPath = `${appGroupDir}/caiyun_location_config.json`
-        fm.writeAsStringSync(configPath, JSON.stringify({
-          locationData: newLocationData,
-          lockLocation: nextLockLocation,
-          ownerDeviceId,
-        }))
-        // 清除天气缓存，避免旧位置的通知数据残留
-        const weatherCachePath = `${appGroupDir}/cache_weather.json`
-        if (fm.existsSync(weatherCachePath)) {
-          fm.removeItemSync(weatherCachePath)
-          console.log("[main] cleared weather cache due to location change")
-        }
-      }
-    } catch (e) {}
-    
-    // 清除通知缓存，避免旧位置的预警通知重复触发
-    try {
-      Storage.set("CurrentWeather", {})
-      console.log("[main] cleared notification cache due to location change")
-    } catch (e) {}
-    
-    reloadWidgets()
-  }
-
-  const getLocation = async () => {
-    await setLocation()
-  }
 
   async function setLocation() {
     try {
+      // 与 Colorful Clouds 完全一致：先地图选点，失败则 GPS
       let location = await Location.pickFromMap()
 
       if (!location) {
-        location = await requestCurrentLocationInfo()
+        location = await Location.requestCurrent()
       }
 
       if (!location) {
         throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
       }
 
-      const latitudeValue = String(location.latitude ?? "")
-      const longitudeValue = String(location.longitude ?? "")
-      let nextLocality = ""
-      let nextSubLocality = ""
-      let nextStreet = ""
-      let nextAdministrativeArea = ""
-      let nextNeighborhood = ""
-      let nextQuarter = ""
-      let nextName = ""
-      const acc = getLocationAccuracyValue(location)
-
-      const geocode = await Location.reverseGeocode({ latitude: location.latitude, longitude: location.longitude, locale: "zh-CN" })
-      if (geocode?.[0]) {
-        const g = geocode[0]
-        nextAdministrativeArea = g.administrativeArea || ""
-        nextLocality = g.locality || ""
-        nextSubLocality = g.subLocality || ""
-        nextNeighborhood = ""
-        nextQuarter = ""
-        nextName = g.name || ""
-        const t = String(g.thoroughfare || "").trim()
-        const st = String(g.subThoroughfare || "").trim()
-        nextStreet = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
-      }
-
-      setLockLocation(true) // 手动地图获取的位置，为了防止自动漂移变动，按照预期应该被锁定
-      setLatitude(latitudeValue)
-      setLongitude(longitudeValue)
-      setLocality(nextLocality)
-      setSubLocality(nextSubLocality)
-      setStreet(nextStreet || nextName)
-      persistLocation(true, latitudeValue, longitudeValue, nextLocality, nextSubLocality, nextStreet || nextName, {
-        administrativeArea: nextAdministrativeArea,
-        neighborhood: "",
-        quarter: "",
-        name: nextName,
-        horizontalAccuracy: acc,
+      // 写入缓存供 widget 自动读取
+      writeLocationCaches({
+        lockLocation: false,
+        locationData: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          administrativeArea: "",
+          locality: "",
+          subLocality: "",
+          neighborhood: "",
+          quarter: "",
+          street: "",
+          name: "",
+          resolvedAt: Date.now(),
+        },
       })
-      setRefreshSeed((value) => value + 1)
+      reloadWidgets()
+
+      // 与 Colorful Clouds 一致：复制经纬度到剪贴板
       await Pasteboard.setString(JSON.stringify(location))
       await showMessage("已拷贝经纬度", `经度: ${location.longitude}\n纬度: ${location.latitude}`)
     } catch (error) {
@@ -1202,98 +1128,24 @@ function LocationSettingsPage() {
     }
   }
 
-  function save() {
-    persistLocation(lockLocation, latitude, longitude, locality, subLocality, street)
-    dismiss()
-  }
-
   return (
     <NavigationStack>
       <List
         navigationTitle="定位设置"
-        navigationBarTitleDisplayMode="inline"
         toolbar={{
-          cancellationAction: <Button title="取消" action={dismiss} />,
-          confirmationAction: <Button title="保存" action={save} />,
+          topBarTrailing: [
+            <Button action={dismiss}>
+              <Text>保存</Text>
+            </Button>,
+          ],
         }}
       >
-        {/* ─── 状态卡片 ─── */}
-        <Section>
-          <VStack spacing={0}>
-            <ZStack alignment="center">
-              <Rectangle fill={{ colors: ["#e8f4fd", "#f0f9ff"], startPoint: "topLeading", endPoint: "bottomTrailing" }} frame={{ height: 160 }} />
-              <VStack spacing={10} padding={{ horizontal: 16, vertical: 14 }} alignment="leading">
-                <HStack alignment="center" spacing={12}>
-                  <ZStack frame={{ width: 40, height: 40 }}>
-                    <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
-                    <Image systemName={lockLocation ? "mappin.circle.fill" : "location.fill"} renderingMode="template" foregroundStyle="white" font={18} />
-                  </ZStack>
-                  <VStack spacing={2} alignment="leading">
-                    <Text font={17} fontWeight="bold" foregroundStyle="#1a2b3c">当前定位状态</Text>
-                    <HStack spacing={4}>
-                      <Text font={12} fontWeight="medium" foregroundStyle={lockLocation ? "#e67e22" : "#27ae60"}>{lockLocation ? "● 固定模式" : "● 自动 GPS"}</Text>
-                    </HStack>
-                  </VStack>
-                </HStack>
-                <VStack spacing={5} alignment="leading" padding={{ top: 2 }}>
-                  <HStack spacing={6}>
-                    <Image systemName="mappin.and.ellipse" font={11} foregroundStyle="#5a6470" />
-                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>{locationStatusText}</Text>
-                  </HStack>
-                  <HStack spacing={6}>
-                    <Image systemName="globe.asia.australia.fill" font={11} foregroundStyle="#5a6470" />
-                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>{coordinateStatusText}</Text>
-                  </HStack>
-                  <HStack spacing={6}>
-                    <Image systemName="clock.fill" font={11} foregroundStyle="#5a6470" />
-                    <Text font={13} foregroundStyle="#3d4852" lineLimit={1}>更新：{resolvedTimeText}</Text>
-                  </HStack>
-                </VStack>
-              </VStack>
-            </ZStack>
-          </VStack>
-        </Section>
-
-        {/* ─── 定位模式 ─── */}
-        <Section header={
-          <HStack spacing={4}>
-            <Image systemName="gearshape.fill" font={12} foregroundStyle="#8e8e93" />
-            <Text font={13} fontWeight="medium" foregroundStyle="#555">定位模式</Text>
-          </HStack>
-        } footer={<Text font={12} foregroundStyle="gray">开启"自动定位"后组件每次刷新跟随最新 GPS 位置；如需长期固定才打开"固定位置"。</Text>}>
-          <Toggle title="自动定位" systemImage="location.fill" value={!lockLocation} onChanged={(val) => {
-            const nextLock = !val
-            setLockLocation(nextLock)
-            persistLocation(nextLock, latitude, longitude, locality, subLocality, street)
-            setRefreshSeed((v) => v + 1)
-          }} />
-          <Toggle title="固定使用当前位置" systemImage="lock.fill" value={lockLocation} onChanged={(val) => {
-            setLockLocation(val)
-            persistLocation(val, latitude, longitude, locality, subLocality, street)
-            setRefreshSeed((v) => v + 1)
-          }} />
-        </Section>
-
         <Section
           header={<Text>获取位置</Text>}
-          footer={<Text attributedString="· 获取后填入桌面小组件参数栏，可为小组件设定天气位置" /> }>
-          <Button action={getLocation}>
+          footer={<Text attributedString="· 获取后填入桌面小组件参数栏，可为小组件设定天气位置" />}>
+          <Button action={setLocation}>
             <Text>获取经纬度</Text>
           </Button>
-        </Section>
-
-        {/* ─── 手动位置信息 ─── */}
-        <Section header={
-          <HStack spacing={4}>
-            <Image systemName="pencil.line" font={12} foregroundStyle="#8e8e93" />
-            <Text font={13} fontWeight="medium" foregroundStyle="#555">手动位置信息</Text>
-          </HStack>
-        } footer={<Text font={12} foregroundStyle="gray">一般无需手动填写，自动 GPS 会自动填充以上字段。</Text>}>
-          <TextField key={`lat-${refreshSeed}`} title="纬度" prompt="例如 31.2304" value={latitude} onChanged={setLatitude} />
-          <TextField key={`lng-${refreshSeed}`} title="经度" prompt="例如 121.4737" value={longitude} onChanged={setLongitude} />
-          <TextField key={`city-${refreshSeed}`} title="城市" prompt="例如 上海市" value={locality} onChanged={setLocality} />
-          <TextField key={`area-${refreshSeed}`} title="区县" prompt="例如 宝山区" value={subLocality} onChanged={setSubLocality} />
-          <TextField key={`street-${refreshSeed}`} title="街道门牌" prompt="例如 世纪大道1号" value={street} onChanged={setStreet} />
         </Section>
       </List>
     </NavigationStack>
@@ -1954,8 +1806,6 @@ function loadStatusInfo(): StatusInfo {
   const readinessBadge = readyCount === 3 ? "已就绪" : readyCount === 2 ? "接近完成" : readyCount === 1 ? "待完善" : "未开始"
   
   const apiKeyText = hasApiKey ? "已设置" : "未设置"
-  const locationModeText = locationConfig?.lockLocation ? "固定 GPS" : "自动 GPS"
-
   const refreshText = styleConfig.refreshInterval ? `${styleConfig.refreshInterval} 分钟` : "自动"
   const backgroundText = hasBackground ? "已更换" : "默认"
 
@@ -1994,7 +1844,6 @@ function loadStatusInfo(): StatusInfo {
   return {
     readinessBadge,
     apiKeyText,
-    locationModeText,
     refreshText,
     backgroundText,
     fontSizeText,
@@ -2199,6 +2048,7 @@ async function showMessage(title: string, message: string) {
   alert.addAction("好")
   await alert.presentAlert()
 }
+
 
 function imageToData(image: any): any {
   return image?.toJPEGData?.(0.92) || image?.toPNGData?.() || null
