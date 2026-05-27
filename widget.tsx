@@ -671,12 +671,53 @@ async function getLocation(): Promise<LocationData> {
     }
   }
 
-  // 2. 锁定位置时才使用已保存位置（保持原有功能）
-  const savedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
-  if (lockLocation && savedLocation && hasValidCoordinates(savedLocation)) {
-    locationData = { ...locationData, ...savedLocation }
-    appendDebugLog("using locked saved location", { lockLocation, locationData })
-    return locationData
+  // 2. 锁定位置时从 AppGroup 文件读取主应用设置的位置
+  if (lockLocation) {
+    try {
+      const appGroupConfig = readJson<{ locationData?: LocationData }>(`${appGroupDir}/caiyun_location_config.json`)
+      if (appGroupConfig?.locationData && hasValidCoordinates(appGroupConfig.locationData)) {
+        // 直接使用主应用写入的完整位置，不展开旧缓存（避免旧地名污染）
+        const saved = appGroupConfig.locationData
+        locationData = {
+          latitude: saved.latitude,
+          longitude: saved.longitude,
+          locality: saved.locality || "",
+          subLocality: saved.subLocality || "",
+          administrativeArea: saved.administrativeArea || "",
+          subAdministrativeArea: saved.subAdministrativeArea || "",
+          town: saved.town || "",
+          street: saved.street || "",
+          neighborhood: saved.neighborhood || "",
+          quarter: saved.quarter || "",
+          name: saved.name || "",
+          resolvedAt: saved.resolvedAt,
+        }
+        Storage.set(LOCATION_CACHE_KEY, locationData)
+        appendDebugLog("using locked location from main app", locationData)
+        return locationData
+      }
+    } catch {}
+    // AppGroup 读取失败，尝试 Storage 缓存
+    const savedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
+    if (savedLocation && hasValidCoordinates(savedLocation)) {
+      // 直接使用缓存的完整位置，不展开旧数据
+      locationData = {
+        latitude: savedLocation.latitude,
+        longitude: savedLocation.longitude,
+        locality: savedLocation.locality || "",
+        subLocality: savedLocation.subLocality || "",
+        administrativeArea: savedLocation.administrativeArea || "",
+        subAdministrativeArea: savedLocation.subAdministrativeArea || "",
+        town: savedLocation.town || "",
+        street: savedLocation.street || "",
+        neighborhood: savedLocation.neighborhood || "",
+        quarter: savedLocation.quarter || "",
+        name: savedLocation.name || "",
+        resolvedAt: savedLocation.resolvedAt,
+      }
+      appendDebugLog("using locked location from cache", locationData)
+      return locationData
+    }
   }
 
   // 3. 像 Colorful Clouds 一样：直接请求当前位置（不带 forceRequest）
@@ -714,9 +755,22 @@ async function getLocation(): Promise<LocationData> {
   }
 
   // 4. 像 Colorful Clouds 一样：失败后回退 Storage 缓存
-  // 4. 像 Colorful Clouds 一样：失败后回退 Storage 缓存
+  const savedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
   if (savedLocation && hasValidCoordinates(savedLocation)) {
-    locationData = { ...locationData, ...savedLocation }
+    locationData = {
+      latitude: savedLocation.latitude,
+      longitude: savedLocation.longitude,
+      locality: savedLocation.locality || "",
+      subLocality: savedLocation.subLocality || "",
+      administrativeArea: savedLocation.administrativeArea || "",
+      subAdministrativeArea: savedLocation.subAdministrativeArea || "",
+      town: savedLocation.town || "",
+      street: savedLocation.street || "",
+      neighborhood: savedLocation.neighborhood || "",
+      quarter: savedLocation.quarter || "",
+      name: savedLocation.name || "",
+      resolvedAt: savedLocation.resolvedAt,
+    }
     appendDebugLog("fallback to cached location", locationData)
     return locationData
   }
