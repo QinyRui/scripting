@@ -638,8 +638,8 @@ async function getJson(url: string) {
 
 // 与 Colorful Clouds 完全一致的三级定位策略
 // 优先级：Widget 参数 > 实时定位 > Storage 缓存
-async function getLocation(): Promise<LocationData> {
-  // 1. Widget 参数优先（与 Colorful Clouds 一致）
+async function getLocation(): Promise<LocationData & { isCurrentLocation: boolean }> {
+  // 1. Widget 参数优先（与 Colorful Clouds 一致：手动填入 = 非当前位置）
   const widgetParameter = String((Widget as any)?.parameter || "").trim()
   if (widgetParameter && widgetParameter !== "dev") {
     try {
@@ -659,7 +659,7 @@ async function getLocation(): Promise<LocationData> {
         } catch {}
         Storage.set(LOCATION_CACHE_KEY, locationData)
         appendDebugLog("using widget parameter location", locationData)
-        return locationData
+        return { ...locationData, isCurrentLocation: false }
       }
     } catch (error) {
       appendDebugLog("invalid widget parameter location", {
@@ -669,7 +669,7 @@ async function getLocation(): Promise<LocationData> {
     }
   }
 
-  // 2. 像 Colorful Clouds 一样：直接请求当前位置（不带 forceRequest）
+  // 2. 像 Colorful Clouds 一样：直接请求当前位置
   try {
     const reqLoc = await Location.requestCurrent()
     if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
@@ -690,7 +690,7 @@ async function getLocation(): Promise<LocationData> {
       // 像 Colorful Clouds 一样：成功后用 Storage.set 缓存
       Storage.set(LOCATION_CACHE_KEY, locationData)
       appendDebugLog("using current location", locationData)
-      return locationData
+      return { ...locationData, isCurrentLocation: true }
     }
   } catch (error) {
     appendDebugLog("requestCurrent location failed", {
@@ -716,12 +716,12 @@ async function getLocation(): Promise<LocationData> {
       resolvedAt: savedLocation.resolvedAt,
     }
     appendDebugLog("fallback to cached location", locationData)
-    return locationData
+    return { ...locationData, isCurrentLocation: false }
   }
 
   // 4. 什么都没有，返回占位符
   appendDebugLog("location fallback failed, returning default placeholder", locationData)
-  return locationData
+  return { ...locationData, isCurrentLocation: false }
 }
 
 export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo> {
@@ -811,18 +811,17 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
     alertCount: Array.isArray(data.result?.alert?.content) ? data.result.alert.content.length : 0
   })
 
-  // 处理通知逻辑（通知模块内部会自行读取最新 Storage 配置，避免使用过期 profile）
-  // Colorful Clouds 风格：始终视为当前位置
-  const isCurrentLocation = true
-  // 从 Storage 读取用户通知设置配置（与主应用 SETTING_KEY 一致）
+  // 处理通知逻辑（与 Colorful Clouds 完全一致）
   const appProfile = (Storage.get("ColorfulCloudsSetting") as any) || {}
   const notificationSettings = appProfile.notification || {}
-  try {
-    handleNotifications(data.result, isCurrentLocation, notificationSettings).catch(err => {
-      appendDebugLog("handleNotifications background error", { message: String(err) })
-    })
-  } catch (err) {
-    appendDebugLog("handleNotifications error", { message: String(err) })
+  if (notificationSettings.Precipitation) {
+    try {
+      handleNotifications(data.result, location.isCurrentLocation, notificationSettings).catch(err => {
+        appendDebugLog("handleNotifications background error", { message: String(err) })
+      })
+    } catch (err) {
+      appendDebugLog("handleNotifications error", { message: String(err) })
+    }
   }
 
   return info
