@@ -12,6 +12,7 @@ import {
   Circle,
   Rectangle,
   RoundedRectangle,
+  gradient,
 } from "scripting"
 
 declare const FileManager: any
@@ -339,50 +340,71 @@ function getLocationAccuracyStatus(location: any) {
 }
 
 async function requestCurrentLocationInfo() {
-  try {
-    if (typeof Location?.setAccuracy === "function") {
-      try {
-        await Location.setAccuracy("best")
-        appendDebugLog("set location accuracy", { value: "best", targetMeters: TARGET_LOCATION_ACCURACY_METERS })
-      } catch (setError) {
-        appendDebugLog("set location accuracy failed", {
-          message: String((setError as any)?.message || setError),
-        })
+  // 尝试两次，每次 8 秒超时
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      if (attempt === 1 && typeof Location?.setAccuracy === "function") {
+        try {
+          await Location.setAccuracy("best")
+          appendDebugLog("set location accuracy", { value: "best", targetMeters: TARGET_LOCATION_ACCURACY_METERS })
+        } catch (setError) {
+          appendDebugLog("set location accuracy failed", {
+            message: String((setError as any)?.message || setError),
+          })
+        }
       }
-    }
-    const reqLoc = await Promise.race([
-      Location.requestCurrent({ forceRequest: true }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 15000))
-    ])
-    if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
-      appendDebugLog("request current location success", {
-        latitude: (reqLoc as any).latitude,
-        longitude: (reqLoc as any).longitude,
-        accuracy: getLocationAccuracyValue(reqLoc),
-        accuracyStatus: getLocationAccuracyStatus(reqLoc),
+      const reqLoc = await Promise.race([
+        Location.requestCurrent({ forceRequest: true }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout requesting location")), 8000))
+      ])
+      if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
+        appendDebugLog("request current location success", {
+          latitude: (reqLoc as any).latitude,
+          longitude: (reqLoc as any).longitude,
+          accuracy: getLocationAccuracyValue(reqLoc),
+          accuracyStatus: getLocationAccuracyStatus(reqLoc),
+          attempt,
+        })
+        return reqLoc
+      }
+    } catch (error) {
+      appendDebugLog("request current location failed", {
+        attempt,
+        message: String((error as any)?.message || error),
       })
-      return reqLoc
     }
-  } catch (error) {
-    appendDebugLog("request current location failed", {
-      message: String((error as any)?.message || error),
-    })
   }
   return getCurrentLocationInfo()
 }
 
 /** 通过 IP 获取粗略位置（GPS 失败时的后备方案） */
 async function getIPLocationInfo(): Promise<{ latitude: number; longitude: number; locality?: string } | null> {
+  // 服务 1: ip-api.com（免费，无 HTTPS 限制）
   try {
-    appendDebugLog("trying IP-based geolocation fallback")
+    appendDebugLog("trying IP geolocation via ip-api.com")
     const response = await fetch("http://ip-api.com/json/?fields=status,lat,lon,city&lang=zh-CN")
     const data = await response.json()
     if (data?.status === "success" && typeof data.lat === "number" && typeof data.lon === "number") {
-      appendDebugLog("IP geolocation success", { latitude: data.lat, longitude: data.lon, city: data.city })
+      appendDebugLog("IP geolocation success (ip-api)", { latitude: data.lat, longitude: data.lon, city: data.city })
       return { latitude: data.lat, longitude: data.lon, locality: data.city || "" }
     }
   } catch (error) {
-    appendDebugLog("IP geolocation failed", { message: String((error as any)?.message || error) })
+    appendDebugLog("IP geolocation failed (ip-api)", { message: String((error as any)?.message || error) })
+  }
+  // 服务 2: ipinfo.io（备用）
+  try {
+    appendDebugLog("trying IP geolocation via ipinfo.io")
+    const resp2 = await fetch("https://ipinfo.io/json")
+    const data2 = await resp2.json()
+    if (data2?.loc) {
+      const [lat, lon] = data2.loc.split(",").map(Number)
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        appendDebugLog("IP geolocation success (ipinfo)", { latitude: lat, longitude: lon, city: data2.city })
+        return { latitude: lat, longitude: lon, locality: data2.city || "" }
+      }
+    }
+  } catch (error) {
+    appendDebugLog("IP geolocation failed (ipinfo)", { message: String((error as any)?.message || error) })
   }
   return null
 }
@@ -546,17 +568,38 @@ function getSavedApiKey() {
   return null
 }
 
+/** 生成当前设备指纹，用于校验 config 是否属于本机 */
+function getDeviceId(): string {
+  try {
+    return `${Device.model}-${Device.screen.width}x${Device.screen.height}@${Device.screen.scale}-${Device.systemVersion}`
+  } catch {
+    return "unknown"
+  }
+}
+
 function getSavedLocationConfig() {
-  const documentConfig = readJson<{ lockLocation?: boolean; locationData?: LocationData }>(locCachePath)
-  const appGroupConfig = readJson<{ lockLocation?: boolean; locationData?: LocationData }>(`${appGroupDir}/caiyun_location_config.json`)
+  const documentConfig = readJson<{ lockLocation?: boolean; locationData?: LocationData; ownerDeviceId?: string }>(locCachePath)
+  const appGroupConfig = readJson<{ lockLocation?: boolean; locationData?: LocationData; ownerDeviceId?: string }>(`${appGroupDir}/caiyun_location_config.json`)
   
-  // AppGroup is the only truly shared sandbox between the app and the widget. 
-  // Main app writes lockLocation here. Widget never changes lockLocation.
-  // So appGroupConfig is the absolute source of truth for lockLocation.
-  const lockLocation = appGroupConfig?.lockLocation ?? documentConfig?.lockLocation ?? false
+  // 设备指纹校验：如果 config 来自另一台设备（分享脚本场景），忽略它
+  const currentDeviceId = getDeviceId()
+  const isFromThisDevice = (config: any) => !config?.ownerDeviceId || config.ownerDeviceId === currentDeviceId
+  const safeAppGroupConfig = isFromThisDevice(appGroupConfig) ? appGroupConfig : null
+  const safeDocConfig = isFromThisDevice(documentConfig) ? documentConfig : null
   
-  const docLoc = extractLocationData(documentConfig)
-  const appLoc = extractLocationData(appGroupConfig)
+  if (!isFromThisDevice(appGroupConfig) || !isFromThisDevice(documentConfig)) {
+    appendDebugLog("config from different device, ignoring shared location", {
+      currentDeviceId,
+      appGroupDeviceId: appGroupConfig?.ownerDeviceId,
+      docDeviceId: documentConfig?.ownerDeviceId,
+    })
+  }
+  
+  // AppGroup is the absolute source of truth for lockLocation.
+  const lockLocation = safeAppGroupConfig?.lockLocation ?? safeDocConfig?.lockLocation ?? false
+  
+  const docLoc = extractLocationData(safeDocConfig)
+  const appLoc = extractLocationData(safeAppGroupConfig)
   const cachedLoc = extractLocationData(readJson<any>(locationCachePath))
   
   let bestLocation = appLoc || docLoc || cachedLoc || undefined
@@ -1564,49 +1607,63 @@ function RainingBarChart({ precipitation, widgetType }: { precipitation: number[
   
   // 仅取前 60 分钟数据
   const data = precipitation.slice(0, 60)
-  const chartHeight = widgetType === "medium" ? 38 : 42
+  const chartHeight = widgetType === "medium" ? 30 : 36
   const chartStyle = styleConfig.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
-  const barSpacing = chartStyle === "caiyun" ? 0.45 : 0.5
-  const barWidth = chartStyle === "caiyun" ? 2.5 : 2.4
+  const barSpacing = 0.8
+  const barWidth = 2.5
   const labelColor = chartStyle === "caiyun" ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.42)"
   
-  const getBarColor = (val: number) => {
-    if (val <= 0) return "transparent"
-    if (chartStyle === "caiyun") {
-      if (val < 0.1) return "rgba(120, 210, 255, 0.5)"
-      if (val < 0.3) return "rgba(94, 201, 255, 0.82)"
-      if (val < 1.0) return "rgba(40, 170, 255, 0.96)"
-      return "rgba(0, 132, 255, 1)"
+  // 更平滑的高斯加权平均（9 点核）
+  const getSmoothedValue = (index: number) => {
+    const weights = [0.03, 0.06, 0.12, 0.2, 0.26, 0.2, 0.12, 0.06, 0.03]
+    let sum = 0
+    let weightSum = 0
+    for (let offset = -4; offset <= 4; offset++) {
+      const i = index + offset
+      if (i >= 0 && i < data.length) {
+        const w = weights[offset + 4]
+        sum += (data[i] || 0) * w
+        weightSum += w
+      }
     }
-    if (val < 0.1) return "rgba(112, 200, 255, 0.42)"
-    if (val < 0.3) return "rgba(112, 200, 255, 0.72)"
-    if (val < 1.0) return "rgba(64, 156, 255, 0.92)"
-    return "rgba(24, 118, 255, 1)"
+    return sum / weightSum
   }
 
-  const getSmoothedValue = (index: number) => {
-    const prev = data[Math.max(0, index - 1)] ?? data[index] ?? 0
-    const curr = data[index] ?? 0
-    const next = data[Math.min(data.length - 1, index + 1)] ?? curr
-    return chartStyle === "caiyun"
-      ? prev * 0.16 + curr * 0.68 + next * 0.16
-      : prev * 0.22 + curr * 0.56 + next * 0.22
+  // 颜色配置（彩云风格与苹果风格）
+  const getBarColor = (val: number): string => {
+    if (chartStyle === "caiyun") {
+      if (val < 0.1) return "rgba(150, 225, 255, 0.7)"
+      if (val < 0.3) return "rgba(120, 210, 255, 0.85)"
+      if (val < 0.6) return "rgba(80, 185, 255, 0.95)"
+      return "rgba(45, 160, 255, 1)"
+    }
+    if (val < 0.1) return "rgba(140, 215, 255, 0.6)"
+    if (val < 0.3) return "rgba(100, 195, 255, 0.8)"
+    if (val < 0.6) return "rgba(65, 170, 255, 0.95)"
+    return "rgba(35, 140, 255, 1)"
   }
+
+  // 检查是否有降水
+  const hasRain = data.some(v => v > 0.02)
+  if (!hasRain) return null
 
   return (
-    <VStack alignment="leading" spacing={chartStyle === "caiyun" ? 2 : 3} padding={{ top: 2 }}>
+    <VStack alignment="leading" spacing={4} padding={{ top: 2 }}>
       <ZStack alignment="bottomLeading" frame={{ height: chartHeight }}>
-        {/* 降水柱状图 */}
+        {/* 主柱状图 — 底部对齐 */}
         <HStack spacing={barSpacing} alignment="bottom">
           {data.map((_, i) => {
             const smoothed = getSmoothedValue(i)
-            let h = Math.min(chartHeight, smoothed * (chartHeight / (chartStyle === "caiyun" ? 1.35 : 1.5)))
-            if (smoothed > 0 && h < (chartStyle === "caiyun" ? 3 : 2.5)) h = chartStyle === "caiyun" ? 3 : 2.5
+            if (smoothed <= 0.02) return <RoundedRectangle key={i} cornerRadius={barWidth / 2} fill="clear" frame={{ width: barWidth, height: 0 }} />
+            // 使用平方根缩放让小雨也可见，大雨不溢出
+            let h = Math.sqrt(smoothed) * chartHeight * 0.95
+            h = Math.max(4, Math.min(chartHeight - 1, h))
+            const barColor = getBarColor(smoothed)
             return (
               <RoundedRectangle
                 key={i}
-                cornerRadius={chartStyle === "caiyun" ? 1.6 : 1.2}
-                fill={getBarColor(smoothed) as any}
+                cornerRadius={barWidth / 2}
+                fill={{ color: barColor as any, opacity: 1 }}  
                 frame={{ width: barWidth, height: h }}
               />
             )
@@ -1615,12 +1672,18 @@ function RainingBarChart({ precipitation, widgetType }: { precipitation: number[
       </ZStack>
       
       {/* 时间轴刻度 */}
-      <HStack frame={{ width: barWidth * 60 + barSpacing * 59 }}>
+      <HStack>
         <SectionText text="现在" font={s(7, "weather")} color={labelColor} />
+        <Spacer />
+        <SectionText text="10分钟" font={s(7, "weather")} color={labelColor} />
+        <Spacer />
+        <SectionText text="20分钟" font={s(7, "weather")} color={labelColor} />
         <Spacer />
         <SectionText text="30分钟" font={s(7, "weather")} color={labelColor} />
         <Spacer />
-        <SectionText text="60分钟" font={s(7, "weather")} color={labelColor} />
+        <SectionText text="40分钟" font={s(7, "weather")} color={labelColor} />
+        <Spacer />
+        <SectionText text="50分钟" font={s(7, "weather")} color={labelColor} />
       </HStack>
     </VStack>
   )
