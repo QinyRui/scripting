@@ -454,15 +454,7 @@ function getDeviceId(): string {
   }
 }
 
-// 简化：只从 AppGroup 读取 lockLocation 设置（与主应用兼容）
-function getLockLocationSetting(): boolean {
-  try {
-    const appGroupConfig = readJson<{ lockLocation?: boolean }>(`${appGroupDir}/caiyun_location_config.json`)
-    return !!appGroupConfig?.lockLocation
-  } catch {
-    return false
-  }
-}
+// Colorful Clouds 风格：不再需要 lockLocation，定位逻辑完全由 widget 自身管理
 
 function getSavedStyleConfig(): StyleConfig {
   const documentStyle = readJson<StyleConfig>(styleCachePath)
@@ -482,7 +474,6 @@ const LOCATION_CACHE_KEY = "CloudyWeatherLocation"
 
 let apiKey = getSavedApiKey()
 let locationData: LocationData = { latitude: 0, longitude: 0, locality: "等待定位", subLocality: "" }
-let lockLocation = getLockLocationSetting()
 // 位置数据通过 Storage 缓存（像 Colorful Clouds 一样）
 const cachedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
 if (cachedLocation && hasValidCoordinates(cachedLocation)) {
@@ -645,6 +636,8 @@ async function getJson(url: string) {
   return await response.json()
 }
 
+// 与 Colorful Clouds 完全一致的三级定位策略
+// 优先级：Widget 参数 > 实时定位 > Storage 缓存
 async function getLocation(): Promise<LocationData> {
   // 1. Widget 参数优先（与 Colorful Clouds 一致）
   const widgetParameter = String((Widget as any)?.parameter || "").trim()
@@ -652,14 +645,19 @@ async function getLocation(): Promise<LocationData> {
     try {
       const parsed = JSON.parse(widgetParameter)
       if (typeof parsed?.latitude === "number" && typeof parsed?.longitude === "number") {
-        const parameterLocation: LocationData = {
-          ...locationData,
+        locationData = {
           latitude: parsed.latitude,
           longitude: parsed.longitude,
+          locality: "",
+          subLocality: "",
+          name: "",
           resolvedAt: Date.now(),
         }
-        locationData = await resolveLocationNameIfNeeded(parameterLocation)
-        Cache.write(locationCachePath, locationData)
+        // 尝试解析地名，失败不阻塞
+        try {
+          locationData = await resolveLocationNameIfNeeded(locationData)
+        } catch {}
+        Storage.set(LOCATION_CACHE_KEY, locationData)
         appendDebugLog("using widget parameter location", locationData)
         return locationData
       }
@@ -671,61 +669,11 @@ async function getLocation(): Promise<LocationData> {
     }
   }
 
-  // 2. 锁定位置时从 AppGroup 文件读取主应用设置的位置
-  if (lockLocation) {
-    try {
-      const appGroupConfig = readJson<{ locationData?: LocationData }>(`${appGroupDir}/caiyun_location_config.json`)
-      if (appGroupConfig?.locationData && hasValidCoordinates(appGroupConfig.locationData)) {
-        // 直接使用主应用写入的完整位置，不展开旧缓存（避免旧地名污染）
-        const saved = appGroupConfig.locationData
-        locationData = {
-          latitude: saved.latitude,
-          longitude: saved.longitude,
-          locality: saved.locality || "",
-          subLocality: saved.subLocality || "",
-          administrativeArea: saved.administrativeArea || "",
-          subAdministrativeArea: saved.subAdministrativeArea || "",
-          town: saved.town || "",
-          street: saved.street || "",
-          neighborhood: saved.neighborhood || "",
-          quarter: saved.quarter || "",
-          name: saved.name || "",
-          resolvedAt: saved.resolvedAt,
-        }
-        Storage.set(LOCATION_CACHE_KEY, locationData)
-        appendDebugLog("using locked location from main app", locationData)
-        return locationData
-      }
-    } catch {}
-    // AppGroup 读取失败，尝试 Storage 缓存
-    const savedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
-    if (savedLocation && hasValidCoordinates(savedLocation)) {
-      // 直接使用缓存的完整位置，不展开旧数据
-      locationData = {
-        latitude: savedLocation.latitude,
-        longitude: savedLocation.longitude,
-        locality: savedLocation.locality || "",
-        subLocality: savedLocation.subLocality || "",
-        administrativeArea: savedLocation.administrativeArea || "",
-        subAdministrativeArea: savedLocation.subAdministrativeArea || "",
-        town: savedLocation.town || "",
-        street: savedLocation.street || "",
-        neighborhood: savedLocation.neighborhood || "",
-        quarter: savedLocation.quarter || "",
-        name: savedLocation.name || "",
-        resolvedAt: savedLocation.resolvedAt,
-      }
-      appendDebugLog("using locked location from cache", locationData)
-      return locationData
-    }
-  }
-
-  // 3. 像 Colorful Clouds 一样：直接请求当前位置（不带 forceRequest）
+  // 2. 像 Colorful Clouds 一样：直接请求当前位置（不带 forceRequest）
   try {
     const reqLoc = await Location.requestCurrent()
     if (reqLoc && typeof (reqLoc as any).latitude === "number" && typeof (reqLoc as any).longitude === "number") {
-      // 创建干净的 LocationData，不展开旧缓存（避免旧地名污染新坐标）
-      const freshLocation: LocationData = {
+      locationData = {
         latitude: (reqLoc as any).latitude,
         longitude: (reqLoc as any).longitude,
         locality: "",
@@ -733,16 +681,12 @@ async function getLocation(): Promise<LocationData> {
         name: "",
         resolvedAt: Date.now(),
       }
-      appendDebugLog("requestCurrent location success", freshLocation)
-
       // 尝试解析地名，失败不阻塞
       try {
-        locationData = await resolveLocationNameIfNeeded(freshLocation, true)
+        locationData = await resolveLocationNameIfNeeded(locationData, true)
       } catch {
-        locationData = freshLocation
         appendDebugLog("resolve location name failed, keep coordinates only")
       }
-
       // 像 Colorful Clouds 一样：成功后用 Storage.set 缓存
       Storage.set(LOCATION_CACHE_KEY, locationData)
       appendDebugLog("using current location", locationData)
@@ -754,7 +698,7 @@ async function getLocation(): Promise<LocationData> {
     })
   }
 
-  // 4. 像 Colorful Clouds 一样：失败后回退 Storage 缓存
+  // 3. 像 Colorful Clouds 一样：失败后回退 Storage 缓存
   const savedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
   if (savedLocation && hasValidCoordinates(savedLocation)) {
     locationData = {
@@ -775,7 +719,7 @@ async function getLocation(): Promise<LocationData> {
     return locationData
   }
 
-  // 5. 什么都没有，返回占位符
+  // 4. 什么都没有，返回占位符
   appendDebugLog("location fallback failed, returning default placeholder", locationData)
   return locationData
 }
@@ -868,9 +812,8 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
   })
 
   // 处理通知逻辑（通知模块内部会自行读取最新 Storage 配置，避免使用过期 profile）
-  // isCurrentLocation：未锁定位置时为当前位置，锁定位置时为指定位置
-  // 关键：Colorful Clouds 传入的是 data.result（内层对象），不是整个 data
-  const isCurrentLocation = !lockLocation
+  // Colorful Clouds 风格：始终视为当前位置
+  const isCurrentLocation = true
   // 从 Storage 读取用户通知设置配置（与主应用 SETTING_KEY 一致）
   const appProfile = (Storage.get("ColorfulCloudsSetting") as any) || {}
   const notificationSettings = appProfile.notification || {}
@@ -1799,7 +1742,6 @@ async function main() {
   await ensureBackgroundMigrated()
   // Re-read configuration on run to ensure widget has the freshest values when loaded by iOS background system
   apiKey = getSavedApiKey()
-  lockLocation = getLockLocationSetting()
   // 位置数据通过 Storage 缓存（像 Colorful Clouds 一样）
   const cachedLocation = Storage.get(LOCATION_CACHE_KEY) as LocationData | null
   if (cachedLocation && hasValidCoordinates(cachedLocation)) {
@@ -1809,7 +1751,6 @@ async function main() {
   
   appendDebugLog("widget render start", {
     styleConfig,
-    lockLocation,
     savedLocation: locationData,
     apiKeyExists: Boolean(apiKey),
   })
