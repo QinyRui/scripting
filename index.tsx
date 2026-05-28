@@ -308,37 +308,12 @@ function formatUpdateTime(timestamp?: number) {
   return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`
 }
 
-function getWeatherIconColor(icon: string) {
-  if (icon.includes("sun") || icon.includes("sunrise") || icon.includes("sunset")) return "#ffd166"
-  if (icon.includes("cloud.sun")) return "#ffc857"
-  if (icon.includes("cloud")) return "#9bd7ff"
-  if (icon.includes("rain") || icon.includes("drop")) return "#70c8ff"
-  if (icon.includes("snow")) return "#d7f3ff"
-  if (icon.includes("wind")) return "#b8f7d4"
-  if (icon.includes("bolt")) return "#ffe066"
-  return "#ffd166"
-}
-
-function getWeatherNameFromIcon(icon: string) {
-  if (icon === "sun.max.fill" || icon === "moon.fill") return "晴"
-  if (icon === "cloud.sun.fill" || icon === "cloud.moon.fill" || icon === "cloud.sun" || icon === "cloud.moon") return "多云"
-  if (icon === "cloud.fill") return "阴"
-  if (icon.includes("drizzle")) return "小雨"
-  if (icon.includes("rain")) return "雨"
-  if (icon.includes("snow")) return "雪"
-  if (icon.includes("haze")) return "霾"
-  if (icon.includes("bolt") || icon.includes("thunder")) return "雷阵雨"
-  if (icon.includes("wind")) return "风"
-  return "未知"
-}
-
 function ConfigPage() {
   const dismiss = Navigation.useDismiss()
   const [statusInfo, setStatusInfo] = useState(() => loadStatusInfo())
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [chartStyle, setChartStyle] = useState<"apple" | "caiyun">(() => {
-    const styleConfig = ensureStyleConfig() as any
-    return styleConfig.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
+    const sc = ensureStyleConfig() as any
+    return sc.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
   })
 
   // 通知相关的状态
@@ -352,12 +327,12 @@ function ConfigPage() {
   const timeGapList = [0, 5, 10, 15, 30]
 
   function updateChartStyle(nextStyle: "apple" | "caiyun") {
-    const styleConfig = ensureStyleConfig() as any
-    styleConfig.weatherChart = {
-      ...(styleConfig.weatherChart || {}),
+    const sc = ensureStyleConfig() as any
+    sc.weatherChart = {
+      ...(sc.weatherChart || {}),
       style: nextStyle,
     }
-    writeStyleConfig(styleConfig)
+    writeStyleConfig(sc)
     setChartStyle(nextStyle)
     reloadWidgets()
     setStatusInfo(loadStatusInfo())
@@ -382,17 +357,6 @@ function ConfigPage() {
     Storage.set(SETTING_KEY, profile)
   }
 
-  async function refreshWeather() {
-    if (isRefreshing) return
-    setIsRefreshing(true)
-    try {
-      await safeGetWeather(true)
-      setStatusInfo(loadStatusInfo())
-      Widget.reloadAll()
-    } catch {}
-    setIsRefreshing(false)
-  }
-
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
       <NavigationStack>
@@ -409,101 +373,10 @@ function ConfigPage() {
               </VStack>
             </VStack>
 
-            <VStack spacing={24}>
-              {statusInfo.cachedWeather ? (
-                <VStack spacing={16} padding={16} onTapGesture={refreshWeather}>
-                  <HStack alignment="center" spacing={8}>
-                    <Text font={{ name: "system", size: 56 }} fontWeight="regular" lineLimit={1}>
-                      {statusInfo.cachedWeather.bodyFeelingTemperature !== undefined ? `${statusInfo.cachedWeather.bodyFeelingTemperature}°` : "--°"}
-                    </Text>
-                    <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
-                      <HStack alignment="center" spacing={8}>
-                        <Text font="title3" lineLimit={1}>{getWeatherNameFromIcon(statusInfo.cachedWeather.weatherIco || "")}</Text>
-                        {statusInfo.cachedWeather.aqiInfo ? (
-                          <Text font="caption2" padding={{ horizontal: 6, vertical: 2 }} background={{ style: "systemTeal", shape: { type: "rect", cornerRadius: 4 } }} foregroundStyle="white" lineLimit={1}>
-                            {statusInfo.cachedWeather.aqiInfo}
-                          </Text>
-                        ) : null}
-                        {isRefreshing ? <Text font="caption2" foregroundStyle="secondaryLabel">更新中...</Text> : null}
-                      </HStack>
-                      <Text font="caption" foregroundStyle="secondaryLabel" lineLimit={1}>
-                        体感{statusInfo.cachedWeather.bodyFeelingTemperature !== undefined ? `${statusInfo.cachedWeather.bodyFeelingTemperature}°` : "--°"} {statusInfo.cachedWeather.windStr ? `${statusInfo.cachedWeather.windStr}` : ""} 湿度{statusInfo.cachedWeather.humidity || "--"}
-                      </Text>
-                    </VStack>
-                    <Spacer />
-                    {statusInfo.cachedWeather.weatherIco ? (
-                      <Image
-                        systemName={statusInfo.cachedWeather.weatherIco}
-                        font={40}
-                        foregroundStyle={getWeatherIconColor(statusInfo.cachedWeather.weatherIco) as any}
-                      />
-                    ) : null}
-                  </HStack>
-                  {statusInfo.cachedWeather.future && statusInfo.cachedWeather.future.length >= 2 ? (
-                    <VStack spacing={16} padding={{ top: 8, bottom: 8 }}>
-                      <HStack padding={12} background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 8 } }} alignment="center" frame={{ maxWidth: "infinity" }}>
-                        <Spacer />
-                        <Text font="subheadline" lineLimit={1}>{statusInfo.cachedWeather.alertWeatherTitle || "今明气温相差不大"}</Text>
-                        <Spacer />
-                        <ZStack frame={{ width: 16, height: 16 }}>
-                          <Circle fill="systemGreen" />
-                          <Image systemName="chevron.right" font={10} foregroundStyle="white" />
-                        </ZStack>
-                      </HStack>
-                      <HStack spacing={0}>
-                        <VStack frame={{ maxWidth: "infinity" }} alignment="leading" spacing={8}>
-                          <HStack spacing={4} frame={{ maxWidth: "infinity" }}>
-                            <Text font="title2" fontWeight="bold">{statusInfo.cachedWeather.future[0]?.min}°~{statusInfo.cachedWeather.future[0]?.max}°</Text>
-                            <Spacer />
-                            <Image systemName={statusInfo.cachedWeather.future[0]?.ico || "sun.max.fill"} font={20} foregroundStyle={getWeatherIconColor(statusInfo.cachedWeather.future[0]?.ico || "sun.max.fill") as any} />
-                          </HStack>
-                          <HStack spacing={4}>
-                            <Text font="title2" fontWeight="bold">今天</Text>
-                            {statusInfo.cachedWeather.aqiInfo ? (
-                              <Text font="caption2" padding={{ horizontal: 4, vertical: 2 }} background={{ style: "systemTeal", shape: { type: "rect", cornerRadius: 4 } }} foregroundStyle="white">优</Text>
-                            ) : null}
-                            <Spacer />
-                            <Text font="title2" fontWeight="bold">阴</Text>
-                          </HStack>
-                        </VStack>
-                        <VStack frame={{ width: 1, height: 40 }} background="separator" padding={{ horizontal: 16 }} />
-                        <VStack frame={{ maxWidth: "infinity" }} alignment="leading" spacing={8}>
-                          <HStack spacing={4} frame={{ maxWidth: "infinity" }}>
-                            <Text font="title2" fontWeight="bold">{statusInfo.cachedWeather.future[1]?.min}°~{statusInfo.cachedWeather.future[1]?.max}°</Text>
-                            <Spacer />
-                            <Image systemName={statusInfo.cachedWeather.future[1]?.ico || "sun.max.fill"} font={20} foregroundStyle={getWeatherIconColor(statusInfo.cachedWeather.future[1]?.ico || "sun.max.fill") as any} />
-                          </HStack>
-                          <HStack spacing={4}>
-                            <Text font="title2" fontWeight="bold">明天</Text>
-                            {statusInfo.cachedWeather.aqiInfo ? (
-                              <Text font="caption2" padding={{ horizontal: 4, vertical: 2 }} background={{ style: "systemTeal", shape: { type: "rect", cornerRadius: 4 } }} foregroundStyle="white">优</Text>
-                            ) : null}
-                            <Spacer />
-                            <Text font="title2" fontWeight="bold">多云</Text>
-                          </HStack>
-                        </VStack>
-                      </HStack>
-                    </VStack>
-                  ) : null}
-                </VStack>
-              ) : (
-                <VStack spacing={4} alignment="center">
-                  <Text font="subheadline" foregroundStyle="secondaryLabel">精准、实时、美观</Text>
-                  <HStack spacing={12} alignment="center">
-                    <Text font="caption" fontWeight="bold" foregroundStyle="systemBlue" padding={{ horizontal: 12, vertical: 4 }}>v1.0.0</Text>
-                    <HStack spacing={6} padding={{ horizontal: 12, vertical: 4 }} background={{ style: statusInfo.readinessBadge === "待完善" ? "systemRed" : "systemGreen", shape: { type: "rect", cornerRadius: 8 } }}>
-                      <Image systemName={statusInfo.readinessBadge === "待完善" ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"} font={10} foregroundStyle="white" />
-                      <Text font="caption" fontWeight="bold" foregroundStyle="white">{statusInfo.readinessBadge}</Text>
-                    </HStack>
-                  </HStack>
-                </VStack>
-              )}
-
-              <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
-                <HomeQuickButton icon="rectangle.expand.vertical" title="中号预览" subtitle="Medium" action="preview-medium" tint="systemBlue" />
-                <HomeQuickButton icon="rectangle.grid.1x2.fill" title="大号预览" subtitle="Large" action="preview-large" tint="systemOrange" />
-              </HStack>
-            </VStack>
+            <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
+              <HomeQuickButton icon="rectangle.expand.vertical" title="中号预览" subtitle="Medium" action="preview-medium" tint="systemBlue" />
+              <HomeQuickButton icon="rectangle.grid.1x2.fill" title="大号预览" subtitle="Large" action="preview-large" tint="systemOrange" />
+            </HStack>
           </VStack>
         </Section>
 
