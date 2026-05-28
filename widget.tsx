@@ -99,12 +99,13 @@ const ScanBeam = ({ width, color = Theme.colors.green }: { width: number, color?
 // 核心 UI 组件
 // ========================
 
-/** 九号 Logo 图片路径（带光晕版本）*/
-const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到/ninebot-glow.jpg"
+/** 中心图标路径（备用）*/
+const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到/scooter-icon.jpg"
 
-/** 签到核心仪表盘 — 同心环 + 蓝紫光晕 + 九号 Logo（图一 × 图二融合）*/
+/** 签到核心仪表盘 — 同心环 + 蓝紫光晕 + 九号 Logo（白底裁圆）*/
 const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }) => {
   const ringColor: Color = isSigned ? '#34C759' as Color : '#FF3B30' as Color
+  const imgSize = size * 0.56  // Logo 圆形占仪表盘 56%
   return (
     <ZStack frame={{ width: size, height: size }} alignment="center">
       {/* ═══ 第一层：最外圈光环（极淡）═══ */}
@@ -126,15 +127,15 @@ const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }
       <Circle fill={ringColor} frame={{ width: Math.max(2, S(3)), height: Math.max(2, S(3)) }}
         offset={{ x: -size * 0.28, y: size * 0.2 } } opacity={0.25} />
 
-      {/* ═══ 蓝紫光晕层（图二辉光效果）═══ */}
-      <Circle fill="#6B5CE7" frame={{ width: size * 0.62, height: size * 0.62 }} opacity={0.06} />
-      <Circle fill="#5B4FCF" frame={{ width: size * 0.57, height: size * 0.57 }} opacity={0.08} />
-      <Circle fill="#7B68EE" frame={{ width: size * 0.54, height: size * 0.54 }} opacity={0.10} />
+      {/* ═══ 蓝紫光晕（白圆外围辉光）═══ */}
+      <Circle fill="#6B5CE7" frame={{ width: imgSize * 1.20, height: imgSize * 1.20 }} opacity={0.07} />
+      <Circle fill="#5B4FCF" frame={{ width: imgSize * 1.12, height: imgSize * 1.12 }} opacity={0.09} />
+      <Circle fill="#7B68EE" frame={{ width: imgSize * 1.06, height: imgSize * 1.06 }} opacity={0.11} />
 
-      {/* ═══ 图二裁剪成圆形 — clipShape="circle" ═══ */}
-      <Image filePath={NINEBOT_LOGO_PATH} resizable scaleToFit
-        frame={{ width: size * 0.52, height: size * 0.52 }}
-        clipShape="circle" />
+      {/* ═══ 中心圆：蓝底 + 白色 moped.fill 图标 ═══ */}
+      <Circle fill={"#3478F6" as Color} frame={{ width: imgSize, height: imgSize }} opacity={0.92} />
+      <Image systemName="moped.fill" font={imgSize * 0.52}
+        foregroundStyle={{ color: "#FFFFFF" as Color, opacity: 1 }} />
     </ZStack>
   )
 }
