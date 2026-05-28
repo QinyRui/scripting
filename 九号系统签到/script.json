@@ -1,0 +1,48 @@
+{
+  "localizedNames" : {
+    "ru" : "",
+    "pt" : "",
+    "ja" : "",
+    "es" : "",
+    "zh" : "",
+    "it" : "",
+    "en" : "",
+    "fr" : "",
+    "de" : ""
+  },
+  "version" : "1.1.0",
+  "runInApp" : false,
+  "remoteResource" : {
+    "autoUpdateInterval" : null,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
+    "hash" : "a185d0d6760774794509cf602e5b9dac"
+  },
+  "contributors" : [
+
+  ],
+  "description" : "",
+  "name" : "九号系统签到",
+  "icon" : "scooter",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
+    "name" : "QinyRui"
+  },
+  "entry" : "index.tsx",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/%E4%B9%9D%E5%8F%B7\/IMG_1706.png",
+  "color" : "rgba(143, 168, 149,1)",
+  "intentInputTypes" : [
+
+  ],
+  "localizedDescriptions" : {
+    "pt" : "",
+    "ja" : "",
+    "es" : "",
+    "de" : "",
+    "ru" : "",
+    "it" : "",
+    "zh" : "",
+    "fr" : "",
+    "en" : ""
+  }
+}
