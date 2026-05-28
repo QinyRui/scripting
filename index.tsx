@@ -1,6 +1,6 @@
 import { SettingView, profile } from "./pages/setting"
 import { safeGetWeather } from "./utils/weather"
-import { RainNotification, AlertNotification } from "./notification_logic"
+import { clearAllNotifications } from "./notification_logic"
 import { ApiKeySettingsPage } from "./pages/api-key-settings"
 import { FontSettingsPage } from "./pages/font-settings"
 import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
@@ -2289,6 +2289,9 @@ async function handleAction(action: string) {
 
 
 async function run() {
+  // 启动时清除所有遗留通知（防止旧版本代码调度的通知继续弹出）
+  clearAllNotifications().catch(() => {})
+
   const action = Script.queryParameters?.action
   forceDesktopWidgetSync(action ? `open:${action}` : "open:index")
   if (action) {
