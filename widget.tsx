@@ -102,35 +102,61 @@ const ScanBeam = ({ width, color = Theme.colors.green }: { width: number, color?
 /** 中心图标路径（备用）*/
 const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到/scooter-icon.jpg"
 
-/** 签到核心仪表盘 — 彩色渐变环 + 光晕 + moped.fill */
+/** 签到核心仪表盘 — 彩色渐变环（基于时间旋转）+ 光晕 + moped.fill */
 const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }) => {
-  const iconSize = size * 0.38  // 图标大小
+  const iconSize = size * 0.38
+  // ═══ 基于当前时间计算旋转角度（每圈不同速度）═══
+  const now = Date.now() / 1000  // 秒级时间戳
+  const rot1 = (now * 8) % 360    // 青色外圈：最快
+  const rot2 = -(now * 5) % 360   // 紫色圈：反向中速
+  const rot3 = (now * 3) % 360    // 绿色圈：慢速
+  const rot4 = -(now * 12) % 360  // 金色活动环：最快反向
+
   return (
     <ZStack frame={{ width: size, height: size }} alignment="center">
-      {/* ═══ 第一层：最外圈 — 青色 ═══ */}
-      <Circle stroke={{ shapeStyle: '#00E5FF' as Color, strokeStyle: { lineWidth: Math.max(0.5, S(0.8)) } }}
-        frame={{ width: size, height: size }} opacity={0.18} />
-      {/* ═══ 第二圈 — 紫色 ═══ */}
-      <Circle stroke={{ shapeStyle: '#BF5AF2' as Color, strokeStyle: { lineWidth: Math.max(0.8, S(1.2)) } }}
-        frame={{ width: size * 0.88, height: size * 0.88 }} opacity={0.28} />
-      {/* ═══ 第三圈 — 绿色 ═══ */}
-      <Circle stroke={{ shapeStyle: '#34C759' as Color, strokeStyle: { lineWidth: Math.max(1, S(1.8)) } }}
-        frame={{ width: size * 0.76, height: size * 0.76 }} opacity={0.40} />
-      {/* ═══ 第四圈：活动环 — 黄金（带 trim）═══ */}
-      <Circle stroke={{ shapeStyle: '#FFD60A' as Color, strokeStyle: { lineWidth: Math.max(1.5, S(2.5)) } }}
-        frame={{ width: size * 0.66, height: size * 0.66 }}
-        trim={{ from: 0.08, to: 0.92 }} opacity={0.80} />
-      {/* ═══ 装饰点 — 多彩 ═══ */}
-      <Circle fill="#00E5FF" frame={{ width: Math.max(3, S(4)), height: Math.max(3, S(4)) }}
-        offset={{ x: size * 0.33, y: -size * 0.1 }} opacity={0.50} />
-      <Circle fill="#BF5AF2" frame={{ width: Math.max(2, S(3)), height: Math.max(2, S(3)) }}
-        offset={{ x: -size * 0.28, y: size * 0.2 } } opacity={0.40} />
+      {/* ═══ 第一层：最外圈 — 青色弧段（旋转）═══ */}
+      <ZStack frame={{ width: size, height: size }} alignment="center"
+        rotationEffect={{ degrees: rot1, anchor: "center" }}>
+        <Circle stroke={{ shapeStyle: '#00E5FF' as Color, strokeStyle: { lineWidth: Math.max(0.5, S(0.8)) } }}
+          frame={{ width: size, height: size }}
+          trim={{ from: 0.0, to: 0.75 }} opacity={0.25} />
+      </ZStack>
+      {/* ═══ 第二圈 — 紫色弧段（反向旋转）═══ */}
+      <ZStack frame={{ width: size * 0.88, height: size * 0.88 }} alignment="center"
+        rotationEffect={{ degrees: rot2, anchor: "center" }}>
+        <Circle stroke={{ shapeStyle: '#BF5AF2' as Color, strokeStyle: { lineWidth: Math.max(0.8, S(1.2)) } }}
+          frame={{ width: size * 0.88, height: size * 0.88 }}
+          trim={{ from: 0.1, to: 0.85 }} opacity={0.35} />
+      </ZStack>
+      {/* ═══ 第三圈 — 绿色弧段（慢速旋转）═══ */}
+      <ZStack frame={{ width: size * 0.76, height: size * 0.76 }} alignment="center"
+        rotationEffect={{ degrees: rot3, anchor: "center" }}>
+        <Circle stroke={{ shapeStyle: '#34C759' as Color, strokeStyle: { lineWidth: Math.max(1, S(1.8)) } }}
+          frame={{ width: size * 0.76, height: size * 0.76 }}
+          trim={{ from: 0.05, to: 0.90 }} opacity={0.45} />
+      </ZStack>
+      {/* ═══ 第四圈：活动环 — 黄金弧段（最快反向）═══ */}
+      <ZStack frame={{ width: size * 0.66, height: size * 0.66 }} alignment="center"
+        rotationEffect={{ degrees: rot4, anchor: "center" }}>
+        <Circle stroke={{ shapeStyle: '#FFD60A' as Color, strokeStyle: { lineWidth: Math.max(1.5, S(2.5)) } }}
+          frame={{ width: size * 0.66, height: size * 0.66 }}
+          trim={{ from: 0.08, to: 0.65 }} opacity={0.80} />
+      </ZStack>
 
-      {/* ═══ 外围光晕 ═══ */}
+      {/* ═══ 装饰点 — 跟随外圈旋转 ═══ */}
+      <ZStack frame={{ width: size, height: size }} alignment="center"
+        rotationEffect={{ degrees: rot1 * 0.7, anchor: "center" }}>
+        <Circle fill="#00E5FF" frame={{ width: Math.max(3, S(4)), height: Math.max(3, S(4)) }}
+          offset={{ x: size * 0.33, y: -size * 0.1 }} opacity={0.50} />
+        <Circle fill="#BF5AF2" frame={{ width: Math.max(2, S(3)), height: Math.max(2, S(3)) }}
+          offset={{ x: -size * 0.28, y: size * 0.2 } } opacity={0.40} />
+      </ZStack>
+
+      {/* ═══ 外围光晕（静态）═══ */}
       <Circle fill="#6B5CE7" frame={{ width: size * 0.58, height: size * 0.58 }} opacity={0.06} />
       <Circle fill="#5B4FCF" frame={{ width: size * 0.53, height: size * 0.53 }} opacity={0.08} />
 
-      {/* ═══ 白色图标（无背景）═══ */}
+      {/* ═══ 白色图标（静态不旋转）═══ */}
       <Image systemName="moped.fill" font={iconSize}
         foregroundStyle={{ color: "#FFFFFF" as Color, opacity: 1 }} />
     </ZStack>
