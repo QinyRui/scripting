@@ -28,6 +28,30 @@ function placemarkHasDetailedAddress(placemark: any) {
 }
 
 // ─── 逆向地理编码 ───
+interface GeoNameCache {
+  latitude: number
+  longitude: number
+  administrativeArea?: string
+  locality?: string
+  subLocality?: string
+  name?: string
+  town?: string
+  resolvedAt?: number
+}
+
+/** 从 locationCachePath 读取上次成功解析的地名 */
+function loadCachedGeoNames(): GeoNameCache | null {
+  try {
+    return Cache.read<GeoNameCache>(locationCachePath)
+  } catch { return null }
+}
+
+/** 判断缓存坐标与当前坐标的距离是否在可复用范围内（<5km） */
+export function isNearby(lat1: number, lon1: number, lat2?: number, lon2?: number): boolean {
+  if (!lat2 || !lon2) return false
+  // 简化计算：0.05°≈5km
+  return Math.abs(lat1 - lat2) < 0.05 && Math.abs(lon1 - lon2) < 0.05
+}
 export async function callReverseGeocode(options: { latitude: number; longitude: number; locale?: string }): Promise<any[] | null> {
   const nativeFn = (typeof Location !== "undefined" && Location.reverseGeocode) ? Location.reverseGeocode : (globalThis as any)?.reverseGeocode
   let nativeResult: any[] | null = null
@@ -109,7 +133,25 @@ export async function callReverseGeocode(options: { latitude: number; longitude:
     } catch (backupError) {
       appendDebugLog("Backup geocode service also failed", { error: String(backupError) })
     }
+
+    // ─── 回退：使用缓存的地名 ───
     if (nativeResult) return nativeResult
+    const cached = loadCachedGeoNames()
+    if (cached && isNearby(options.latitude, options.longitude, cached.latitude, cached.longitude)) {
+      appendDebugLog("geocode fallback: using cached location name", {
+        cachedLat: cached.latitude,
+        cachedLon: cached.longitude,
+        name: cached.locality || cached.administrativeArea || cached.name,
+      })
+      return [{
+        locality: cached.locality || "",
+        administrativeArea: cached.administrativeArea || "",
+        subAdministrativeArea: cached.subLocality || "",
+        subLocality: cached.subLocality || "",
+        name: cached.name || "",
+        town: cached.town || "",
+      }]
+    }
     throw error
   }
 }
