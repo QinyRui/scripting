@@ -5,9 +5,9 @@
 import { Widget } from "scripting"
 import { handleNotifications } from "../notification_logic"
 import type { WeatherInfo, LocationData, PoetryInfo, ScheduleInfo } from "./types"
-import { weatherIcos, LOCATION_CACHE_KEY, weatherCachePath } from "./constants"
+import { weatherIcos, LOCATION_CACHE_KEY, weatherCachePath, locationCachePath } from "./constants"
 import { Cache, appendDebugLog, getSavedApiKey, locationData, updateLocationData } from "./storage"
-import { resolveLocationNameIfNeeded, hasValidCoordinates, isWeatherCacheValid } from "./location"
+import { resolveLocationNameIfNeeded, hasValidCoordinates, isWeatherCacheValid, isNearby, isMeaningfulName } from "./location"
 import { getWindDirection, getWindLevel, airQuality, pad } from "./format"
 import { getLunarDate_Precise } from "./lunar"
 
@@ -58,11 +58,21 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
   }
 
   // 逆向地理编码获取地名
+  // 先加载已缓存的完整位置数据，保留已解析的地名
+  const cachedLoc = Cache.read<LocationData>(locationCachePath)
+  const hasCachedNames = Boolean(
+    cachedLoc &&
+    isNearby(location?.latitude || 0, location?.longitude || 0, cachedLoc.latitude, cachedLoc.longitude) &&
+    (isMeaningfulName(cachedLoc.locality) || isMeaningfulName(cachedLoc.administrativeArea))
+  )
   const baseData: LocationData = {
     latitude: location?.latitude || 0,
     longitude: location?.longitude || 0,
-    locality: "",
-    subLocality: "",
+    locality: hasCachedNames ? (cachedLoc!.locality || "") : "",
+    subLocality: hasCachedNames ? (cachedLoc!.subLocality || "") : "",
+    administrativeArea: hasCachedNames ? (cachedLoc!.administrativeArea || "") : "",
+    name: hasCachedNames ? (cachedLoc!.name || "") : "",
+    town: hasCachedNames ? (cachedLoc!.town || "") : "",
   }
   const resolved = await resolveLocationNameIfNeeded(baseData, true)
   updateLocationData(resolved)
