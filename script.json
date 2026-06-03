@@ -1,48 +1,52 @@
 {
-  "icon" : "network",
-  "color" : "rgba(102, 196, 235,1)",
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
+  "entry" : "index.tsx",
+  "name" : "☁️彩云天气(^ᴗ^)☁️",
+  "icon" : "cloud.sun.rain.fill",
+  "description" : "",
+  "localizedNames" : {
+    "de" : "",
+    "ja" : "",
+    "it" : "",
+    "es" : "",
+    "zh" : "",
+    "pt" : "",
+    "en" : "",
+    "fr" : "",
+    "ru" : ""
+  },
+  "color" : "rgba(174, 109, 216,1)",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
+  },
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "contributors" : [
-
-  ],
-  "localizedNames" : {
-    "zh" : "",
-    "fr" : "",
-    "en" : "",
-    "pt" : "",
-    "ja" : "",
-    "es" : "",
-    "de" : "",
-    "it" : "",
-    "ru" : ""
-  },
-  "description" : null,
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  },
-  "iconImage" : null,
-  "version" : "1.0.0",
   "remoteResource" : {
-    "autoUpdateInterval" : null,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
-    "hash" : "61b12430e8656c2485f0fe26018bc967"
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "hash" : "a20cd61e39555fad21114c5fb76c39b9",
+    "autoUpdateInterval" : 300
   },
-  "runInApp" : false,
   "localizedDescriptions" : {
-    "it" : "",
-    "de" : "",
-    "zh" : "",
-    "fr" : "",
-    "es" : "",
     "pt" : "",
-    "ru" : "",
+    "fr" : "",
     "ja" : "",
-    "en" : ""
+    "en" : "",
+    "it" : "",
+    "es" : "",
+    "ru" : "",
+    "zh" : "",
+    "de" : ""
   },
-  "entry" : "index.tsx",
-  "name" : "IP 信息展示改"
+  "version" : "6.1.7"
 }
