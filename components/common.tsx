@@ -147,8 +147,9 @@ export function RainingBarChart({ precipitation, widgetType }: { precipitation: 
   const hasRain = data.some(v => v > 0.02)
   if (!hasRain) return null
 
+  const isMedium = widgetType === "medium"
   // 图表总高度（含网格 + 柱子），保持紧凑
-  const chartHeight = widgetType === "medium" ? 26 : 32
+  const chartHeight = isMedium ? 26 : 32
   // 柱子最大高度只占图表区域的 55%，上方留给网格线
   const maxBarArea = Math.round(chartHeight * 0.55)
   const barWidth = 2.6
@@ -207,15 +208,15 @@ export function RainingBarChart({ precipitation, widgetType }: { precipitation: 
     return "rgba(25, 140, 255, 1)"
   }
 
-  // 每条虚线: 3.5px + 3px 间距 ≈ 6.5px; medium≈210px/6.5≈32, large≈200px/6.5≈30
-  const dashCount = widgetType === "medium" ? 32 : 30
+  // 大号组件不显示虚线网格，节省视图数
+  const dashCount = isMedium ? 32 : 0
 
   return (
     <VStack alignment="leading" spacing={2} padding={{ top: 0 }}>
       {/* 柱状图区域 */}
       <ZStack alignment="bottomLeading" frame={{ height: chartHeight, maxWidth: "infinity" }}>
-        {/* 水平虚线网格（3 条均分图表高度） */}
-        {Array.from({ length: gridLineCount }).map((_, i) => {
+        {/* 水平虚线网格（仅中号显示） */}
+        {isMedium && Array.from({ length: gridLineCount }).map((_, i) => {
           const y = Math.round((chartHeight / (gridLineCount + 1)) * (i + 1))
           return (
             <VStack key={`grid-${i}`} alignment="leading" spacing={0} padding={{ top: y }} frame={{ maxWidth: "infinity" }}>
