@@ -127,11 +127,11 @@ function useIPMeta(data: any, locationZh: string) {
   return { locationStr, mapLocationName, asnStr, fraudScore, purityScore, riskColor, riskLabel, purityLabel, riskText: `${fraudScore}% ${riskLabel}`, tags, ipRange, domain, coord, lat, lon, hasCoord, mapZoom, country: data.country, region: data.region, city: data.city, countryCode };
 }
 
-function buildStaticMapUrl(lat: number, lon: number, width: number, height: number, zoom = 8): string {
+function buildStaticMapUrl(lat: number, lon: number, width: number, height: number, zoom = 4): string {
   const safeLat = Math.max(-85, Math.min(85, lat));
   const safeLon = Math.max(-180, Math.min(180, lon));
   const safeZoom = Math.max(2, Math.min(17, zoom));
-  return `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=${safeZoom}&l=map&size=${width},${height}&dummy=.png`;
+  return `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=${safeZoom}&l=sat&size=${width},${height}&dummy=.png`;
 }
 
 const COUNTRY_ZH: Record<string, string> = {
@@ -254,8 +254,7 @@ function MediumWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any,
       widgetURL={Script.createRunSingleURLScheme(Script.name)}
     >
       <HStack alignment="center" spacing={6}>
-        <Text styledText={{ content: '🍃 IPPure', foregroundColor: '#1F7A3A', font: { name: 'System', size: 14 }, bold: true }} />
-        <Text styledText={{ content: 'IP 实时监控定位', foregroundColor: SECONDARY_TEXT, font: 10 }} />
+        <Text styledText={{ content: 'IP 实时监控定位', foregroundColor: '#1F7A3A', font: { name: 'System', size: 14 }, bold: true }} />
         <Spacer />
       </HStack>
 
@@ -444,36 +443,40 @@ function WidgetDataPanel({ data, meta, selected, compact, mapImage }: { data: an
 }
 
 function LocationMapPanel({ data, meta, selected, compact, title, mapImage }: { data: any, meta: any, selected: any, compact: boolean, title: string, mapImage: any }) {
-  const mapWidth = compact ? 108 : 156;
-  const mapHeight = compact ? 82 : 132;
+  const panelWidth = compact ? 108 : 156;
   const panelHeight = compact ? 110 : 168;
+  const headerHeight = compact ? 28 : 34;
   const locationTitle = [meta.city || meta.region, meta.country].filter(Boolean).join(' · ') || meta.mapLocationName || '定位位置';
   const coordText = meta.hasCoord ? `${meta.lat.toFixed(2)}, ${meta.lon.toFixed(2)}` : '坐标未知';
   const amapUrl = meta.hasCoord ? `https://uri.amap.com/marker?position=${meta.lon},${meta.lat}&name=${encodeURIComponent(locationTitle)}` : 'https://m.amap.com';
 
   return (
     <Link url={amapUrl}>
-      <VStack alignment="leading" spacing={0} frame={{ width: mapWidth, height: panelHeight }} background="#1F2937" cornerRadius={compact ? 10 : 14} padding={0} clipped={true}>
-        <HStack spacing={4} alignment="center" background="#1F2937" frame={{ width: mapWidth, height: compact ? 30 : 36 }} padding={{ leading: compact ? 6 : 8, trailing: compact ? 6 : 8 }}>
-          <Image systemName="mappin.and.ellipse" resizable={{}} frame={{ width: compact ? 16 : 20, height: compact ? 16 : 20 }} modifiers={modifiers().foregroundStyle(selected.color)} />
+      <VStack alignment="center" spacing={0} frame={{ width: panelWidth, height: panelHeight }} cornerRadius={compact ? 10 : 14} padding={0} clipped={true}>
+        <HStack spacing={4} alignment="center" background={tertiaryBg()} frame={{ width: panelWidth, height: headerHeight }} padding={{ leading: compact ? 6 : 8, trailing: compact ? 6: 8 }}>
+          <Image systemName="globe.americas" resizable={{}} frame={{ width: compact ? 14 : 18, height: compact ? 14 : 18 }} modifiers={modifiers().foregroundStyle(selected.color)} />
           <VStack alignment="leading" spacing={0} layoutPriority={1}>
             <Text styledText={{ content: title, foregroundColor: selected.color, font: compact ? 10 : 12, bold: true }} lineLimit={1} />
             <Text styledText={{ content: locationTitle, foregroundColor: 'white', font: compact ? 8 : 9, bold: true }} lineLimit={1} />
           </VStack>
         </HStack>
-        <ZStack alignment="center" frame={{ width: mapWidth, height: mapHeight }} background="#A8D7E1" clipped={true}>
+        <ZStack alignment="center" frame={{ width: panelWidth, height: panelHeight - headerHeight }}>
+          {/* 卫星地图 — 铺满整个区域，无黑框 */}
           {mapImage ? (
-            <Image
-              image={mapImage}
-              resizable={true}
-              frame={{ width: mapWidth, height: mapHeight }}
-            />
+            <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
           ) : (
-            <StaticMapFallback coord={coordText} name={locationTitle} compact={compact} width={mapWidth} height={mapHeight} />
+            <VStack alignment="center" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background="#0D1B2A">
+              <Text styledText={{ content: '🌍', font: 28 }} />
+            </VStack>
           )}
-          {meta.hasCoord && <Circle fill="rgba(255,59,48,0.22)" stroke="#FFFFFF" strokeWidth={1} frame={{ width: compact ? 26 : 32, height: compact ? 26 : 32 }} />}
-          {meta.hasCoord && <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: compact ? 20 : 24, height: compact ? 20 : 24 }} modifiers={modifiers().foregroundStyle('#FF3B30')} />}
-          {meta.hasCoord && <Text styledText={{ content: coordText, foregroundColor: 'white', font: compact ? 7 : 9, bold: true }} background="rgba(0,0,0,0.45)" cornerRadius={5} padding={{ top: 2, bottom: 2, leading: 4, trailing: 4 }} offset={{ x: 5, y: mapHeight - (compact ? 18 : 22) }} lineLimit={1} />}
+          {/* 淡蓝光晕装饰 */}
+          <Circle fill="rgba(20,55,130,0.08)" frame={{ width: compact ? 80 : 120, height: compact ? 80 : 120 }} blur={16} />
+          {/* 大气亮边环 */}
+          <Circle fill="none" stroke="rgba(75,160,255,0.18)" strokeWidth={1} frame={{ width: compact ? 80 : 120, height: compact ? 80 : 120 }} />
+          {/* 定位标记 */}
+          {meta.hasCoord && <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: compact ? 16 : 20, height: compact ? 16 : 20 }} modifiers={modifiers().foregroundStyle('#FF3B30')} />}
+          {/* 坐标标签 */}
+          {meta.hasCoord && <Text styledText={{ content: coordText, foregroundColor: 'rgba(255,255,255,0.80)', font: compact ? 7 : 8, bold: true }} background="rgba(0,0,0,0.50)" cornerRadius={4} padding={{ top: 2, bottom: 2, leading: 4, trailing: 4 }} offset={{ x: 0, y: (panelHeight - headerHeight) / 2 - (compact ? 12 : 16) }} lineLimit={1} />}
         </ZStack>
       </VStack>
     </Link>
@@ -698,12 +701,10 @@ async function runWidget() {
 
     let mapImage = null;
     if (data.latitude && data.longitude) {
-      const zoom = getCountryMapZoom(data, false);
       const safeLat = Math.max(-85, Math.min(85, data.latitude));
       const safeLon = Math.max(-180, Math.min(180, data.longitude));
-      const safeZoom = Math.max(2, Math.min(17, zoom));
-      // Pre-fetch a map size that fits the widget
-      const url = `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=${safeZoom}&l=map&size=312,264`;
+      // 卫星影像 + 适中缩放级别，铺满面板区域（Yandex 最大支持约 312px）
+      const url = `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=6&l=sat&size=312,312`;
       try {
         mapImage = await UIImage.fromURL(url);
       } catch (e) {
