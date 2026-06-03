@@ -12,6 +12,7 @@ import { safeGetLunarStr } from "./utils/lunar"
 import { getNextWidgetReloadDate } from "./utils/format"
 
 import { BackgroundLayer, InfoSide, WeatherSide, TimeInfoBar, CalendarView } from "./components/common"
+import { AccessoryRectangularView } from "./components/accessoryRectangular"
 
 declare const FileManager: any
 
@@ -65,6 +66,12 @@ function ErrorWidgetView({ message }: { message: string }) {
 function WidgetRoot(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   const family = Widget.family
   const skycon = props.weatherInfo.weatherIco ? Object.keys(weatherIcos).find(k => weatherIcos[k] === props.weatherInfo.weatherIco) : "CLEAR_DAY"
+
+  // 锁屏组件：独立渲染，不使用背景层
+  if (family === "accessoryRectangular") {
+    return <AccessoryRectangularView weatherInfo={props.weatherInfo} />
+  }
+
   return (
     <ZStack alignment="topLeading" widgetURL={Script.createOpenURLScheme(scriptName)}>
       <BackgroundLayer family={family} skycon={skycon} />
