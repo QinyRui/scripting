@@ -1,726 +1,131 @@
-// @ts-nocheck
-import { Widget, VStack, HStack, ZStack, Text, Spacer, Divider, Image, Link, Script, RoundedRectangle, Circle, modifiers, fetch, Button } from 'scripting';
-import { SelectFeatureIntent } from './app_intents';
+/**
+ * 🌤️ 彩云天气(^ᴗ^)☁️ — Widget 入口
+ * 主文件仅负责：初始化 → 获取数据 → 渲染视图
+ */
+import { Widget, Script, VStack, HStack, ZStack, Spacer, Text } from "scripting"
+import type { WeatherInfo, PoetryInfo, ScheduleInfo } from "./utils/types"
+import { scriptName, weatherIcos, LOCATION_CACHE_KEY } from "./utils/constants"
+import { styleConfig, updateStyleConfig, getSavedStyleConfig, locationData, updateLocationData, appendDebugLog, ensureBackgroundMigrated, getSavedApiKey, hasRecentForceReloadRequest, Cache } from "./utils/storage"
+import { hasValidCoordinates } from "./utils/location"
+import { safeGetWeather, safeGetSchedules, refreshApiKey } from "./utils/weather"
+import { safeGetLunarStr } from "./utils/lunar"
+import { getNextWidgetReloadDate } from "./utils/format"
 
-const BASE_URL = 'https://ippure.com';
-const STORAGE_KEY = 'ippure.selectedFeature';
-const WIDGET_BACKGROUND = 'systemBackground';
-const CARD_BACKGROUND = 'secondarySystemBackground';
-const TERTIARY_CARD_BACKGROUND = 'tertiarySystemBackground';
+import { BackgroundLayer, InfoSide, WeatherSide, TimeInfoBar, CalendarView } from "./components/common"
+import { AccessoryRectangularView } from "./components/accessoryRectangular"
 
-// ─── 透明背景支持 ───────────────────────────────────────────
-// 当用户在 iOS 主屏幕组件设置中启用「透明背景」时，
-// Widget.isTransparentBackground 为 true，此时：
-//   1. 组件外层不设背景色，让桌面壁纸透出
-//   2. 卡片/面板使用深色半透明毛玻璃背景，保证文字可读性
-function isTransparent(): boolean {
-  try { return Widget.isTransparentBackground; } catch { return false; }
-}
-const GLASS_BG = 'rgba(30,30,30,0.65)';
-const GLASS_CARD_BG = 'rgba(40,40,40,0.55)';
-const GLASS_TERTIARY_BG = 'rgba(50,50,50,0.45)';
-function widgetBg(): string | undefined { return isTransparent() ? undefined : WIDGET_BACKGROUND; }
-function cardBg(): string { return isTransparent() ? GLASS_CARD_BG : CARD_BACKGROUND; }
-function tertiaryBg(): string { return isTransparent() ? GLASS_TERTIARY_BG : TERTIARY_CARD_BACKGROUND; }
-const OSM_TILE_ZOOM = 4;
-const COUNTRY_MAP_ZOOM: Record<string, number> = {
-  RU: 2, CA: 2, US: 3, CN: 3, BR: 3, AU: 3,
-  IN: 4, AR: 4, KZ: 4, MX: 4, ID: 4, SA: 4,
-  JP: 5, KR: 5, GB: 5, DE: 5, FR: 5, IT: 5, ES: 5, TH: 5, VN: 5, TR: 5,
-  SG: 8, HK: 8, MO: 8,
-};
-const PRIMARY_TEXT = 'label';
-const SECONDARY_TEXT = 'secondaryLabel';
+declare const FileManager: any
 
-const FEATURES = [
-  { id: 'ip-info', title: 'IP 定位信息', shortTitle: '定位', icon: 'location.fill', emoji: '📍', color: '#34C759', url: 'https://ippure.com/', desc: '精准获悉 IP 地理位置与运营商信息' },
-  { id: 'risk', title: 'IP 风险检测', shortTitle: '风险', icon: 'shield.lefthalf.filled', emoji: '🛡️', color: '#FF9500', url: 'https://ippure.com/', desc: '识别欺诈、代理及黑名单风险' },
-  { id: 'fingerprint', title: '指纹信息分析', shortTitle: '指纹', icon: 'touchid', emoji: '👆', color: '#AF52DE', url: 'https://ippure.com/fingerprint', desc: '深度解析浏览器与设备指纹特征' },
-  { id: 'outbound', title: 'IP 出口地图', shortTitle: '出口', icon: 'map.fill', emoji: '🗺️', color: '#007AFF', url: 'https://ippure.com/IP-Outbound-Detect', desc: '可视化展示网络链路与出口节点' },
-  { id: 'vpn-leak', title: 'VPN 泄露检测', shortTitle: 'VPN', icon: 'lock.shield.fill', emoji: '🔐', color: '#5856D6', url: 'https://ippure.com/IP-leak-Detect', desc: '检测是否存在 VPN 穿透与伪装' },
-  { id: 'webrtc', title: 'WebRTC 检测', shortTitle: 'WebRTC', icon: 'video.badge.ellipsis', emoji: '🧩', color: '#00C7BE', url: 'https://ippure.com/Browser-WebRTC-Leak-Detect', desc: '防止真实 IP 通过 WebRTC 协议泄露' },
-  { id: 'dns-leak', title: 'DNS 泄露检测', shortTitle: 'DNS', icon: 'network', emoji: '🌐', color: '#32ADE6', url: 'https://ippure.com/DNS-Leak-Detect', desc: '确保域名解析请求的安全隐私' },
-  { id: 'advanced', title: '高级检测服务', shortTitle: '高级', icon: 'sparkles', emoji: '✨', color: '#FF2D55', url: 'https://ippure.com/todo', desc: '更多检测服务开发中' },
-];
-
-function getSelectedFeature() {
-  const saved = Storage.get<any>(STORAGE_KEY) || Storage.get<any>(STORAGE_KEY, { shared: true });
-  const id = typeof saved === 'string' ? saved : saved?.id;
-  return FEATURES.find(item => item.id === id) || FEATURES[0];
-}
-
-function ErrorView() {
+// ─── 中号组件视图 ───
+function MediumWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
-    <VStack alignment="center" background={WIDGET_BACKGROUND} cornerRadius={16} padding={16} widgetURL={Script.createRunSingleURLScheme(Script.name)}>
-      <Text styledText={{ content: "❌ 获取 IP 信息失败", foregroundColor: PRIMARY_TEXT, font: 14, bold: true }} />
-      <Text styledText={{ content: "请检查网络或稍后重试", foregroundColor: SECONDARY_TEXT, font: 11 }} />
-    </VStack>
-  );
-}
-
-const WALLPAPER_MEDIUM_KEY = 'ippure.wallpaper.medium';
-const WALLPAPER_LARGE_KEY = 'ippure.wallpaper.large';
-
-function IPWidgetView({ data, locationZh, mapImage }: { data: any, locationZh: string, mapImage: any }) {
-  if (!data) return <ErrorView />;
-  const family = Widget.family;
-
-  const wallpaperKey = family === 'systemLarge' ? WALLPAPER_LARGE_KEY : WALLPAPER_MEDIUM_KEY;
-  const wallpaperData = Storage.getData(wallpaperKey);
-  const wallpaperImage = wallpaperData ? UIImage.fromData(wallpaperData) : null;
-
-  const isPreview = Widget.family === undefined;
-
-  const widgetView = family === 'systemLarge' ? (
-    <LargeWidget data={data} locationZh={locationZh} mapImage={mapImage} hasWallpaper={!!wallpaperImage} />
-  ) : (
-    <MediumWidget data={data} locationZh={locationZh} mapImage={mapImage} hasWallpaper={!!wallpaperImage} />
-  );
-
-  if (wallpaperImage) {
-    return (
-      <ZStack alignment="center" frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
-        <Image image={wallpaperImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
-        {widgetView}
-      </ZStack>
-    );
-  }
-
-  return widgetView;
-}
-
-function getCountryMapZoom(data: any, compact = false) {
-  const code = String(data.countryCode || data.country_code || data.countryCode2 || '').toUpperCase();
-  const baseZoom = COUNTRY_MAP_ZOOM[code] || 5;
-  return Math.max(2, Math.min(8, compact ? baseZoom : baseZoom + 1));
-}
-
-function useIPMeta(data: any, locationZh: string) {
-  const locationName = data.locationName || data.placeName || data.displayName || data.ispLocation || data.orgLocation || '';
-  const locationStr = locationZh || locationName || [data.country, data.region, data.city].filter(Boolean).join(', ') || 'N/A';
-  const asnStr = `${data.asn || ''}${data.asOrganization ? ' - ' + data.asOrganization : ''}` || 'N/A';
-  const fraudScore = data.fraudScore || data.riskScore || data.score || 0;
-  const purityScore = Math.max(0, Math.min(100, 100 - fraudScore));
-  let riskColor = '#34c759';
-  let riskLabel = '低风险';
-  let purityLabel = '纯净';
-  if (fraudScore > 70) { riskColor = '#FF3B30'; riskLabel = '极度风险'; purityLabel = '高危'; }
-  else if (fraudScore > 50) { riskColor = '#FF3B30'; riskLabel = '高风险'; purityLabel = '高危'; }
-  else if (fraudScore > 40) { riskColor = '#FF9500'; riskLabel = '中度风险'; purityLabel = '中性'; }
-  else if (fraudScore > 15) { riskColor = '#FFCC00'; riskLabel = '轻微风险'; purityLabel = '一般'; }
-  const tags: string[] = [];
-  if (data.isBroadcast) tags.push('广播 IP');
-  if (data.isHosting || data.isServer) tags.push('机房 IP');
-  if (data.isResidential) tags.push('住宅 IP');
-  if (data.isProxy) tags.push('代理');
-  if (data.isVpn) tags.push('VPN');
-  if (tags.length === 0) tags.push('普通 IP');
-  const ipRange = data.ipRange || data.range || data.network || '未知';
-  const domain = data.asDomain || data.domain || (data.asOrganization || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 18) || '未知';
-  const lat = Number(data.latitude || data.lat);
-  const lon = Number(data.longitude || data.lon || data.lng);
-  const hasCoord = Number.isFinite(lat) && Number.isFinite(lon);
-  const coord = hasCoord ? `${lat.toFixed(2)}, ${lon.toFixed(2)}` : '坐标未知';
-  const mapLocationName = locationName || locationStr;
-  const countryCode = String(data.countryCode || data.country_code || '').toUpperCase();
-  const mapZoom = getCountryMapZoom(data);
-  return { locationStr, mapLocationName, asnStr, fraudScore, purityScore, riskColor, riskLabel, purityLabel, riskText: `${fraudScore}% ${riskLabel}`, tags, ipRange, domain, coord, lat, lon, hasCoord, mapZoom, country: data.country, region: data.region, city: data.city, countryCode };
-}
-
-function buildStaticMapUrl(lat: number, lon: number, width: number, height: number, zoom = 4): string {
-  const safeLat = Math.max(-85, Math.min(85, lat));
-  const safeLon = Math.max(-180, Math.min(180, lon));
-  const safeZoom = Math.max(2, Math.min(17, zoom));
-  return `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=${safeZoom}&l=sat&size=${width},${height}&dummy=.png`;
-}
-
-const COUNTRY_ZH: Record<string, string> = {
-  'China': '中国', 'United States': '美国', 'Japan': '日本', 'South Korea': '韩国',
-  'United Kingdom': '英国', 'Germany': '德国', 'France': '法国', 'Canada': '加拿大',
-  'Australia': '澳大利亚', 'Russia': '俄罗斯', 'India': '印度', 'Brazil': '巴西',
-  'Singapore': '新加坡', 'Hong Kong': '中国香港', 'Taiwan': '中国台湾', 'Macau': '中国澳门',
-  'Vietnam': '越南', 'Thailand': '泰国', 'Malaysia': '马来西亚', 'Indonesia': '印度尼西亚',
-  'Philippines': '菲律宾', 'Mongolia': '蒙古', 'South Africa': '南非', 'Egypt': '埃及',
-  'Nigeria': '尼日利亚', 'Kenya': '肯尼亚', 'Morocco': '摩洛哥', 'Saudi Arabia': '沙特阿拉伯',
-  'United Arab Emirates': '阿联酋', 'Turkey': '土耳其', 'Iran': '伊朗', 'Pakistan': '巴基斯坦',
-  'Bangladesh': '孟加拉国', 'Sri Lanka': '斯里兰卡', 'Nepal': '尼泊尔',
-  'Netherlands': '荷兰', 'Belgium': '比利时', 'Switzerland': '瑞士', 'Sweden': '瑞典',
-  'Norway': '挪威', 'Denmark': '丹麦', 'Finland': '芬兰', 'Poland': '波兰',
-  'Italy': '意大利', 'Spain': '西班牙', 'Portugal': '葡萄牙', 'Greece': '希腊',
-  'Austria': '奥地利', 'Ireland': '爱尔兰', 'New Zealand': '新西兰',
-  'Mexico': '墨西哥', 'Argentina': '阿根廷', 'Colombia': '哥伦比亚', 'Chile': '智利',
-  'Peru': '秘鲁', 'Venezuela': '委内瑞拉', 'Ukraine': '乌克兰', 'Romania': '罗马尼亚',
-  'Czech Republic': '捷克', 'Hungary': '匈牙利', 'Israel': '以色列', 'Qatar': '卡塔尔',
-};
-
-function toChineseName(data: any): string {
-  const parts: string[] = [];
-  // Country in Chinese
-  if (data.country) {
-    parts.push(COUNTRY_ZH[data.country] || data.country);
-  }
-  // Region/state in Chinese (if available)
-  if (data.region) {
-    parts.push(data.region);
-  }
-  // City in Chinese (if available)
-  if (data.city) {
-    parts.push(data.city);
-  }
-  return parts.filter(Boolean).join(' ');
-}
-
-function clampLat(lat: number) {
-  return Math.max(-85.0511, Math.min(85.0511, lat));
-}
-
-function lonLatToTile(lat: number, lon: number, zoom: number) {
-  const safeLat = clampLat(lat);
-  const safeLon = Math.max(-180, Math.min(180, lon));
-  const scale = Math.pow(2, zoom);
-  const latRad = safeLat * Math.PI / 180;
-  const xFloat = (safeLon + 180) / 360 * scale;
-  const yFloat = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * scale;
-  const x = Math.max(0, Math.min(scale - 1, Math.floor(xFloat)));
-  const y = Math.max(0, Math.min(scale - 1, Math.floor(yFloat)));
-  return {
-    x,
-    y,
-    pinXRatio: xFloat - x,
-    pinYRatio: yFloat - y,
-  };
-}
-
-function buildOSMTileUrlForTile(zoom: number, x: number, y: number) {
-  const scale = Math.pow(2, zoom);
-  const wrappedX = ((x % scale) + scale) % scale;
-  const clampedY = Math.max(0, Math.min(scale - 1, y));
-  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${zoom}/${clampedY}/${wrappedX}`;
-}
-
-function getCenteredMapTiles(lat: number, lon: number, zoom: number, width: number, height: number) {
-  const safeLat = clampLat(lat);
-  const safeLon = Math.max(-180, Math.min(180, lon));
-  const scale = Math.pow(2, zoom);
-  const tileSize = 256;
-  const latRad = safeLat * Math.PI / 180;
-  const centerX = (safeLon + 180) / 360 * scale * tileSize;
-  const centerY = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * scale * tileSize;
-  const originX = centerX - width / 2;
-  const originY = centerY - height / 2;
-  const startX = Math.floor(originX / tileSize);
-  const startY = Math.floor(originY / tileSize);
-  const endX = Math.floor((originX + width) / tileSize);
-  const endY = Math.floor((originY + height) / tileSize);
-  const tiles: any[] = [];
-
-  for (let y = startY - 1; y <= endY + 1; y++) {
-    for (let x = startX - 1; x <= endX + 1; x++) {
-      tiles.push({
-        key: `${zoom}-${x}-${y}`,
-        url: buildOSMTileUrlForTile(zoom, x, y),
-        offsetX: x * tileSize - originX,
-        offsetY: y * tileSize - originY,
-      });
-    }
-  }
-
-  return tiles;
-}
-
-function buildOSMTileUrl(lat: number, lon: number, zoom: number) {
-  const tile = lonLatToTile(lat, lon, zoom);
-  return `https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`;
-}
-
-function getTilePinOffset(lat: number, lon: number, zoom: number, width: number, height: number) {
-  const tile = lonLatToTile(lat, lon, zoom);
-  return {
-    x: tile.pinXRatio * width,
-    y: tile.pinYRatio * height,
-  };
-}
-
-function MediumWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any, locationZh: string, mapImage: any, hasWallpaper?: boolean }) {
-  const meta = useIPMeta(data, locationZh);
-  const ipInfoSelected = FEATURES[0]; // 固定使用 IP 定位信息
-  return (
-    <VStack
-      cornerRadius={22}
-      padding={{ top: 14, bottom: 12, leading: 14, trailing: 14 }}
-      spacing={6}
-      alignment="leading"
-      background={hasWallpaper ? undefined : widgetBg()}
-      widgetURL={Script.createRunSingleURLScheme(Script.name)}
-    >
-      <HStack alignment="center" spacing={6}>
-        <Text styledText={{ content: 'IP 实时监控定位', foregroundColor: '#1F7A3A', font: { name: 'System', size: 14 }, bold: true }} />
-        <Spacer />
-      </HStack>
-
-      <HStack alignment="center" spacing={8}>
-        <VStack alignment="leading" spacing={4} layoutPriority={1}>
-          <Row icon="📍" label="位置" value={meta.locationStr} />
-          <Row icon="💻" label="IP" value={data.ip || 'N/A'} />
-          <Row icon="🏢" label="ASN" value={meta.asnStr} />
-          <RiskGaugeBar fraudScore={meta.fraudScore} riskColor={meta.riskColor} riskLabel={meta.riskLabel} tags={meta.tags} />
-        </VStack>
-        <LocationMapPanel data={data} meta={meta} selected={ipInfoSelected} compact={true} title="定位地图" mapImage={mapImage} />
-      </HStack>
-    </VStack>
-  );
-}
-
-function LargeWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any, locationZh: string, mapImage: any, hasWallpaper?: boolean }) {
-  const meta = useIPMeta(data, locationZh);
-  const ipInfoSelected = FEATURES[0]; // 固定使用 IP 定位信息
-  return (
-    <VStack
-      cornerRadius={24}
-      padding={{ top: 16, bottom: 14, leading: 16, trailing: 16 }}
-      spacing={10}
-      alignment="leading"
-      background={hasWallpaper ? undefined : widgetBg()}
-    >
-      <HStack alignment="center">
-        <VStack alignment="leading" spacing={2}>
-          <Text styledText={{ content: 'IP 实时监控定位', foregroundColor: '#166534', font: 18, bold: true }} />
-        </VStack>
-      </HStack>
-
-      <HStack alignment="center" spacing={10}>
-        <VStack alignment="leading" spacing={4} layoutPriority={1} frame={{ maxWidth: 160 }}>
-          <InfoCard title="当前 IP" value={data.ip || 'N/A'} icon="💻" color="#2563EB" />
-          <InfoCard title="位置" value={meta.locationStr} icon="📍" color="#16A34A" />
-          <InfoCard title="ASN / 组织" value={meta.asnStr} icon="🏢" color="#9333EA" />
-        </VStack>
-        <LocationMapPanel data={data} meta={meta} selected={ipInfoSelected} compact={false} title="定位地图" mapImage={mapImage} />
-      </HStack>
-
-      <HStack spacing={6} alignment="center">
-        <Text styledText={{ content: '🔰 ' + meta.riskText, foregroundColor: meta.riskColor, font: 11, bold: true }} background="rgba(255,255,255,0.08)" cornerRadius={8} padding={{ top: 4, bottom: 4, leading: 7, trailing: 7 }} modifiers={modifiers().overlay(<RoundedRectangle cornerRadius={8} stroke={meta.riskColor} strokeWidth={1} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />)} />
-        {meta.tags.slice(0, 2).map(tag => <Text styledText={{ content: tag, foregroundColor: '#EE7799', font: 10, bold: true }} background="rgba(255,255,255,0.08)" cornerRadius={8} padding={{ top: 3, bottom: 3, leading: 6, trailing: 6 }} modifiers={modifiers().overlay(<RoundedRectangle cornerRadius={8} stroke="#EE7799" strokeWidth={1} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />)} />)}
-        <Spacer />
-      </HStack>
-    </VStack>
-  );
-}
-
-function WidgetDataPanel({ data, meta, selected, compact, mapImage }: { data: any, meta: any, selected: any, compact: boolean, mapImage: any }) {
-  const panelWidth = compact ? 118 : 156;
-
-  // ── 定位地图 ──────────────────────────────────────────────
-  if (selected.id === 'ip-info') {
-    return <LocationMapPanel data={data} meta={meta} selected={selected} compact={compact} title="定位地图" mapImage={mapImage} />;
-  }
-
-  // ── 出口地图 ──────────────────────────────────────────────
-  if (selected.id === 'outbound') {
-    return <LocationMapPanel data={data} meta={meta} selected={selected} compact={compact} title="出口地图" mapImage={mapImage} />;
-  }
-
-  // ── 风险检测面板（IPPure 纯净度检测）──────────────────────
-  if (selected.id === 'risk') {
-    const riskColor = meta.riskColor;
-    const riskLevel = meta.fraudScore > 70 ? 'HIGH' : meta.fraudScore > 40 ? 'MED' : 'LOW';
-    return (
-      <VStack alignment="leading" spacing={compact ? 4 : 6} frame={{ width: panelWidth, height: compact ? 118 : 168 }} background={cardBg()} cornerRadius={compact ? 14 : 18} padding={compact ? 8 : 10}>
-        <PanelHeader selected={selected} compact={compact} />
-        {/* IPPure 纯净度分数 */}
-        <VStack alignment="leading" spacing={2}>
-          <Text styledText={{ content: `${meta.purityScore}%`, foregroundColor: riskColor, font: compact ? 22 : 28, bold: true }} />
-          <Text styledText={{ content: `IPPure 纯净度 · ${meta.purityLabel}`, foregroundColor: SECONDARY_TEXT, font: compact ? 8 : 9 }} />
-        </VStack>
-        <ScoreBar score={meta.purityScore} label={meta.purityLabel} color={riskColor} compact={compact} />
-        <HStack spacing={4} alignment="center">
-          <Text styledText={{ content: riskLevel, foregroundColor: 'white', font: compact ? 8 : 9, bold: true }} background={riskColor} cornerRadius={4} padding={{ top: 2, bottom: 2, leading: 5, trailing: 5 }} />
-          <Text styledText={{ content: meta.tags.slice(0, 2).join(' · '), foregroundColor: '#EE7799', font: compact ? 9 : 10 }} lineLimit={1} />
-        </HStack>
-        <MiniData label="欺诈分" value={`${meta.fraudScore}/100`} color={riskColor} />
-        {!compact && <MiniData label="流量" value={`human ${Math.max(0, 100 - meta.fraudScore)}% / bot ${meta.fraudScore}%`} color="#0EA5E9" />}
-        {!compact && <MiniData label="IP 属性" value={meta.tags.join(' · ') || '普通 IP'} color="#A78BFA" />}
+    <HStack alignment="center" spacing={5} padding={{ top: 6, leading: 8, trailing: 10, bottom: 6 }}>
+      <VStack frame={{ width: 202, alignment: "leading" }}>
+        <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="medium" />
       </VStack>
-    );
-  }
-
-  // ── 指纹分析面板（IPPure 浏览器指纹）─────────────────────
-  if (selected.id === 'fingerprint') {
-    return (
-      <VStack alignment="leading" spacing={compact ? 3 : 5} frame={{ width: panelWidth, height: compact ? 118 : 168 }} background={cardBg()} cornerRadius={compact ? 14 : 18} padding={compact ? 8 : 10}>
-        <PanelHeader selected={selected} compact={compact} />
-        <Text styledText={{ content: '网络指纹特征', foregroundColor: '#AF52DE', font: compact ? 9 : 10, bold: true }} />
-        <VStack alignment="leading" spacing={compact ? 1 : 2}>
-          <MiniData label="IP" value={data.ip || 'N/A'} color="#2563EB" />
-          <MiniData label="ASN" value={meta.asnStr} color="#9333EA" />
-          <MiniData label="ISP" value={data.isp || 'N/A'} color="#16A34A" />
-          <MiniData label="域名" value={meta.domain || 'N/A'} color="#0EA5E9" />
-          {!compact && <MiniData label="邮编" value={data.ippurePostalCode || 'N/A'} color={SECONDARY_TEXT} />}
-          {!compact && <MiniData label="坐标" value={meta.coord} color={SECONDARY_TEXT} />}
-        </VStack>
-      </VStack>
-    );
-  }
-
-  // ── VPN 泄露检测面板（IPPure VPN 溯源）──────────────────
-  if (selected.id === 'vpn-leak') {
-    const isVpnDetected = data.isVpn || data.isProxy;
-    const vpnStatus = isVpnDetected ? '⚠️ VPN/代理已识别' : '✅ 未检测到 VPN';
-    const vpnColor = isVpnDetected ? '#FF9500' : '#34C759';
-    return (
-      <VStack alignment="leading" spacing={compact ? 3 : 5} frame={{ width: panelWidth, height: compact ? 118 : 168 }} background={cardBg()} cornerRadius={compact ? 14 : 18} padding={compact ? 8 : 10}>
-        <PanelHeader selected={selected} compact={compact} />
-        <HStack alignment="center" spacing={4}>
-          <Circle fill={vpnColor} frame={{ width: compact ? 8 : 10, height: compact ? 8 : 10 }} />
-          <Text styledText={{ content: vpnStatus, foregroundColor: vpnColor, font: compact ? 9 : 10, bold: true }} lineLimit={1} />
-        </HStack>
-        <VStack alignment="leading" spacing={compact ? 1 : 2}>
-          <MiniData label="公网 IP" value={data.ip || 'N/A'} color="#2563EB" />
-          <MiniData label="ISP" value={(data.isp || 'N/A').substring(0, 16)} color="#16A34A" />
-          <MiniData label="VPN" value={data.isVpn ? '已检测' : '未检测'} color={data.isVpn ? '#FF9500' : '#34C759'} />
-          <MiniData label="代理" value={data.isProxy ? '已检测' : '未检测'} color={data.isProxy ? '#FF9500' : '#34C759'} />
-          {!compact && <MiniData label="住宅IP" value={data.isResidential ? '是' : '否'} color={data.isResidential ? '#34C759' : '#FF9500'} />}
-        </VStack>
-      </VStack>
-    );
-  }
-
-  // ── WebRTC 检测面板（IPPure WebRTC 泄露）─────────────────
-  if (selected.id === 'webrtc') {
-    const webrtcSafe = !data.isVpn && !data.isProxy && !data.isHosting;
-    const webrtcColor = webrtcSafe ? '#34C759' : '#FF3B30';
-    return (
-      <VStack alignment="leading" spacing={compact ? 3 : 5} frame={{ width: panelWidth, height: compact ? 118 : 168 }} background={cardBg()} cornerRadius={compact ? 14 : 18} padding={compact ? 8 : 10}>
-        <PanelHeader selected={selected} compact={compact} />
-        <HStack alignment="center" spacing={4}>
-          <Circle fill={webrtcColor} frame={{ width: compact ? 8 : 10, height: compact ? 8 : 10 }} />
-          <Text styledText={{ content: webrtcSafe ? '✅ WebRTC 安全' : '⚠️ 存在泄露风险', foregroundColor: webrtcColor, font: compact ? 9 : 10, bold: true }} lineLimit={1} />
-        </HStack>
-        <VStack alignment="leading" spacing={compact ? 1 : 2}>
-          <MiniData label="公共IP" value={data.ip || 'N/A'} color="#2563EB" />
-          <MiniData label="ISP" value={(data.isp || 'N/A').substring(0, 16)} color="#16A34A" />
-          <MiniData label="VPN" value={data.isVpn ? '已检测' : '未检测'} color={data.isVpn ? '#FF3B30' : '#34C759'} />
-          {!compact && <MiniData label="代理" value={data.isProxy ? '已检测' : '未检测'} color={data.isProxy ? '#FF3B30' : '#34C759'} />}
-          {!compact && <MiniData label="类型" value={meta.tags[0] || '普通 IP'} color="#EE7799" />}
-        </VStack>
-      </VStack>
-    );
-  }
-
-  // ── DNS 泄露检测面板（IPPure DNS 泄露）───────────────────
-  if (selected.id === 'dns-leak') {
-    const dnsSafe = !data.isHosting && !data.isProxy;
-    const dnsColor = dnsSafe ? '#34C759' : '#FF3B30';
-    const dnsStatus = dnsSafe ? '✅ DNS 解析安全' : '⚠️ DNS 可能泄露';
-    return (
-      <VStack alignment="leading" spacing={compact ? 3 : 5} frame={{ width: panelWidth, height: compact ? 118 : 168 }} background={cardBg()} cornerRadius={compact ? 14 : 18} padding={compact ? 8 : 10}>
-        <PanelHeader selected={selected} compact={compact} />
-        <HStack alignment="center" spacing={4}>
-          <Circle fill={dnsColor} frame={{ width: compact ? 8 : 10, height: compact ? 8 : 10 }} />
-          <Text styledText={{ content: dnsStatus, foregroundColor: dnsColor, font: compact ? 9 : 10, bold: true }} lineLimit={1} />
-        </HStack>
-        <VStack alignment="leading" spacing={compact ? 1 : 2}>
-          <MiniData label="DNS" value={meta.domain || 'N/A'} color="#2563EB" />
-          <MiniData label="ISP" value={(data.isp || 'N/A').substring(0, 16)} color="#16A34A" />
-          <MiniData label="机房" value={data.isHosting ? '是' : '否'} color={data.isHosting ? '#FF9500' : '#34C759'} />
-          {!compact && <MiniData label="位置" value={meta.locationStr.substring(0, 14)} color="#A78BFA" />}
-          {!compact && <MiniData label="时区" value={data.ippureTimezone || 'N/A'} color={SECONDARY_TEXT} />}
-        </VStack>
-      </VStack>
-    );
-  }
-
-  // ── 高级检测 / 默认面板（敬请期待）───────────────────────
-  return (
-    <VStack alignment="center" spacing={compact ? 6 : 10} frame={{ width: panelWidth, height: compact ? 118 : 168 }} background={cardBg()} cornerRadius={compact ? 14 : 18} padding={compact ? 8 : 10}>
-      <PanelHeader selected={selected} compact={compact} />
       <Spacer />
-      <Text styledText={{ content: selected.emoji, font: compact ? 28 : 36 }} />
-      <Text styledText={{ content: '敬请期待', foregroundColor: SECONDARY_TEXT, font: compact ? 10 : 12, bold: true }} />
-      <Text styledText={{ content: selected.desc, foregroundColor: SECONDARY_TEXT, font: compact ? 8 : 9 }} lineLimit={2} alignment="center" />
-      <Spacer />
-    </VStack>
-  );
+      <VStack frame={{ width: 100, maxHeight: "infinity", alignment: "center" }}>
+        <WeatherSide weatherInfo={props.weatherInfo} widgetType="medium" />
+      </VStack>
+    </HStack>
+  )
 }
 
-function LocationMapPanel({ data, meta, selected, compact, title, mapImage }: { data: any, meta: any, selected: any, compact: boolean, title: string, mapImage: any }) {
-  const panelWidth = compact ? 108 : 156;
-  const panelHeight = compact ? 110 : 168;
-  const headerHeight = compact ? 28 : 34;
-  const locationTitle = [meta.city || meta.region, meta.country].filter(Boolean).join(' · ') || meta.mapLocationName || '定位位置';
-  const coordText = meta.hasCoord ? `${meta.lat.toFixed(2)}, ${meta.lon.toFixed(2)}` : '坐标未知';
-  const amapUrl = meta.hasCoord ? `https://uri.amap.com/marker?position=${meta.lon},${meta.lat}&name=${encodeURIComponent(locationTitle)}` : 'https://m.amap.com';
-
+// ─── 大号组件视图 ───
+function LargeWidgetView(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
   return (
-    <Link url={amapUrl}>
-      <VStack alignment="center" spacing={0} frame={{ width: panelWidth, height: panelHeight }} cornerRadius={compact ? 10 : 14} padding={0} clipped={true}>
-        <HStack spacing={4} alignment="center" background={tertiaryBg()} frame={{ width: panelWidth, height: headerHeight }} padding={{ leading: compact ? 6 : 8, trailing: compact ? 6: 8 }}>
-          <Image systemName="globe.americas" resizable={{}} frame={{ width: compact ? 14 : 18, height: compact ? 14 : 18 }} modifiers={modifiers().foregroundStyle(selected.color)} />
-          <VStack alignment="leading" spacing={0} layoutPriority={1}>
-            <Text styledText={{ content: title, foregroundColor: selected.color, font: compact ? 10 : 12, bold: true }} lineLimit={1} />
-            <Text styledText={{ content: locationTitle, foregroundColor: 'white', font: compact ? 8 : 9, bold: true }} lineLimit={1} />
-          </VStack>
+    <VStack alignment="leading" spacing={0} padding={{ top: 8, bottom: 1 }}>
+      <VStack padding={{ leading: 8, trailing: 4 }}>
+        <HStack alignment="top" spacing={0} frame={{ minHeight: 110 }}>
+          <InfoSide weatherInfo={props.weatherInfo} lunarStr={props.lunarStr} poetry={props.poetry} schedules={props.schedules} widgetType="large" />
+          <Spacer minLength={4} />
+          <WeatherSide weatherInfo={props.weatherInfo} widgetType="large" />
         </HStack>
-        <ZStack alignment="center" frame={{ width: panelWidth, height: panelHeight - headerHeight }}>
-          {/* 卫星地图 — 铺满整个区域，无黑框 */}
-          {mapImage ? (
-            <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
-          ) : (
-            <VStack alignment="center" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background="#0D1B2A">
-              <Text styledText={{ content: '🌍', font: 28 }} />
-            </VStack>
-          )}
-          {/* 淡蓝光晕装饰 */}
-          <Circle fill="rgba(20,55,130,0.08)" frame={{ width: compact ? 80 : 120, height: compact ? 80 : 120 }} blur={16} />
-          {/* 大气亮边环 */}
-          <Circle fill="none" stroke="rgba(75,160,255,0.18)" strokeWidth={1} frame={{ width: compact ? 80 : 120, height: compact ? 80 : 120 }} />
-          {/* 定位标记 */}
-          {meta.hasCoord && <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: compact ? 16 : 20, height: compact ? 16 : 20 }} modifiers={modifiers().foregroundStyle('#FF3B30')} />}
-          {/* 坐标标签 */}
-          {meta.hasCoord && <Text styledText={{ content: coordText, foregroundColor: 'rgba(255,255,255,0.80)', font: compact ? 7 : 8, bold: true }} background="rgba(0,0,0,0.50)" cornerRadius={4} padding={{ top: 2, bottom: 2, leading: 4, trailing: 4 }} offset={{ x: 0, y: (panelHeight - headerHeight) / 2 - (compact ? 12 : 16) }} lineLimit={1} />}
-        </ZStack>
+        <VStack frame={{ height: 2 }} />
+        <TimeInfoBar />
       </VStack>
-    </Link>
-  );
-}
-
-function PanelHeader({ selected, compact }: { selected: any, compact: boolean }) {
-  return (
-    <HStack alignment="center" spacing={4} frame={{ width: '100%' }}>
-      <Image systemName={selected.icon} resizable={{}} frame={{ width: compact ? 18 : 22, height: compact ? 18 : 22 }} modifiers={modifiers().foregroundStyle(selected.color)} />
-      <Text styledText={{ content: selected.title, foregroundColor: selected.color, font: compact ? 11 : 13, bold: true }} lineLimit={1} />
-    </HStack>
-  );
-}
-
-function InfoCard({ title, value, icon, color }: { title: string, value: string, icon: string, color: string }) {
-  return (
-    <HStack alignment="center" spacing={4} background={cardBg()} cornerRadius={8} padding={{ top: 4, bottom: 4, leading: 6, trailing: 6 }}>
-      <Text styledText={{ content: icon, font: 12 }} frame={{ width: 16, alignment: 'center' }} />
-      <VStack alignment="leading" spacing={0} layoutPriority={1}>
-        <Text styledText={{ content: title, foregroundColor: SECONDARY_TEXT, font: 8 }} lineLimit={1} />
-        <Text styledText={{ content: value, foregroundColor: color, font: 9, bold: true }} marquee={true} />
+      <VStack frame={{ height: 1 }} />
+      <VStack padding={{ leading: 4, trailing: 4 }}>
+        <CalendarView />
       </VStack>
-    </HStack>
-  );
-}
-
-function Row({ icon, label, value }: { icon: string, label: string, value: string }) {
-  return (
-    <HStack spacing={4} alignment="center" layoutPriority={1}>
-      <Text styledText={{ content: icon + ' ' + label, foregroundColor: SECONDARY_TEXT, font: 11 }} frame={{ width: 42, alignment: 'leading' }} />
-      <Text styledText={{ content: value, foregroundColor: PRIMARY_TEXT, font: 11 }} lineLimit={1} marquee={true} />
-    </HStack>
-  );
-}
-
-function MiniData({ label, value, color }: { label: string, value: string, color: string }) {
-  return (
-    <HStack alignment="center" spacing={4} frame={{ width: '100%' }}>
-      <Text styledText={{ content: label, foregroundColor: SECONDARY_TEXT, font: 10 }} frame={{ width: 40, alignment: 'leading' }} />
-      <Text styledText={{ content: value, foregroundColor: color, font: 10 }} lineLimit={1} />
-    </HStack>
-  );
-}
-
-function RiskGaugeBar({ fraudScore, riskColor, riskLabel, tags }: { fraudScore: number, riskColor: string, riskLabel: string, tags: string[] }) {
-  const segments = [
-    { range: [0, 15], color: '#43A047' },
-    { range: [15, 25], color: '#66BB6A' },
-    { range: [25, 40], color: '#AED581' },
-    { range: [40, 50], color: '#FFD54F' },
-    { range: [50, 70], color: '#FF7043' },
-    { range: [70, 100], color: '#E53935' },
-  ];
-  const barHeight = 6;
-  const dotSize = 12;
-  // 刻度数字颜色 — 与各段颜色对应
-  const tickColors: Record<number, string> = {
-    0: '#43A047', 15: '#66BB6A', 25: '#AED581',
-    40: '#FFD54F', 50: '#FF7043', 70: '#E53935', 100: '#E53935',
-  };
-  const ticks = [0, 15, 25, 40, 50, 70, 100];
-  return (
-    <>
-      {/* 色条 */}
-      <HStack spacing={0} alignment="leading" frame={{ height: barHeight }}>
-        {segments.map((seg, index) => {
-          const w = (seg.range[1] - seg.range[0]) * 1.55;
-          return <RoundedRectangle key={index} fill={seg.color} cornerRadius={2} frame={{ width: w, height: barHeight }} />;
-        })}
-      </HStack>
-      {/* 指示点 + 刻度数字 — 合并 ZStack，点在上数字在下互不遮挡 */}
-      <ZStack alignment="leading" frame={{ height: 24 }}>
-        {/* 指示点：y=-6 使其贴近色条底部，不遮挡数字 */}
-        <Circle fill="white" stroke={riskColor} strokeWidth={2} frame={{ width: dotSize, height: dotSize }}
-          offset={{ x: fraudScore * 1.55 - dotSize / 2, y: -6 }} />
-        {/* 刻度数字：y=8 位于 ZStack 下方，远离指示点 */}
-        {ticks.map(tick => {
-          const x = tick * 1.55;
-          const offsetX = tick === 0 ? x : tick === 100 ? x - 16 : x - 6;
-          return <Text key={tick} styledText={{ content: String(tick), foregroundColor: tickColors[tick] || '#FFFFFF', font: 7 }} offset={{ x: offsetX, y: 8 }} />;
-        })}
-      </ZStack>
-      {/* 风险标签 */}
-      <Text styledText={{ content: tags.slice(0, 2).join(' \u00b7 '), foregroundColor: '#EE7799', font: 9, bold: true }} lineLimit={1} />
-    </>
-  );
-}
-
-function ScoreBar({ score, label, color, compact }: { score: number, label: string, color: string, compact: boolean }) {
-  const segments = [
-    { range: [0, 15], color: '#34C759' }, // 纯净
-    { range: [15, 25], color: '#66CD00' },
-    { range: [25, 40], color: '#FFD700' }, // 中性
-    { range: [40, 50], color: '#FF9500' },
-    { range: [50, 70], color: '#FF4500' },
-    { range: [70, 100], color: '#FF3B30' }, // 危险
-  ];
-  const barWidth = compact ? 90 : 120;
-  const barHeight = compact ? 5 : 7;
-  return (
-    <VStack alignment="leading" spacing={3}>
-      <Text styledText={{ content: label, foregroundColor: color, font: compact ? 10 : 12, bold: true }} />
-      <ZStack alignment="leading" frame={{ width: barWidth, height: barHeight }}>
-        {segments.map((seg, index) => {
-          const start = (seg.range[0] / 100) * barWidth;
-          const end = (seg.range[1] / 100) * barWidth;
-          return <RoundedRectangle key={index} fill={seg.color} cornerRadius={1} frame={{ width: end - start, height: barHeight }} offset={{ x: start, y: 0 }} />;
-        })}
-        <Circle fill="white" stroke={color} strokeWidth={1} frame={{ width: barHeight * 1.5, height: barHeight * 1.5 }} offset={{ x: (score / 100) * barWidth - (barHeight * 0.75), y: -(barHeight * 0.25) }} />
-      </ZStack>
     </VStack>
-  );
+  )
 }
 
-function FeatureChip({ feature, active }: { feature: any, active: boolean }) {
+// ─── 错误视图 ───
+function ErrorWidgetView({ message }: { message: string }) {
   return (
-    <Button title={feature.shortTitle} intent={SelectFeatureIntent(feature.id)} />
-  );
-}
-
-
-// Fallback when map data is not available or static map service is unstable
-function StaticMapFallback({ coord, name, compact, width, height }: { coord: string, name: string, compact: boolean, width: number, height: number }) {
-  const fontSize = compact ? 10 : 12;
-  return (
-    <VStack alignment="center" background={tertiaryBg()} cornerRadius={compact ? 10 : 14} frame={{ width, height }}>
-      <Image systemName="map.fill" resizable={{}} frame={{ width: compact ? 30 : 40, height: compact ? 30 : 40 }} modifiers={modifiers().foregroundStyle(SECONDARY_TEXT)} />
-      <Text styledText={{ content: name, foregroundColor: PRIMARY_TEXT, font: fontSize, bold: true }} lineLimit={1} />
-      <Text styledText={{ content: coord, foregroundColor: SECONDARY_TEXT, font: compact ? 8 : 10 }} lineLimit={1} />
+    <VStack alignment="leading" spacing={6} padding={12} background="#3b0d0d">
+      <Text font="headline">⚠️ 组件运行出错</Text>
+      <Text font="caption" lineLimit={4}>{message}</Text>
     </VStack>
-  );
+  )
 }
 
-async function fetchIPData() {
-  // 并行请求两个 API：ipwho.is（VPN/代理/主机检测）+ IPPure（真实风险分数）
-  const [ipwhoRes, ippureRes] = await Promise.allSettled([
-    fetch('https://ipwho.is/'),
-    fetch('https://my.ippure.com/v1/info')
-  ]);
+// ─── 根视图 ───
+function WidgetRoot(props: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[] }) {
+  const family = Widget.family
+  const skycon = props.weatherInfo.weatherIco ? Object.keys(weatherIcos).find(k => weatherIcos[k] === props.weatherInfo.weatherIco) : "CLEAR_DAY"
 
-  // --- 解析 ipwho.is 数据（安全标志）---
-  let ipwhoData: any = {};
-  if (ipwhoRes.status === 'fulfilled' && ipwhoRes.value.ok) {
-    const json = await ipwhoRes.value.json();
-    if (json?.success !== false) ipwhoData = json;
-  }
-  const connection = ipwhoData.connection || {};
-  const security = ipwhoData.security || {};
-  const isProxy = Boolean(security.proxy);
-  const isVpn = Boolean(security.vpn);
-  const isHosting = Boolean(security.hosting);
-
-  // --- 解析 IPPure 数据（真实 fraudScore）---
-  let ippureData: any = {};
-  if (ippureRes.status === 'fulfilled' && ippureRes.value.ok) {
-    ippureData = await ippureRes.value.json();
+  // 锁屏组件：独立渲染，不使用背景层
+  if (family === "accessoryRectangular") {
+    return <AccessoryRectangularView weatherInfo={props.weatherInfo} />
   }
 
-  // 优先使用 IPPure 的 fraudScore，回退到 ipwho.is 估算
-  const riskCount = [isProxy, isVpn, isHosting].filter(Boolean).length;
-  const ippureScore = typeof ippureData.fraudScore === 'number' ? ippureData.fraudScore : undefined;
-  const fallbackScore = riskCount * 35;
-  const fraudScore = ippureScore ?? fallbackScore;
-
-  // 合并数据：优先取 IPPure 的位置信息，安全标志取 ipwho.is
-  const org = ippureData.asOrganization || connection.org || connection.isp || '';
-  const asnNum = ippureData.asn || connection.asn;
-  const asn = asnNum ? `AS${asnNum}` : '';
-
-  return {
-    ip: ippureData.ip || ipwhoData.ip,
-    country: ippureData.country || ipwhoData.country,
-    region: ippureData.region || ipwhoData.region,
-    city: ippureData.city || ipwhoData.city,
-    countryCode: ippureData.countryCode || ipwhoData.country_code,
-    latitude: Number(ippureData.latitude) || ipwhoData.latitude,
-    longitude: Number(ippureData.longitude) || ipwhoData.longitude,
-    asn,
-    asOrganization: org,
-    isp: connection.isp || org,
-    asDomain: connection.domain,
-    fraudScore,
-    isProxy,
-    isVpn,
-    isHosting,
-    isServer: isHosting,
-    isResidential: Boolean(ippureData.isResidential) || (!isProxy && !isVpn && !isHosting),
-    isBroadcast: Boolean(ippureData.isBroadcast),
-  };
+  return (
+    <ZStack alignment="topLeading" widgetURL={Script.createOpenURLScheme(scriptName)}>
+      <BackgroundLayer family={family} skycon={skycon} />
+      {family === "systemLarge" ? (
+        <LargeWidgetView {...props} />
+      ) : (
+        <MediumWidgetView {...props} />
+      )}
+    </ZStack>
+  )
 }
 
-async function runWidget() {
-  try {
-    const data = await fetchIPData();
-    
-    // 1) Use country-name mapping as quick baseline
-    let locationZh = toChineseName(data);
-
-    // 2) Try reverseGeocode with zh-CN locale for accurate Chinese place names
-    if (data.latitude && data.longitude) {
-      try {
-        const placemarks = await reverseGeocode({
-          latitude: data.latitude,
-          longitude: data.longitude,
-          locale: 'zh-CN'
-        });
-        if (placemarks && placemarks.length > 0) {
-          const pm = placemarks[0];
-          const parts: string[] = [];
-          if (pm.country) parts.push(pm.country);
-          if (pm.administrativeArea) parts.push(pm.administrativeArea);
-          if (pm.locality) parts.push(pm.locality);
-          if (parts.length >= 2) {
-            locationZh = parts.join(' ');
-          }
-        }
-      } catch (_e) {
-        // reverseGeocode failed, fall back to mapped name
-      }
-    }
-
-    let mapImage = null;
-    if (data.latitude && data.longitude) {
-      const safeLat = Math.max(-85, Math.min(85, data.latitude));
-      const safeLon = Math.max(-180, Math.min(180, data.longitude));
-      // 卫星影像 + 适中缩放级别，铺满面板区域（Yandex 最大支持约 312px）
-      const url = `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=6&l=sat&size=312,312`;
-      try {
-        mapImage = await UIImage.fromURL(url);
-      } catch (e) {
-        console.error("Failed to load map image:", e);
-      }
-    }
-
-    // 每 5 分钟自动刷新，实时同步 IPPure 风险分数
-    Widget.present(<IPWidgetView data={data} locationZh={locationZh} mapImage={mapImage} />, {
-      policy: 'after',
-      date: new Date(Date.now() + 1000 * 60 * 5)
-    });
-  } catch (error) {
-    console.error(error);
-    Widget.present(<ErrorView />);
+// ─── 主入口 ───
+async function main() {
+  await ensureBackgroundMigrated()
+  refreshApiKey()
+  const cachedLocation = Storage.get(LOCATION_CACHE_KEY) as any
+  if (cachedLocation && hasValidCoordinates(cachedLocation)) {
+    updateLocationData(cachedLocation)
   }
+  updateStyleConfig(getSavedStyleConfig())
+
+  appendDebugLog("widget render start", {
+    styleConfig,
+    savedLocation: locationData,
+    apiKeyExists: Boolean(getSavedApiKey()),
+  })
+  const refreshMinutesRaw = parseInt(String(styleConfig.refreshInterval || 60), 10)
+  const refreshMinutes = Number.isNaN(refreshMinutesRaw) ? 60 : Math.max(5, refreshMinutesRaw)
+  const now = new Date()
+  const forceRefreshRequested = hasRecentForceReloadRequest(now.getTime())
+  const reloadDate = getNextWidgetReloadDate(now, refreshMinutes, forceRefreshRequested)
+  const [weatherInfo, schedules] = await Promise.all([
+    safeGetWeather(forceRefreshRequested),
+    safeGetSchedules(),
+  ])
+  const poetry = null
+  const lunarStr = safeGetLunarStr()
+  appendDebugLog("widget render payload", {
+    weatherInfo,
+    lunarStr,
+    scheduleCount: schedules.length,
+    forceRefreshRequested,
+    reloadDate: reloadDate.toISOString(),
+  })
+  Widget.present(
+    <WidgetRoot weatherInfo={weatherInfo} lunarStr={lunarStr} poetry={poetry} schedules={schedules} />,
+    {
+      reloadPolicy: { policy: "after", date: reloadDate },
+      relevance: { score: 50, duration: refreshMinutes * 60 },
+    },
+  )
 }
 
-runWidget();
+main().catch((error) => {
+  Widget.present(<ErrorWidgetView message={String(error?.message || error)} />)
+})
