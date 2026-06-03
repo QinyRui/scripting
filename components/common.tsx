@@ -140,64 +140,113 @@ function BottomCountdownBlock({ primary, secondary, widgetType }: { primary: str
   )
 }
 
-// ─── 降水柱状图 ───
+// ─── 降水柱状图（克制矮柱 + 网格线在上方） ───
 export function RainingBarChart({ precipitation, widgetType }: { precipitation: number[]; widgetType: "medium" | "large" }) {
   if (!precipitation || precipitation.length === 0) return null
   const data = precipitation.slice(0, 60)
-  const chartHeight = widgetType === "medium" ? 30 : 36
-  const chartStyle = styleConfig.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
-  const barSpacing = 0.8
-  const barWidth = 2.5
-  const labelColor = chartStyle === "caiyun" ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.42)"
-
-  const getSmoothedValue = (index: number) => {
-    const weights = [0.03, 0.06, 0.12, 0.2, 0.26, 0.2, 0.12, 0.06, 0.03]
-    let sum = 0
-    let weightSum = 0
-    for (let offset = -4; offset <= 4; offset++) {
-      const i = index + offset
-      if (i >= 0 && i < data.length) {
-        const w = weights[offset + 4]
-        sum += (data[i] || 0) * w
-        weightSum += w
-      }
-    }
-    return sum / weightSum
-  }
-
-  const getBarColor = (val: number): string => {
-    if (chartStyle === "caiyun") {
-      if (val < 0.1) return "rgba(150, 225, 255, 0.7)"
-      if (val < 0.3) return "rgba(120, 210, 255, 0.85)"
-      if (val < 0.6) return "rgba(80, 185, 255, 0.95)"
-      return "rgba(45, 160, 255, 1)"
-    }
-    if (val < 0.1) return "rgba(140, 215, 255, 0.6)"
-    if (val < 0.3) return "rgba(100, 195, 255, 0.8)"
-    if (val < 0.6) return "rgba(65, 170, 255, 0.95)"
-    return "rgba(35, 140, 255, 1)"
-  }
-
   const hasRain = data.some(v => v > 0.02)
   if (!hasRain) return null
 
+  // 图表总高度（含网格 + 柱子），保持紧凑
+  const chartHeight = widgetType === "medium" ? 26 : 32
+  // 柱子最大高度只占图表区域的 55%，上方留给网格线
+  const maxBarArea = Math.round(chartHeight * 0.55)
+  const barWidth = 2.6
+  const barSpacing = 1.0
+  const gridLineCount = 3
+  const chartStyle = styleConfig.weatherChart?.style === "caiyun" ? "caiyun" : "apple"
+  const labelColor = chartStyle === "caiyun" ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.38)"
+  const gridLineColor = "rgba(255,255,255,0.32)"
+
+  // ① 归一化：以数据最大值为 1.0
+  const maxVal = Math.max(...data)
+  const safeMax = maxVal > 0 ? maxVal : 1
+
+  // ② 轻度 3 点平滑
+  const getSmoothedValue = (index: number) => {
+    let sum = 0
+    let count = 0
+    for (let offset = -1; offset <= 1; offset++) {
+      const i = index + offset
+      if (i >= 0 && i < data.length) {
+        sum += (data[i] || 0)
+        count++
+      }
+    }
+    return count > 0 ? sum / count : 0
+  }
+
+  // ③ 柱高：用 power 1.5 压低小值，让未下雨时段保持最矮
+  //    当 norm < 0.12 时压到 2px 最小值（几乎平线）
+  //    norm >= 0.12 时用 1.5 次幂从 minBar 拉升到 maxBarArea
+  const minBar = 2
+  const getBarHeight = (raw: number): number => {
+    if (raw <= 0.015) return 0
+    const norm = Math.min(1, raw / safeMax)
+    if (norm < 0.12) return minBar
+    // 将 norm 0.12~1.0 映射到 minBar~maxBarArea，再施加 1.5 次幂
+    const remapped = (norm - 0.12) / 0.88
+    const curved = Math.pow(remapped, 1.5)
+    let h = minBar + curved * (maxBarArea - minBar)
+    return Math.max(minBar, Math.min(maxBarArea, Math.round(h)))
+  }
+
+  // ④ 颜色按归一化强度分 5 级
+  const getBarColor = (norm: number): string => {
+    if (chartStyle === "caiyun") {
+      if (norm < 0.15) return "rgba(170, 235, 255, 0.55)"
+      if (norm < 0.35) return "rgba(125, 218, 255, 0.72)"
+      if (norm < 0.55) return "rgba(85, 200, 255, 0.85)"
+      if (norm < 0.8) return "rgba(50, 175, 255, 0.93)"
+      return "rgba(30, 150, 255, 1)"
+    }
+    if (norm < 0.15) return "rgba(160, 230, 255, 0.48)"
+    if (norm < 0.35) return "rgba(115, 212, 255, 0.65)"
+    if (norm < 0.55) return "rgba(75, 190, 255, 0.8)"
+    if (norm < 0.8) return "rgba(42, 165, 255, 0.92)"
+    return "rgba(25, 140, 255, 1)"
+  }
+
+  // 每条虚线: 3.5px + 3px 间距 ≈ 6.5px; medium≈210px/6.5≈32, large≈200px/6.5≈30
+  const dashCount = widgetType === "medium" ? 32 : 30
+
   return (
-    <VStack alignment="leading" spacing={4} padding={{ top: 2 }}>
-      <ZStack alignment="bottomLeading" frame={{ height: chartHeight }}>
-        <HStack spacing={barSpacing} alignment="bottom">
+    <VStack alignment="leading" spacing={2} padding={{ top: 0 }}>
+      {/* 柱状图区域 */}
+      <ZStack alignment="bottomLeading" frame={{ height: chartHeight, maxWidth: "infinity" }}>
+        {/* 水平虚线网格（3 条均分图表高度） */}
+        {Array.from({ length: gridLineCount }).map((_, i) => {
+          const y = Math.round((chartHeight / (gridLineCount + 1)) * (i + 1))
+          return (
+            <VStack key={`grid-${i}`} alignment="leading" spacing={0} padding={{ top: y }} frame={{ maxWidth: "infinity" }}>
+              <HStack spacing={3} alignment="center">
+                {Array.from({ length: dashCount }).map((_, di) => (
+                  <Rectangle key={di} fill={{ color: gridLineColor as any, opacity: 1 }} frame={{ width: 3.5, height: 0.6 }} />
+                ))}
+              </HStack>
+            </VStack>
+          )
+        })}
+        {/* 降水柱：从底部向上生长 */}
+        <HStack spacing={barSpacing} alignment="bottom" padding={{ top: 0 }}>
           {data.map((_, i) => {
-            const smoothed = getSmoothedValue(i)
-            if (smoothed <= 0.02) return <RoundedRectangle key={i} cornerRadius={barWidth / 2} fill="clear" frame={{ width: barWidth, height: 0 }} />
-            let h = Math.sqrt(smoothed) * chartHeight * 0.95
-            h = Math.max(4, Math.min(chartHeight - 1, h))
-            const barColor = getBarColor(smoothed)
+            const raw = getSmoothedValue(i)
+            const norm = Math.min(1, raw / safeMax)
+            const h = getBarHeight(raw)
+            if (h <= 0) return <RoundedRectangle key={i} cornerRadius={barWidth / 2} fill="clear" frame={{ width: barWidth, height: 0 }} />
             return (
-              <RoundedRectangle key={i} cornerRadius={barWidth / 2} fill={{ color: barColor as any, opacity: 1 }} frame={{ width: barWidth, height: h }} />
+              <RoundedRectangle
+                key={i}
+                cornerRadius={barWidth / 2}
+                fill={{ color: getBarColor(norm) as any, opacity: 1 }}
+                frame={{ width: barWidth, height: h }}
+              />
             )
           })}
         </HStack>
       </ZStack>
-      <HStack>
+      {/* 时间刻度标签 */}
+      <HStack padding={{ top: 0 }}>
         <SectionText text="现在" font={s(7, "weather")} color={labelColor} />
         <Spacer />
         <SectionText text="10分钟" font={s(7, "weather")} color={labelColor} />
