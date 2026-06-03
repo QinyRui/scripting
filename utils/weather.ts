@@ -109,7 +109,10 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
     info.precipitation = data.result.minutely.precipitation || []
     info.precipitationDesc = data.result.minutely.description || ""
   }
-  if (data.result?.alert?.content) info.alertWeatherTitle = data.result.alert.content.title
+  if (data.result?.alert?.content) {
+    info.alertWeatherTitle = data.result.alert.content.title
+    info.alertContents = data.result.alert.content
+  }
 
   const daily = data.result?.daily
   if (daily?.temperature?.[0]) {
@@ -134,6 +137,8 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
 
   const rt = data.result?.realtime
   if (rt) {
+    info.temperature = Math.round(rt.temperature)
+    info.skycon = rt.skycon
     info.bodyFeelingTemperature = Math.round(rt.apparent_temperature)
     info.weatherIco = weatherIcos[rt.skycon] || "sun.max.fill"
     info.humidity = Math.round(rt.humidity * 100) + "%"
