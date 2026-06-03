@@ -1,48 +1,48 @@
 {
-  "runInApp" : false,
-  "iconImage" : null,
+  "contributors" : [
+
+  ],
   "intentInputTypes" : [
 
   ],
   "icon" : "network",
   "entry" : "index.tsx",
-  "contributors" : [
-
-  ],
-  "name" : "IP 信息展示改",
-  "description" : null,
-  "version" : "1.0.0",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
-    "autoUpdateInterval" : null,
-    "hash" : "fce1c4a6efc4660bb650e4bf2964fc35"
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui"
   },
-  "localizedNames" : {
+  "localizedDescriptions" : {
+    "it" : "",
+    "es" : "",
+    "en" : "",
     "pt" : "",
+    "ru" : "",
+    "de" : "",
+    "fr" : "",
+    "zh" : "",
+    "ja" : ""
+  },
+  "remoteResource" : {
+    "autoUpdateInterval" : null,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
+    "hash" : "61b12430e8656c2485f0fe26018bc967"
+  },
+  "runInApp" : false,
+  "color" : "rgba(102, 196, 235,1)",
+  "localizedNames" : {
+    "de" : "",
+    "pt" : "",
+    "zh" : "",
     "fr" : "",
     "en" : "",
-    "de" : "",
-    "es" : "",
-    "zh" : "",
     "ja" : "",
-    "ru" : "",
-    "it" : ""
-  },
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "email" : "602839678@qq.com"
-  },
-  "color" : "rgba(102, 196, 235,1)",
-  "localizedDescriptions" : {
-    "ja" : "",
-    "ru" : "",
-    "en" : "",
-    "es" : "",
     "it" : "",
-    "pt" : "",
-    "de" : "",
-    "zh" : "",
-    "fr" : ""
-  }
+    "ru" : "",
+    "es" : ""
+  },
+  "name" : "IP 定位",
+  "description" : null,
+  "version" : "1.0.0",
+  "iconImage" : null
 }
