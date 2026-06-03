@@ -74,7 +74,7 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
     name: hasCachedNames ? (cachedLoc!.name || "") : "",
     town: hasCachedNames ? (cachedLoc!.town || "") : "",
   }
-  const resolved = await resolveLocationNameIfNeeded(baseData, true)
+  const resolved = await resolveLocationNameIfNeeded(baseData, !hasCachedNames)
   updateLocationData(resolved)
 
   return {
