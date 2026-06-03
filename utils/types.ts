@@ -49,6 +49,12 @@ export type WeatherInfo = {
   updatedAt?: number
   precipitation?: number[]
   precipitationDesc?: string
+  /** 原始 skycon key（如 CLEAR_DAY），锁屏组件用于映射天气名称 */
+  skycon?: string
+  /** 实时温度（非体感），锁屏组件展示用 */
+  temperature?: number
+  /** 预警内容数组，锁屏组件用于判断是否有预警 */
+  alertContents?: any[]
   /** 缓存时的坐标，用于验证缓存是否有效 */
   cachedLatitude?: number
   cachedLongitude?: number
