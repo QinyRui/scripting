@@ -64,7 +64,7 @@ export async function callReverseGeocode(options: { latitude: number; longitude:
 
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(options.latitude))}&lon=${encodeURIComponent(String(options.longitude))}&accept-language=zh-CN&zoom=18&addressdetails=1`
   const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("请求超时")), 10000)
+    setTimeout(() => reject(new Error("请求超时")), 5000)
   })
 
   try {
@@ -108,7 +108,7 @@ export async function callReverseGeocode(options: { latitude: number; longitude:
     try {
       const backupUrl = `https://apis.map.qq.com/ws/geocoder/v1/?location=${options.latitude},${options.longitude}&key=OB4BZ-D4WMT-UUUQA-MSPIE-6T6E5-KABBR&get_poi=0`
       const backupTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("备用服务请求超时")), 5000)
+        setTimeout(() => reject(new Error("备用服务请求超时")), 3000)
       })
       const backupFetchPromise = fetch(backupUrl, {
         headers: {
@@ -235,7 +235,7 @@ function applyPlacemarkToLocationData(base: LocationData, placemark: any): Locat
 
 export async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
   if (!hasValidCoordinates(data)) return data
-  if (!force && isMeaningfulName(data.locality) && isMeaningfulName(data.subLocality)) return data
+  if (!force && (isMeaningfulName(data.locality) || isMeaningfulName(data.administrativeArea))) return data
   try {
     const placemarks = await callReverseGeocode({ latitude: Number(data.latitude), longitude: Number(data.longitude), locale: "zh-CN" })
     if (placemarks?.[0]) {
