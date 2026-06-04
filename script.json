@@ -1,48 +1,48 @@
 {
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
-    "hash" : "b455c083f33d1ee53be0c9dcdbaf8b1c",
-    "autoUpdateInterval" : null
-  },
   "contributors" : [
 
   ],
-  "version" : "1.1.0",
-  "description" : "",
-  "icon" : "scooter",
-  "localizedNames" : {
-    "it" : "",
-    "es" : "",
-    "fr" : "",
-    "zh" : "",
-    "de" : "",
-    "en" : "",
-    "ja" : "",
-    "ru" : "",
-    "pt" : ""
-  },
   "localizedDescriptions" : {
-    "fr" : "",
-    "pt" : "",
-    "en" : "",
-    "ru" : "",
-    "it" : "",
-    "zh" : "",
     "es" : "",
+    "en" : "",
     "ja" : "",
-    "de" : ""
+    "ru" : "",
+    "zh" : "",
+    "pt" : "",
+    "fr" : "",
+    "de" : "",
+    "it" : ""
   },
   "author" : {
     "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "email" : "602839678@qq.com"
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
   },
+  "description" : "",
+  "runInApp" : false,
+  "name" : "九号系统签到",
+  "entry" : "index.tsx",
+  "version" : "1.1.0",
+  "localizedNames" : {
+    "it" : "",
+    "de" : "",
+    "pt" : "",
+    "zh" : "",
+    "fr" : "",
+    "ru" : "",
+    "ja" : "",
+    "en" : "",
+    "es" : ""
+  },
+  "icon" : "scooter",
   "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/%E4%B9%9D%E5%8F%B7\/IMG_1706.png",
+  "color" : "rgba(143, 168, 149,1)",
+  "remoteResource" : {
+    "autoUpdateInterval" : null,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
+    "hash" : "4d2ff3ef09f2c487447493d71a3a6e29"
+  },
   "intentInputTypes" : [
 
-  ],
-  "entry" : "index.tsx",
-  "color" : "rgba(143, 168, 149,1)",
-  "name" : "九号系统签到",
-  "runInApp" : false
+  ]
 }
