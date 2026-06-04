@@ -1,0 +1,12 @@
+#!name = 九号智能电动车 · 仅抓包写入数据
+#!desc = 只保留抓包自动写入BoxJs凭证功能，
+#!author = QinyRui
+#!tag = 九号智能电动车
+#!system = iOS,iPadOS,macOS
+#!version = 2.7.0
+#!system_version = 15
+[Argument]
+capture = switch, "false", "true", tag=自动抓包开关, desc=开启后访问九号签到接口自动写入鉴权信息到BoxJs
+[Script]
+# 仅保留签到接口抓包写入BoxJs，其余所有定时、车辆、跨域、更新全部移除
+http-response ^https:\/\/cn-cbu-gateway\.ninebot\.com\/portal\/api\/user-sign\/v2\/status script-path=https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/2.9.js, timeout=10, tag=九号-抓包写入, enable={capture}, script-update-interval=0, requires-body=true
