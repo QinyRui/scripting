@@ -99,12 +99,12 @@ const ScanBeam = ({ width, color = Theme.colors.green }: { width: number, color?
 // 核心 UI 组件
 // ========================
 
-/** 中心图标路径（备用）*/
-const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到/scooter-icon.jpg"
+/** 中心图标路径 */
+const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到/photos/LOUGO.png"
 
-/** 签到核心仪表盘 — 彩色渐变环（基于时间旋转）+ 光晕 + moped.fill */
+/** 签到核心仪表盘 — 彩色渐变环（基于时间旋转）+ 光晕 + 九号logo */
 const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }) => {
-  const iconSize = size * 0.38
+  const iconSize = size * 0.55
   // ═══ 基于当前时间计算旋转角度（每圈不同速度）═══
   const now = Date.now() / 1000  // 秒级时间戳
   const rot1 = (now * 8) % 360    // 青色外圈：最快
@@ -156,12 +156,22 @@ const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }
       <Circle fill="#6B5CE7" frame={{ width: size * 0.58, height: size * 0.58 }} opacity={0.06} />
       <Circle fill="#5B4FCF" frame={{ width: size * 0.53, height: size * 0.53 }} opacity={0.08} />
 
-      {/* ═══ 白色图标（静态不旋转）═══ */}
-      <Image systemName="moped.fill" font={iconSize}
-        foregroundStyle={{ color: "#FFFFFF" as Color, opacity: 1 }} />
+      {/* ═══ 九号logo（静态不旋转，精确对齐） ═══ */}
+      <Image filePath={NINEBOT_LOGO_PATH} resizable={true} frame={{ width: iconSize, height: iconSize }} />
     </ZStack>
   )
 }
+
+/** ninebot 品牌标题 — 红色英文 + 彩色九号 */
+const NinebotTitle = ({ fontSize }: { fontSize: number }) => (
+  <VStack alignment="center" spacing={0}>
+    <Text font={Math.round(fontSize * 0.5)} foregroundStyle={{ color: "#FF3B30" as Color, opacity: 1 }}>ninebot</Text>
+    <HStack alignment="center" spacing={0}>
+      <Text font={fontSize} fontWeight="bold" foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>九</Text>
+      <Text font={fontSize} fontWeight="bold" foregroundStyle={{ color: "#BF5AF2" as Color, opacity: 1 }}>号</Text>
+    </HStack>
+  </VStack>
+)
 
 /** 科技卡片 */
 const TechCard = ({ children, padding, glowColor }: { children: any, padding?: number, glowColor?: Color }) => (
@@ -194,27 +204,40 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
   </VStack>
 )
 
-/** 盲盒进度条 */
+/** 盲盒倒计时 — 分段胶囊（从左到右填充，全部亮起 = 可开启）*/
 const BlindBoxRow = ({ box }: { box: { awardDays: number, leftDaysToOpen: number } }) => {
-  const progress = box.leftDaysToOpen > 0 ? (box.awardDays - box.leftDaysToOpen) / box.awardDays : 1
+  const isReady = box.leftDaysToOpen <= 0
+  const daysPassed = box.awardDays - box.leftDaysToOpen
+  // 最多显示 7 段胶囊，每段代表 ≈ awardDays/7 天
+  const totalSeg = Math.min(box.awardDays, 7)
+  const filledSeg = isReady ? totalSeg : Math.floor((daysPassed / box.awardDays) * totalSeg)
   const color = box.awardDays >= 100 ? Theme.colors.orange : box.awardDays >= 30 ? Theme.colors.purple : Theme.colors.cyan
   return (
     <VStack spacing={S(2)}>
-      <HStack alignment="center">
-        <Image systemName="shippingbox" font={fs(9)} foregroundStyle={{ color, opacity: 1 }} />
-        <Text font={fs(10)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{box.awardDays}天</Text>
+      {/* 标题行：图标 + 天数 + 倒计时 */}
+      <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+        <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={fs(9)}
+          foregroundStyle={{ color: isReady ? Theme.colors.green : color, opacity: 1 }} />
+        <Text font={fs(9)} fontWeight="semibold"
+          foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{box.awardDays}天盲盒</Text>
         <Spacer />
-        <Text font={fs(8)} foregroundStyle={{ color: (box.leftDaysToOpen > 0 ? Theme.colors.text3 : Theme.colors.green), opacity: 1 }}>
-          {box.leftDaysToOpen > 0 ? `${box.leftDaysToOpen}天` : "可开"}
-        </Text>
+        {isReady ? (
+          <Text font={fs(8)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>✓ 可开启</Text>
+        ) : (
+          <Text font={fs(8)} foregroundStyle={{ color, opacity: 0.9 }}>⏳ {box.leftDaysToOpen}天</Text>
+        )}
       </HStack>
-      <ZStack frame={{ height: S(3), maxWidth: "infinity" }}>
-        <Capsule fill={Theme.colors.cardStroke} />
-        <HStack frame={{ maxWidth: "infinity" }}>
-          <Capsule fill={gradient("linear", { colors: [color, color], startPoint: "leading", endPoint: "trailing" })} frame={{ height: S(3), width: 80 * progress }} />
-          <Spacer />
-        </HStack>
-      </ZStack>
+      {/* 分段胶囊横条 — 已等待天数从左填充 */}
+      <HStack spacing={S(2)} frame={{ maxWidth: "infinity" }}>
+        {Array.from({ length: totalSeg }, (_, i) => (
+          <ZStack frame={{ height: S(5), maxWidth: "infinity" }} alignment="center">
+            <Capsule fill={Theme.colors.cardStroke} />
+            {i < filledSeg && (
+              <Capsule fill={isReady ? Theme.colors.green : color} opacity={isReady ? 0.9 : 0.8} />
+            )}
+          </ZStack>
+        ))}
+      </HStack>
     </VStack>
   )
 }
@@ -238,21 +261,8 @@ const SmallWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
         {/* 扫描线 */}
         {info.isSigned && <ScanBeam width={W * 0.55} color={Theme.colors.green} />}
 
-        {/* 连续天数 */}
-        <VStack alignment="center" spacing={0}>
-          <HStack alignment="bottom" spacing={1}>
-            <Text font={fs(22)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
-            <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }} padding={{ bottom: 2 }}>天</Text>
-          </HStack>
-          <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>连续签到</Text>
-        </VStack>
-
-        {/* 底部精简指标 */}
-        <HStack spacing={S(8)} alignment="center" frame={{ maxWidth: "infinity" }}>
-          <Text font={fs(8)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.cyan, opacity: 1 }}>LV.{info.level}</Text>
-          <Text font={fs(8)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.yellow, opacity: 1 }}>N {info.nCoin}</Text>
-          <Text font={fs(8)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }}>EXP {info.experience}</Text>
-        </HStack>
+        {/* ninebot 品牌标题 */}
+        <NinebotTitle fontSize={fs(12)} />
         <Spacer />
       </VStack>
     </ZStack>
@@ -270,23 +280,12 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
       widgetBackground={isTransparent ? "clear" : gradient("linear", { colors: ["#0A0E1A" as Color, "#050810" as Color], startPoint: "top", endPoint: "bottom" })}>
       <HStack padding={pad} spacing={S(8)} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-        {/* 左侧：大仪表盘 */}
+        {/* 左侧：仪表盘 + ninebot 标题 */}
         <VStack alignment="center" spacing={S(2)} frame={{ width: leftW }}>
           <StatusDashboard isSigned={info.isSigned} size={dashSize} />
           {info.isSigned && <ScanBeam width={leftW - S(6)} color={Theme.colors.green} />}
-          {/* 底部图形化横排：天数 + 更新时间 */}
-          <HStack spacing={S(8)} alignment="center" frame={{ maxWidth: "infinity" }}>
-            <HStack alignment="center" spacing={3}>
-              <Image systemName="flame.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
-              <Text font={fs(18)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
-              <Text font={fs(7)} fontWeight="medium" foregroundStyle={{ color: Theme.colors.text2, opacity: 0.8 }}>天</Text>
-            </HStack>
-            <Rectangle fill={Theme.colors.text3} frame={{ width: 1, height: S(12) }} opacity={0.2} />
-            <HStack alignment="center" spacing={2}>
-              <Image systemName="arrow.clockwise" font={fs(6)} foregroundStyle={{ color: Theme.colors.green, opacity: 0.7 }} />
-              <Text font={fs(6)} fontWeight="medium" foregroundStyle={{ color: Theme.colors.green, opacity: 0.8 }}>{formatTime(new Date())}</Text>
-            </HStack>
-          </HStack>
+          {/* 底部标题 */}
+          <NinebotTitle fontSize={fs(13)} />
         </VStack>
 
         {/* 竖向发光分隔线 */}
@@ -298,6 +297,23 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
         {/* 右侧：数据面板 */}
         <VStack spacing={S(3)} frame={{ maxWidth: "infinity" }} alignment="leading">
+          {/* 签到信息行：天数 + 更新时间 */}
+          <TechCard padding={S(5)} glowColor={Theme.colors.green}>
+            <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+              <Image systemName="flame.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
+              <Text font={fs(20)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
+              <VStack spacing={0}>
+                <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天连续签到</Text>
+                <Text font={fs(6)} foregroundStyle={{ color: info.isSigned ? Theme.colors.green : Theme.colors.text3, opacity: 0.9 }}>{info.isSigned ? "✓ 今日已签" : "待签到"}</Text>
+              </VStack>
+              <Spacer />
+              <VStack alignment="trailing" spacing={1}>
+                <Image systemName="arrow.clockwise" font={fs(6)} foregroundStyle={{ color: Theme.colors.green, opacity: 0.6 }} />
+                <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.6 }}>{formatTime(new Date())}</Text>
+              </VStack>
+            </HStack>
+          </TechCard>
+
           {/* 四项数据统计 — 图标 + 数值 + 彩色底线 */}
           <TechCard padding={S(5)} glowColor={Theme.colors.cyan}>
             <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
@@ -332,121 +348,116 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
   )
 }
 
-/** ——— 大号组件 ——— */
+/** ——— 大号组件 ——— 左仪表盘 + 右数据面板 */
 const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
   const pad = S(10)
-  const dashSize = Math.round(W * 0.34)  // 仪表盘缩小到34% 避免溢出
+  const leftW = Math.round(W * 0.34)  // 左侧面板占 34%
+  const dashSize = Math.round(leftW * 0.78)  // 仪表盘尺寸
   const uniqueHistory = info.openedBoxesDetail
     .sort((a, b) => parseInt(b.openedTime) - parseInt(a.openedTime))
     .reduce((acc, current) => {
       if (!acc.find(item => item.awardDays === current.awardDays)) acc.push(current)
       return acc
     }, [] as typeof info.openedBoxesDetail)
-    .slice(0, 3)  // 限制最多3条
+    .slice(0, 3)
   const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0)
 
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
       widgetBackground={isTransparent ? "clear" : gradient("linear", { colors: ["#0A0E1A" as Color, "#050810" as Color], startPoint: "top", endPoint: "bottom" })}>
-      <VStack padding={pad} spacing={S(5)} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-        {/* ═══ 顶部：仪表盘 + 签到信息 + LV/N ═══ */}
-        <HStack spacing={S(6)} alignment="center">
+      <HStack padding={pad} spacing={S(8)} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+        {/* ═══ 左侧：仪表盘 + 扫描线 + ninebot 标题 ═══ */}
+        <VStack alignment="center" spacing={S(2)} frame={{ width: leftW }}>
           <StatusDashboard isSigned={info.isSigned} size={dashSize} />
-          <VStack spacing={1}>
-            <HStack alignment="bottom" spacing={2}>
-              <Text font={fs(22)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
-              <Text font={fs(9)} foregroundStyle={{ color: Theme.colors.purple, opacity: 0.9 }} padding={{ bottom: 2 }}>天连续签到</Text>
-            </HStack>
-            <Text font={fs(8)} foregroundStyle={{ color: (info.isSigned ? Theme.colors.green : Theme.colors.text3), opacity: 1 }}>
-              {info.isSigned ? "✓ 今日已完成" : "今日尚未签到"}
-            </Text>
-          </VStack>
-          <Spacer />
-          <VStack alignment="trailing" spacing={2}>
-            <HStack alignment="center" spacing={2}>
-              <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>LV</Text>
-              <Text font={fs(12)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.cyan, opacity: 1 }}>{info.level}</Text>
-            </HStack>
-            <HStack alignment="center" spacing={2}>
-              <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>N</Text>
-              <Text font={fs(12)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.yellow, opacity: 1 }}>{info.nCoin}</Text>
-            </HStack>
-          </VStack>
-        </HStack>
+          {info.isSigned && <ScanBeam width={leftW - S(6)} color={Theme.colors.green} />}
+          <NinebotTitle fontSize={fs(13)} />
+        </VStack>
 
-        {/* ═══ 扫描线 ═══ */}
-        {info.isSigned && <ScanBeam width={W - pad * 2} color={Theme.colors.green} />}
+        {/* 竖向发光分隔线 */}
+        <ZStack frame={{ width: 2, maxHeight: "infinity" }} alignment="center">
+          <Rectangle fill={Theme.colors.cyan} frame={{ width: 2, maxHeight: "infinity" }} opacity={0.06} />
+          <Rectangle fill={Theme.colors.cyan} frame={{ width: 0.5, maxHeight: "infinity" }} opacity={0.3} />
+          <Circle fill={Theme.colors.cyan} frame={{ width: 3, height: 3 }} offset={{ x: 0, y: 0 }} opacity={0.6} />
+        </ZStack>
 
-        {/* ═══ 四项统计 — 图标卡片行 ═══ */}
-        <TechCard padding={S(4)} glowColor={Theme.colors.cyan}>
-          <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
-            <StatItem icon="trophy.fill" label="LV" value={info.level} color={Theme.colors.cyan} />
-            <StatItem icon="circle.grid.cross.fill" label="N币" value={info.nCoin} color={Theme.colors.yellow} />
-            <StatItem icon="ticket.fill" label="补签" value={info.signCardsNum} color={Theme.colors.purple} />
-            <StatItem icon="star.fill" label="经验" value={info.experience} color={Theme.colors.green} />
-          </HStack>
-        </TechCard>
-
-        {/* ═══ 盲盒区 ═══ */}
-        <TechCard padding={S(4)} glowColor={Theme.colors.purple}>
-          <HStack alignment="center">
-            <Image systemName="gift.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }} />
-            <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>待开盲盒</Text>
-            <Spacer />
-            <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>{info.notOpenedBlindBoxCount}个待处理</Text>
-          </HStack>
-          {pendingBoxes.length > 0 ? (
-            <VStack spacing={S(2)}>
-              {pendingBoxes.slice(0, 2).map((box, i) => <BlindBoxRow key={i} box={box} />)}
-            </VStack>
-          ) : (
-            <HStack alignment="center" spacing={3}>
-              <Image systemName="checkmark.circle.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
-              <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部已处理</Text>
-            </HStack>
-          )}
-        </TechCard>
-
-        {/* ═══ 发光分隔线 + 更新时间 ═══ */}
-        <HStack spacing={S(4)} alignment="center" frame={{ maxWidth: "infinity" }}>
-          <ZStack frame={{ height: 3, maxWidth: "infinity" }} alignment="center">
-            <Rectangle fill={Theme.colors.purple} frame={{ height: 3, maxWidth: "infinity" }} opacity={0.06} />
-            <Rectangle fill={Theme.colors.purple} frame={{ height: 0.5, maxWidth: "infinity" }} opacity={0.3} />
-          </ZStack>
-          <HStack alignment="center" spacing={2}>
-            <Image systemName="arrow.clockwise" font={fs(5)} foregroundStyle={{ color: Theme.colors.green, opacity: 0.6 }} />
-            <Text font={fs(5)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.7 }}>{formatTime(new Date())}</Text>
-          </HStack>
-        </HStack>
-
-        {/* ═══ 最近记录 ═══ */}
-        <TechCard padding={S(4)} glowColor={Theme.colors.orange}>
-          <HStack alignment="center">
-            <Image systemName="clock.arrow.circlepath" font={fs(8)} foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }} />
-            <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>最近记录</Text>
-          </HStack>
-          {uniqueHistory.map((box, i) => (
-            <HStack key={i} spacing={S(5)} alignment="center">
-              <ZStack frame={{ width: S(16), height: S(16) }}>
-                <Circle fill={Theme.colors.cardStroke} />
-                <Image systemName="shippingbox" font={fs(7)} foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }} />
-              </ZStack>
-              <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
-                <Text font={fs(9)} fontWeight="medium" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>
-                  获得 {box.awardDays} 天奖励
-                </Text>
-                <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>
-                  {new Date(parseInt(box.openedTime)).toLocaleDateString('zh-CN')}
-                </Text>
+        {/* ═══ 右侧：数据面板 ═══ */}
+        <VStack spacing={S(3)} frame={{ maxWidth: "infinity" }} alignment="leading">
+          {/* 签到信息：天数 + 状态 + 更新时间 */}
+          <TechCard padding={S(5)} glowColor={Theme.colors.green}>
+            <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+              <Image systemName="flame.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
+              <Text font={fs(20)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
+              <VStack spacing={0}>
+                <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天连续签到</Text>
+                <Text font={fs(6)} foregroundStyle={{ color: info.isSigned ? Theme.colors.green : Theme.colors.text3, opacity: 0.9 }}>{info.isSigned ? "✓ 今日已签" : "待签到"}</Text>
               </VStack>
-              <Text font={fs(7)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>已入账</Text>
+              <Spacer />
+              <VStack alignment="trailing" spacing={1}>
+                <Image systemName="arrow.clockwise" font={fs(6)} foregroundStyle={{ color: Theme.colors.green, opacity: 0.6 }} />
+                <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.6 }}>{formatTime(new Date())}</Text>
+              </VStack>
             </HStack>
-          ))}
-          {uniqueHistory.length === 0 && (
-            <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>暂无记录</Text>
-          )}
-        </TechCard>
-      </VStack>
+          </TechCard>
+
+          {/* 四项统计 */}
+          <TechCard padding={S(4)} glowColor={Theme.colors.cyan}>
+            <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
+              <StatItem icon="trophy.fill" label="LV" value={info.level} color={Theme.colors.cyan} />
+              <StatItem icon="circle.grid.cross.fill" label="N币" value={info.nCoin} color={Theme.colors.yellow} />
+              <StatItem icon="ticket.fill" label="补签" value={info.signCardsNum} color={Theme.colors.purple} />
+              <StatItem icon="star.fill" label="经验" value={info.experience} color={Theme.colors.green} />
+            </HStack>
+          </TechCard>
+
+          {/* 盲盒区 */}
+          <TechCard padding={S(4)} glowColor={Theme.colors.purple}>
+            <HStack alignment="center">
+              <Image systemName="gift.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }} />
+              <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>待开盲盒</Text>
+              <Spacer />
+              <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>{info.notOpenedBlindBoxCount}个</Text>
+            </HStack>
+            {pendingBoxes.length > 0 ? (
+              <VStack spacing={S(2)}>
+                {pendingBoxes.slice(0, 1).map((box, i) => <BlindBoxRow key={i} box={box} />)}
+              </VStack>
+            ) : (
+              <HStack alignment="center" spacing={3}>
+                <Image systemName="checkmark.circle.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
+                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部已处理</Text>
+              </HStack>
+            )}
+          </TechCard>
+
+          {/* 最近记录 */}
+          <TechCard padding={S(4)} glowColor={Theme.colors.orange}>
+            <HStack alignment="center">
+              <Image systemName="clock.arrow.circlepath" font={fs(8)} foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }} />
+              <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>最近记录</Text>
+            </HStack>
+            {uniqueHistory.map((box, i) => (
+              <HStack key={i} spacing={S(5)} alignment="center">
+                <ZStack frame={{ width: S(16), height: S(16) }}>
+                  <Circle fill={Theme.colors.cardStroke} />
+                  <Image systemName="shippingbox" font={fs(7)} foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }} />
+                </ZStack>
+                <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+                  <Text font={fs(8)} fontWeight="medium" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>
+                    获得 {box.awardDays} 天奖励
+                  </Text>
+                  <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>
+                    {new Date(parseInt(box.openedTime)).toLocaleDateString('zh-CN')}
+                  </Text>
+                </VStack>
+                <Text font={fs(7)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>已入账</Text>
+              </HStack>
+            ))}
+            {uniqueHistory.length === 0 && (
+              <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>暂无记录</Text>
+            )}
+          </TechCard>
+        </VStack>
+      </HStack>
     </ZStack>
   )
 }
