@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { Script, Navigation, NavigationStack, ScrollView, VStack, HStack, ZStack, Text, Image, Button, Spacer, Widget, modifiers, useState, useEffect, RoundedRectangle, Circle, Divider } from 'scripting';
 
-const BG_COLOR = '#0B0C10';
-const CARD_BG = 'rgba(255, 255, 255, 0.04)';
-const CARD_BORDER = 'rgba(255, 255, 255, 0.1)';
+const BG_COLOR = '#050505';
+const CARD_BG = 'rgba(255, 255, 255, 0.08)';
+const CARD_BORDER = 'rgba(255, 255, 255, 0.2)';
 
 const FEATURES = [
   { id: 'ip-info', title: 'IP 定位信息', icon: 'location.fill', color: '#00E676', url: 'https://ippure.com/' },
@@ -176,11 +176,11 @@ function WallpaperSettingsPage() {
 // ─── 数据行组件 ─────────────────────────────────────────────
 function InfoRow({ icon, label, value, color }: { icon: string, label: string, value: string, color?: string }) {
   return (
-    <HStack alignment="center" spacing={10} frame={{ maxWidth: 'infinity' }} background="rgba(0,0,0,0.3)" cornerRadius={12} padding={{ top: 10, bottom: 10, leading: 12, trailing: 12 }}>
-      <Text styledText={{ content: icon, font: 16 }} frame={{ width: 24, alignment: 'center' }} />
-      <VStack alignment="leading" spacing={1} layoutPriority={1}>
-        <Text styledText={{ content: label, foregroundColor: 'rgba(255,255,255,0.4)', font: 10 }} />
-        <Text styledText={{ content: value, foregroundColor: color || 'white', font: 14, bold: true }} lineLimit={1} marquee={true} />
+    <HStack alignment="center" spacing={12} frame={{ maxWidth: 'infinity' }} background="rgba(0,0,0,0.2)" cornerRadius={16} padding={{ top: 12, bottom: 12, leading: 16, trailing: 16 }}>
+      <Text styledText={{ content: icon, font: 18 }} frame={{ width: 24, alignment: 'center' }} />
+      <VStack alignment="leading" spacing={2} layoutPriority={1}>
+        <Text styledText={{ content: label, foregroundColor: 'rgba(255,255,255,0.6)', font: 11 }} />
+        <Text styledText={{ content: value, foregroundColor: color || 'white', font: 15, bold: true }} lineLimit={1} marquee={true} />
       </VStack>
     </HStack>
   );
@@ -327,8 +327,8 @@ function App() {
                   <Image systemName="location.fill" resizable={{}} frame={{ width: 22, height: 22 }} modifiers={modifiers().foregroundStyle('#00E676')} />
                 </ZStack>
                 <VStack alignment="leading" spacing={2}>
-                  <Text styledText={{ content: 'REALTIME DATA', foregroundColor: 'rgba(255,255,255,0.4)', font: { name: 'Menlo', size: 10 } }} />
-                  <Text styledText={{ content: loading ? '正在获取...' : (ipData?.ip || '获取失败'), foregroundColor: 'white', font: 20, bold: true }} />
+                  <Text styledText={{ content: 'REALTIME DATA', foregroundColor: 'rgba(255,255,255,0.6)', font: { name: 'Menlo', size: 10 } }} />
+                  <Text styledText={{ content: loading ? '正在获取...' : (ipData?.ip || '获取失败'), foregroundColor: 'white', font: 22, bold: true }} />
                 </VStack>
               </HStack>
 
@@ -355,30 +355,19 @@ function App() {
                     <Spacer />
                     <Text styledText={{ content: `${fraudScore}% ${riskLabel}`, foregroundColor: riskColor, font: 13, bold: true }} background="rgba(255,255,255,0.06)" cornerRadius={8} padding={{ top: 3, bottom: 3, leading: 8, trailing: 8 }} modifiers={modifiers().overlay(<RoundedRectangle cornerRadius={8} stroke={riskColor} strokeWidth={1} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />)} />
                   </HStack>
-                  {/* 色条 */}
-                  <ZStack alignment="leading" frame={{ width: gaugeWidth, height: gaugeHeight }}>
-                    {gaugeSegments.map((seg, i) => {
-                      const start = (seg.range[0] / 100) * gaugeWidth;
-                      const end = (seg.range[1] / 100) * gaugeWidth;
-                      return <RoundedRectangle key={i} fill={seg.color} cornerRadius={1} frame={{ width: end - start, height: gaugeHeight }} offset={{ x: start, y: 0 }} />;
-                    })}
-                    <Circle fill="white" stroke={riskColor} strokeWidth={2} frame={{ width: gaugeHeight + 4, height: gaugeHeight + 4 }} offset={{ x: rawX - (gaugeHeight + 4) / 2, y: -1 }} />
-                  </ZStack>
-                  <HStack frame={{ width: gaugeWidth }}>
-                    <Text styledText={{ content: '0', foregroundColor: '#666', font: 8 }} />
-                    <Spacer />
-                    <Text styledText={{ content: '15', foregroundColor: '#666', font: 8 }} />
-                    <Spacer />
-                    <Text styledText={{ content: '25', foregroundColor: '#666', font: 8 }} />
-                    <Spacer />
-                    <Text styledText={{ content: '40', foregroundColor: '#666', font: 8 }} />
-                    <Spacer />
-                    <Text styledText={{ content: '50', foregroundColor: '#666', font: 8 }} />
-                    <Spacer />
-                    <Text styledText={{ content: '70', foregroundColor: '#666', font: 8 }} />
-                    <Spacer />
-                    <Text styledText={{ content: '100', foregroundColor: '#666', font: 8 }} />
-                  </HStack>
+                  {/* 优化后的色条与刻度对齐布局 */}
+                  <VStack spacing={6} frame={{ maxWidth: 'infinity' }}>
+                    <HStack spacing={2} frame={{ maxWidth: 'infinity', height: 8 }}>
+                      {gaugeSegments.map((seg, i) => (
+                        <RoundedRectangle key={i} fill={seg.color} cornerRadius={2} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
+                      ))}
+                    </HStack>
+                    <HStack frame={{ maxWidth: 'infinity' }}>
+                      {['0', '15', '25', '40', '50', '70', '100'].map((label) => (
+                        <Text key={label} styledText={{ content: label, foregroundColor: 'rgba(255,255,255,0.4)', font: 9 }} frame={{ maxWidth: 'infinity', alignment: 'center' }} />
+                      ))}
+                    </HStack>
+                  </VStack>
                   {/* 标签 */}
                   <HStack spacing={8}>
                     {tags.map(tag => (
