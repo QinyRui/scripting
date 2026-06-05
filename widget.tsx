@@ -486,9 +486,30 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
         if (signResult.success) {
           baseData = await getNinebotInfo(auth, devId)
           try {
+            // 构建盲盒等待描述
+            let blindBoxInfo = ""
+            if (baseData.minLeftDaysToOpen !== null && baseData.minLeftDaysToOpen !== undefined && baseData.minLeftDaysToOpen > 0) {
+              blindBoxInfo = ` | 🎁 下个盲盒 ${baseData.minLeftDaysToOpen} 天后`
+            } else if (baseData.notOpenedBlindBoxCount > 0) {
+              blindBoxInfo = ` | 🎁 有 ${baseData.notOpenedBlindBoxCount} 个盲盒可领`
+            }
+
             await Notification.schedule({
               title: "✅ 签到成功",
-              body: `已连续签到 ${baseData.consecutiveDays} 天`,
+              subtitle: "九号电动车",
+              body: `🎉 已连续签到 ${baseData.consecutiveDays} 天\n+${baseData.experience} 经验 | 等级 ${baseData.level}${blindBoxInfo}`,
+              iconImageData: { systemImage: "checkmark.seal.fill", color: "#34C759" },
+              threadIdentifier: "ninebot-sign",
+              customUI: true,
+              userInfo: {
+                type: "sign",
+                consecutiveDays: baseData.consecutiveDays,
+                experience: baseData.experience,
+                level: baseData.level,
+                nCoin: baseData.nCoin,
+                minLeftDaysToOpen: baseData.minLeftDaysToOpen,
+                notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
+              }
             })
           } catch (e) { console.log("通知发送失败:", e) }
         }
@@ -501,17 +522,54 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
       // 发送盲盒领取结果通知
       if (boxResult.total > 0) {
         try {
-          if (boxResult.receiveSuccess > 0) {
-            await Notification.schedule({
-              title: "🎁 盲盒领取完成",
-              body: `成功领取 ${boxResult.receiveSuccess} 个盲盒奖励` + (boxResult.failed > 0 ? `，${boxResult.failed} 个失败` : ""),
-            })
-          } else if (boxResult.failed > 0) {
-            await Notification.schedule({
-              title: "⚠️ 盲盒领取异常",
-              body: `${boxResult.failed} 个盲盒领取失败`,
-            })
+          // 构建盲盒剩余天数描述
+          let remainingInfo = ""
+          const boxes = baseData.notOpenedBoxesDetail || []
+          if (boxes.length > 0) {
+            const waitingBoxes = boxes.filter((b: any) => b.leftDaysToOpen > 0)
+            if (waitingBoxes.length > 0) {
+              const minDays = Math.min(...waitingBoxes.map((b: any) => b.leftDaysToOpen))
+              remainingInfo = `\n⏳ 下个盲盒还有 ${minDays} 天可领取`
+            }
           }
+
+          // 构建奖励描述
+          let rewardDesc = ""
+          if (boxResult.rewards.length > 0) {
+            rewardDesc = boxResult.rewards.map((r: any) => {
+              const reward = r.reward
+              if (reward && reward.rewardType === 1) return `+${reward.rewardValue} 等级经验`
+              if (reward && reward.rewardType === 2) return `+${reward.rewardValue} 电动车币`
+              return `+${reward.rewardValue} 奖励`
+            }).join("\n")
+          }
+
+          const bodyLines = [
+            `🎁 成功领取 ${boxResult.receiveSuccess} 个盲盒`,
+            rewardDesc,
+            remainingInfo,
+            boxResult.failed > 0 ? `\n⚠️ ${boxResult.failed} 个领取失败` : "",
+          ].filter(Boolean).join("\n")
+
+          await Notification.schedule({
+            title: boxResult.receiveSuccess > 0 ? "🎁 盲盒领取完成" : "⚠️ 盲盒领取异常",
+            subtitle: "九号电动车",
+            body: bodyLines,
+            iconImageData: { systemImage: boxResult.receiveSuccess > 0 ? "gift.fill" : "exclamationmark.triangle.fill", color: boxResult.receiveSuccess > 0 ? "#FF9500" : "#FF3B30" },
+            threadIdentifier: "ninebot-blindbox",
+            customUI: true,
+            userInfo: {
+              type: "blindbox",
+              total: boxResult.total,
+              receiveSuccess: boxResult.receiveSuccess,
+              failed: boxResult.failed,
+              rewards: boxResult.rewards,
+              errors: boxResult.errors,
+              minLeftDaysToOpen: baseData.minLeftDaysToOpen,
+              notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
+              notOpenedBoxesDetail: baseData.notOpenedBoxesDetail,
+            }
+          })
         } catch (e) { console.log("盲盒通知发送失败:", e) }
       }
     }
