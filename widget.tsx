@@ -496,8 +496,24 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
     }
 
     if (settings.autoOpenBlindBox && baseData.notOpenedBlindBoxCount > 0) {
-      await autoOpenBlindBoxes(auth, devId)
+      const boxResult = await autoOpenBlindBoxes(auth, devId)
       baseData = await getNinebotInfo(auth, devId)
+      // 发送盲盒领取结果通知
+      if (boxResult.total > 0) {
+        try {
+          if (boxResult.receiveSuccess > 0) {
+            await Notification.schedule({
+              title: "🎁 盲盒领取完成",
+              body: `成功领取 ${boxResult.receiveSuccess} 个盲盒奖励` + (boxResult.failed > 0 ? `，${boxResult.failed} 个失败` : ""),
+            })
+          } else if (boxResult.failed > 0) {
+            await Notification.schedule({
+              title: "⚠️ 盲盒领取异常",
+              body: `${boxResult.failed} 个盲盒领取失败`,
+            })
+          }
+        } catch (e) { console.log("盲盒通知发送失败:", e) }
+      }
     }
 
     return {
