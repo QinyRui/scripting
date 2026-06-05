@@ -20,7 +20,7 @@ declare const Safari: any
 declare const Pasteboard: any
 
 // 版本信息
-const VERSION = "1.0.2"
+const VERSION = "1.2.0"
 const BUILD_DATE = "2025-12-19"
 
 // 存储键
