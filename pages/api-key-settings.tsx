@@ -106,7 +106,7 @@ export function ApiKeySettingsPage() {
       >
         {/* ── 顶部品牌区 ── */}
         <Section>
-          <VStack spacing={16} alignment="center" padding={{ vertical: 24 }}>
+          <VStack spacing={16} alignment="center" padding={{ vertical: 24 }} frame={{ maxWidth: "infinity" }}>
             {/* 大图标 */}
             <ZStack frame={{ width: 72, height: 72 }}>
               <Circle fill={{ colors: ["#f59e0b", "#f97316"], startPoint: "top", endPoint: "bottom" }} />
@@ -201,7 +201,7 @@ export function ApiKeySettingsPage() {
         {/* ── 获取 Token 说明 ── */}
         <Section
           header={<Text font="footnote" foregroundStyle="secondaryLabel">如何获取</Text>}>
-          <VStack spacing={8} padding={{ vertical: 4 }}>
+          <VStack spacing={8} alignment="leading" padding={{ vertical: 4 }} frame={{ maxWidth: "infinity" }}>
             {[
               { step: "1", text: "访问彩云天气开放平台注册账号" },
               { step: "2", text: "创建应用后获取 Token" },
