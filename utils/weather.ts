@@ -7,17 +7,39 @@ import { handleNotifications } from "../notification_logic"
 import type { WeatherInfo, LocationData, PoetryInfo, ScheduleInfo } from "./types"
 import { weatherIcos, LOCATION_CACHE_KEY, weatherCachePath, locationCachePath } from "./constants"
 import { Cache, appendDebugLog, getSavedApiKey, locationData, updateLocationData } from "./storage"
-import { resolveLocationNameIfNeeded, hasValidCoordinates, isWeatherCacheValid, isNearby, isMeaningfulName } from "./location"
+import { resolveLocationNameIfNeeded, hasValidCoordinates, isWeatherCacheValid, isNearby, isMeaningfulName, calculateDistance } from "./location"
 import { getWindDirection, getWindLevel, airQuality, pad } from "./format"
 import { getLunarDate_Precise } from "./lunar"
 
 declare const Location: any
 declare const CalendarEvent: any
 declare const fetch: any
+declare const FileManager: any
 
 let apiKey = getSavedApiKey()
 
 export function refreshApiKey() { apiKey = getSavedApiKey() }
+
+/**
+ * 清除位置相关的所有缓存
+ * 当设备移动到新位置时调用，确保旧位置的天气和地名缓存不会残留
+ */
+function clearLocationCaches(reason: string) {
+  try {
+    // 清除天气缓存
+    if (FileManager.existsSync(weatherCachePath)) {
+      FileManager.removeFileSync(weatherCachePath)
+      appendDebugLog("cleared weather cache", { reason })
+    }
+    // 清除地名缓存
+    if (FileManager.existsSync(locationCachePath)) {
+      FileManager.removeFileSync(locationCachePath)
+      appendDebugLog("cleared location name cache", { reason })
+    }
+  } catch (err) {
+    appendDebugLog("clearLocationCaches error", { message: String(err) })
+  }
+}
 
 async function getJson(url: string) {
   const response = await fetch(url)
@@ -53,6 +75,22 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
       location = Storage.get(key)
       if (!location) throw new Error("请先授权定位")
     } else {
+      // 检测位置变化：如果与上次缓存位置距离超过5km，清除旧缓存
+      const prevLocation = Storage.get(key) as any
+      if (prevLocation?.latitude && prevLocation?.longitude) {
+        const movedDistance = calculateDistance(
+          location.latitude, location.longitude,
+          prevLocation.latitude, prevLocation.longitude
+        )
+        if (movedDistance > 5000) {
+          appendDebugLog("significant location change detected", {
+            from: { lat: prevLocation.latitude, lon: prevLocation.longitude },
+            to: { lat: location.latitude, lon: location.longitude },
+            distance: Math.round(movedDistance)
+          })
+          clearLocationCaches(`moved ${Math.round(movedDistance)}m from previous location`)
+        }
+      }
       Storage.set(key, location)
     }
   }
