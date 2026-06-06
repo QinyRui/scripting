@@ -374,7 +374,7 @@ export function WallpaperSettingsPage() {
 
         {/* 透明壁纸使用说明 */}
         <Section header={<Text font="footnote" foregroundStyle="secondaryLabel">透明壁纸使用说明</Text>}>
-          <VStack spacing={6} padding={{ vertical: 4 }}>
+          <VStack spacing={6} alignment="leading" padding={{ vertical: 4 }} frame={{ maxWidth: "infinity" }}>
             {[
               "长按桌面进入编辑模式，滑到没有图标的空白页",
               "截图保存该空白页",
