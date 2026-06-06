@@ -1,0 +1,40 @@
+{
+  "icon" : "square.and.arrow.up",
+  "intentInputTypes" : [
+    "FileURLs"
+  ],
+  "entry" : "index.tsx",
+  "author" : null,
+  "description" : "",
+  "version" : "1.0.0",
+  "localizedNames" : {
+    "es" : "",
+    "pt" : "",
+    "en" : "",
+    "it" : "",
+    "zh" : "",
+    "ja" : "",
+    "fr" : "",
+    "de" : "",
+    "ru" : ""
+  },
+  "name" : "Github 多功能上传",
+  "runInApp" : false,
+  "remoteResource" : null,
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/main\/photos\/AF7F1085-9B6A-4D78-8D45-47B34D7C0086.png",
+  "contributors" : [
+
+  ],
+  "localizedDescriptions" : {
+    "en" : "",
+    "ja" : "",
+    "pt" : "",
+    "de" : "",
+    "fr" : "",
+    "it" : "",
+    "ru" : "",
+    "es" : "",
+    "zh" : ""
+  },
+  "color" : "rgba(28, 140, 255,1)"
+}
