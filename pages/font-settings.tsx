@@ -478,12 +478,12 @@ export function FontSettingsPage() {
       >
         {/* 顶部说明 */}
         <Section>
-          <VStack spacing={8} alignment="center" padding={{ vertical: 12 }}>
-            <ZStack frame={{ width: 56, height: 56 }}>
+          <VStack spacing={8} alignment="center" padding={{ vertical: 16 }} frame={{ maxWidth: "infinity" }}>
+            <ZStack frame={{ width: 60, height: 60 }} alignment="center">
               <Circle fill={{ colors: ["#8b5cf6", "#6d28d9"], startPoint: "top", endPoint: "bottom" }} />
-              <Image systemName="textformat.abc" font={26} foregroundStyle="white" />
+              <Image systemName="textformat.abc" font={28} foregroundStyle="white" />
             </ZStack>
-            <Text font="subheadline" foregroundStyle="secondaryLabel">自定义字体大小与颜色，选择即生效</Text>
+            <Text font="subheadline" foregroundStyle="secondaryLabel" multilineTextAlignment="center">自定义字体大小与颜色，选择即生效</Text>
           </VStack>
         </Section>
 
@@ -500,7 +500,6 @@ export function FontSettingsPage() {
                 <Text font="caption" foregroundStyle="secondaryLabel">调整各区域显示比例</Text>
               </VStack>
               <Text font="subheadline" foregroundStyle="secondaryLabel">{sizeText}</Text>
-              <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
             </HStack>
           </NavigationLink>
         </Section>
@@ -518,7 +517,6 @@ export function FontSettingsPage() {
                 <Text font="caption" foregroundStyle="secondaryLabel">自定义各区域文字颜色</Text>
               </VStack>
               <Text font="subheadline" foregroundStyle="secondaryLabel">{colorText}</Text>
-              <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
             </HStack>
           </NavigationLink>
         </Section>
