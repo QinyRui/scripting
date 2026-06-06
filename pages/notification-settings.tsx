@@ -152,14 +152,14 @@ export function NotificationSettingsPage() {
 
             {/* ── 通知类型 ── */}
             <Section header={<Text font="footnote" foregroundStyle="secondaryLabel">通知类型</Text>}>
-              <VStack spacing={0}>
+              <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
                 {/* 极端天气 */}
-                <HStack spacing={12} alignment="center" padding={{ vertical: 10 }}>
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
                   <ZStack frame={{ width: 36, height: 36 }}>
                     <Circle fill="systemRed" opacity={0.15} />
                     <Image systemName="exclamationmark.triangle.fill" font={17} foregroundStyle="systemRed" />
                   </ZStack>
-                  <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
                     <Text fontWeight="bold">极端天气</Text>
                     <Text font="caption" foregroundStyle="secondaryLabel">暴雨、暴雪等预警</Text>
                   </VStack>
@@ -170,15 +170,15 @@ export function NotificationSettingsPage() {
                   />
                 </HStack>
 
-                <Divider padding={{ leading: 48 }} />
+                <Divider padding={{ leading: 64 }} />
 
                 {/* 降水通知 */}
-                <HStack spacing={12} alignment="center" padding={{ vertical: 10 }}>
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
                   <ZStack frame={{ width: 36, height: 36 }}>
                     <Circle fill="systemBlue" opacity={0.15} />
                     <Image systemName="cloud.rain.fill" font={17} foregroundStyle="systemBlue" />
                   </ZStack>
-                  <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
                     <Text fontWeight="bold">降水通知</Text>
                     <Text font="caption" foregroundStyle="secondaryLabel">即将下雨/停雨提醒</Text>
                   </VStack>
@@ -189,15 +189,15 @@ export function NotificationSettingsPage() {
                   />
                 </HStack>
 
-                <Divider padding={{ leading: 48 }} />
+                <Divider padding={{ leading: 64 }} />
 
                 {/* 周边通知 */}
-                <HStack spacing={12} alignment="center" padding={{ vertical: 10 }}>
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
                   <ZStack frame={{ width: 36, height: 36 }}>
                     <Circle fill="systemCyan" opacity={0.15} />
                     <Image systemName="location.fill" font={17} foregroundStyle="systemCyan" />
                   </ZStack>
-                  <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
                     <Text fontWeight="bold">周边通知</Text>
                     <Text font="caption" foregroundStyle="secondaryLabel">周边区域降水提醒</Text>
                   </VStack>
@@ -208,15 +208,15 @@ export function NotificationSettingsPage() {
                   />
                 </HStack>
 
-                <Divider padding={{ leading: 48 }} />
+                <Divider padding={{ leading: 64 }} />
 
                 {/* 提示通知 */}
-                <HStack spacing={12} alignment="center" padding={{ vertical: 10 }}>
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
                   <ZStack frame={{ width: 36, height: 36 }}>
                     <Circle fill="systemIndigo" opacity={0.15} />
                     <Image systemName="bubble.left.fill" font={17} foregroundStyle="systemIndigo" />
                   </ZStack>
-                  <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
                     <Text fontWeight="bold">提示通知</Text>
                     <Text font="caption" foregroundStyle="secondaryLabel">例如"深夜了"等温馨提醒</Text>
                   </VStack>
