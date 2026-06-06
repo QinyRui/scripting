@@ -1,52 +1,52 @@
 {
-  "name" : "彩云天气",
-  "intentInputTypes" : [
-
-  ],
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
-  },
-  "description" : "",
-  "color" : "rgba(143, 168, 149,1)",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "43b61f1e0d8af286fac96943f6c115d4",
-    "autoUpdateInterval" : 300
-  },
-  "version" : "6.1.7",
-  "entry" : "index.tsx",
-  "localizedDescriptions" : {
-    "ja" : "",
-    "pt" : "",
-    "ru" : "",
-    "es" : "",
-    "it" : "",
-    "zh" : "",
-    "de" : "",
-    "en" : "",
-    "fr" : ""
-  },
-  "icon" : "cloud.sun.rain.fill",
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
-  "runInApp" : true,
   "contributors" : [
     {
       "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "email" : "602839678@qq.com",
-      "name" : "QinyRui"
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com"
     }
   ],
-  "localizedNames" : {
+  "icon" : "cloud.sun.rain.fill",
+  "color" : "rgba(143, 168, 149,1)",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "entry" : "index.tsx",
+  "intentInputTypes" : [
+
+  ],
+  "version" : "6.1.7",
+  "name" : "彩云天气",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "description" : "实时动态.下雨动态条",
+  "localizedDescriptions" : {
+    "en" : "",
     "zh" : "",
-    "ru" : "",
-    "fr" : "",
-    "pt" : "",
-    "ja" : "",
     "es" : "",
     "it" : "",
+    "de" : "",
+    "fr" : "",
+    "ru" : "",
+    "ja" : "",
+    "pt" : ""
+  },
+  "runInApp" : true,
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "hash" : "5f4b8d8b03740cd24671980b6409d6e6",
+    "autoUpdateInterval" : null
+  },
+  "localizedNames" : {
+    "ja" : "",
+    "fr" : "",
+    "de" : "",
+    "ru" : "",
     "en" : "",
-    "de" : ""
+    "zh" : "",
+    "es" : "",
+    "it" : "",
+    "pt" : ""
   }
 }
