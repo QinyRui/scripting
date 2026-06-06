@@ -1,52 +1,52 @@
 {
-  "contributors" : [
-    {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "name" : "QinyRui",
-      "email" : "602839678@qq.com"
-    }
-  ],
   "icon" : "cloud.sun.rain.fill",
-  "color" : "rgba(143, 168, 149,1)",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "entry" : "index.tsx",
+  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "version" : "6.1.8",
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
   "name" : "彩云天气",
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
-  "description" : "实时动态.下雨动态条",
-  "localizedDescriptions" : {
-    "en" : "",
-    "zh" : "",
-    "es" : "",
-    "it" : "",
-    "de" : "",
-    "fr" : "",
-    "ru" : "",
-    "ja" : "",
-    "pt" : ""
-  },
-  "runInApp" : true,
   "remoteResource" : {
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "5f4b8d8b03740cd24671980b6409d6e6",
+    "hash" : "a35149b0f89c5c58423fb3efe63a0eb1",
     "autoUpdateInterval" : null
   },
+  "color" : "rgba(143, 168, 149,1)",
   "localizedNames" : {
     "ja" : "",
-    "fr" : "",
     "de" : "",
+    "zh" : "",
+    "fr" : "",
+    "pt" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "it" : ""
+  },
+  "entry" : "index.tsx",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "author" : {
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com"
+  },
+  "localizedDescriptions" : {
+    "fr" : "",
     "ru" : "",
     "en" : "",
+    "ja" : "",
     "zh" : "",
     "es" : "",
     "it" : "",
+    "de" : "",
     "pt" : ""
-  }
+  },
+  "description" : "实时动态.下雨动态条",
+  "version" : "6.1.7"
 }
