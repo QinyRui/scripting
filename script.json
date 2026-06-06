@@ -1,0 +1,52 @@
+{
+  "runInApp" : true,
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "description" : "实时动态.下雨动态条",
+  "entry" : "index.tsx",
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
+  "version" : "6.1.7",
+  "icon" : "cloud.sun.rain.fill",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "autoUpdateInterval" : null,
+    "hash" : "087dd704aa656b978655e18dae3bdeaf"
+  },
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "localizedNames" : {
+    "it" : "",
+    "es" : "",
+    "de" : "",
+    "ja" : "",
+    "ru" : "",
+    "en" : "",
+    "fr" : "",
+    "pt" : "",
+    "zh" : ""
+  },
+  "color" : "rgba(143, 168, 149,1)",
+  "name" : "彩云天气",
+  "intentInputTypes" : [
+
+  ],
+  "localizedDescriptions" : {
+    "fr" : "",
+    "zh" : "",
+    "en" : "",
+    "it" : "",
+    "es" : "",
+    "ja" : "",
+    "de" : "",
+    "ru" : "",
+    "pt" : ""
+  }
+}
