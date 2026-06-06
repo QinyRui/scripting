@@ -1,48 +1,48 @@
 {
-  "contributors" : [
-
-  ],
-  "version" : "1.0.0",
-  "name" : "IP 定位",
-  "localizedNames" : {
-    "pt" : "",
-    "ja" : "",
-    "en" : "",
-    "es" : "",
-    "it" : "",
-    "ru" : "",
-    "fr" : "",
-    "zh" : "",
-    "de" : ""
-  },
   "description" : null,
-  "color" : "rgba(102, 196, 235,1)",
-  "runInApp" : false,
   "icon" : "network",
-  "entry" : "index.tsx",
-  "remoteResource" : {
-    "autoUpdateInterval" : 300,
-    "hash" : "5c7b4cf716e1c7cbe37f826fbc402f52",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP"
-  },
-  "localizedDescriptions" : {
-    "de" : "",
-    "fr" : "",
-    "ru" : "",
-    "it" : "",
+  "version" : "1.0.0",
+  "localizedNames" : {
     "en" : "",
     "pt" : "",
-    "ja" : "",
     "zh" : "",
+    "ru" : "",
+    "ja" : "",
+    "fr" : "",
+    "it" : "",
+    "de" : "",
     "es" : ""
   },
+  "entry" : "index.tsx",
   "intentInputTypes" : [
 
   ],
+  "name" : "IP 定位",
   "iconImage" : null,
+  "color" : "rgba(102, 196, 235,1)",
   "author" : {
     "name" : "QinyRui",
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  }
+  },
+  "contributors" : [
+
+  ],
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
+    "hash" : "95640841a3eec9eef1c8fbc71a93f5c4",
+    "autoUpdateInterval" : null
+  },
+  "localizedDescriptions" : {
+    "ru" : "",
+    "es" : "",
+    "ja" : "",
+    "en" : "",
+    "it" : "",
+    "de" : "",
+    "pt" : "",
+    "zh" : "",
+    "fr" : ""
+  },
+  "runInApp" : false
 }
