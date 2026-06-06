@@ -205,7 +205,7 @@ export function LayoutSettingsPage() {
               <Circle fill={{ colors: ["#6366f1", "#4f46e5"], startPoint: "top", endPoint: "bottom" }} />
               <Image systemName="triangle.righthalf.inset.filled" font={24} foregroundStyle="white" />
             </ZStack>
-            <VStack spacing={4} alignment="center">
+            <VStack spacing={4} alignment="center" frame={{ maxWidth: "infinity" }}>
               <Text font="title3" fontWeight="bold">布局微调</Text>
               <Text font="subheadline" foregroundStyle="secondaryLabel">
                 调整组件内各区域的位置偏移{"\n"}修改即时生效
