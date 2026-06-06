@@ -1,48 +1,48 @@
 {
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
   "remoteResource" : {
-    "autoUpdateInterval" : null,
     "hash" : "47ced6c4892f8c7a6b9169d03ce1e2d5",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH"
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
+    "autoUpdateInterval" : null
   },
-  "name" : "九号系统签到",
-  "color" : "rgba(143, 168, 149,1)",
-  "entry" : "index.tsx",
+  "runInApp" : false,
   "intentInputTypes" : [
 
   ],
-  "description" : "",
-  "runInApp" : false,
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/%E4%B9%9D%E5%8F%B7\/IMG_1706.png",
+  "entry" : "index.tsx",
+  "name" : "九号系统签到",
+  "localizedDescriptions" : {
+    "ja" : "",
+    "zh" : "",
+    "pt" : "",
+    "en" : "",
+    "ru" : "",
+    "es" : "",
+    "it" : "",
+    "de" : "",
+    "fr" : ""
+  },
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "localizedNames" : {
+    "en" : "",
+    "zh" : "",
+    "de" : "",
+    "it" : "",
+    "pt" : "",
+    "fr" : "",
+    "ru" : "",
+    "ja" : "",
+    "es" : ""
+  },
   "icon" : "scooter",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  },
   "contributors" : [
 
   ],
   "version" : "1.2.0",
-  "localizedDescriptions" : {
-    "zh" : "",
-    "fr" : "",
-    "ja" : "",
-    "de" : "",
-    "it" : "",
-    "ru" : "",
-    "es" : "",
-    "en" : "",
-    "pt" : ""
-  },
-  "localizedNames" : {
-    "zh" : "",
-    "en" : "",
-    "es" : "",
-    "pt" : "",
-    "ru" : "",
-    "de" : "",
-    "fr" : "",
-    "it" : "",
-    "ja" : ""
-  }
+  "description" : ""
 }
