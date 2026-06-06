@@ -301,15 +301,8 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           <TechCard padding={S(4)} glowColor={Theme.colors.green}>
             <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
               <Image systemName="flame.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
-              <VStack alignment="leading" spacing={0}>
-                <Text font={fs(5)} foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "已签到" : "待签到"}</Text>
-                <HStack spacing={0}>
-                  <Text font={fs(5)} foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>连</Text>
-                  <Text font={fs(5)} foregroundStyle={{ color: "#BF5AF2" as Color, opacity: 1 }}>续</Text>
-                  <Text font={fs(5)} foregroundStyle={{ color: "#FF9500" as Color, opacity: 1 }}>签</Text>
-                  <Text font={fs(5)} foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>到</Text>
-                </HStack>
-              </VStack>
+              <Text font={fs(6)} foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "已签到" : "待签到"}</Text>
+              <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续签到</Text>
               <Text font={fs(22)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
               <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天</Text>
               <Spacer />
@@ -392,15 +385,8 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           <TechCard padding={S(5)} glowColor={Theme.colors.green}>
             <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
               <Image systemName="flame.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
-              <VStack alignment="leading" spacing={0}>
-                <Text font={fs(7)} foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "已签到" : "待签到"}</Text>
-                <HStack spacing={0}>
-                  <Text font={fs(7)} foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>连</Text>
-                  <Text font={fs(7)} foregroundStyle={{ color: "#BF5AF2" as Color, opacity: 1 }}>续</Text>
-                  <Text font={fs(7)} foregroundStyle={{ color: "#FF9500" as Color, opacity: 1 }}>签</Text>
-                  <Text font={fs(7)} foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>到</Text>
-                </HStack>
-              </VStack>
+              <Text font={fs(7)} foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "已签到" : "待签到"}</Text>
+              <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续签到</Text>
               <Text font={fs(26)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
               <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天</Text>
               <Spacer />
