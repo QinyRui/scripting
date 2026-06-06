@@ -131,7 +131,8 @@ function buildStaticMapUrl(lat: number, lon: number, width: number, height: numb
   const safeLat = Math.max(-85, Math.min(85, lat));
   const safeLon = Math.max(-180, Math.min(180, lon));
   const safeZoom = Math.max(2, Math.min(17, zoom));
-  return `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=${safeZoom}&l=sat&size=${width},${height}&dummy=.png`;
+  // Yandex 浅色矢量地图 + 中文标注，替代卫星影像
+  return `https://static-maps.yandex.ru/1.x/?lang=zh-CN&ll=${safeLon},${safeLat}&z=${safeZoom}&l=map&size=${width},${height}`;
 }
 
 const COUNTRY_ZH: Record<string, string> = {
@@ -465,18 +466,14 @@ function LocationMapPanel({ data, meta, selected, compact, title, mapImage }: { 
           {mapImage ? (
             <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
           ) : (
-            <VStack alignment="center" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background="#0D1B2A">
+            <VStack alignment="center" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background="#E8E4DE">
               <Text styledText={{ content: '🌍', font: 28 }} />
             </VStack>
           )}
-          {/* 淡蓝光晕装饰 */}
-          <Circle fill="rgba(20,55,130,0.08)" frame={{ width: compact ? 80 : 120, height: compact ? 80 : 120 }} blur={16} />
-          {/* 大气亮边环 */}
-          <Circle fill="none" stroke="rgba(75,160,255,0.18)" strokeWidth={1} frame={{ width: compact ? 80 : 120, height: compact ? 80 : 120 }} />
           {/* 定位标记 */}
-          {meta.hasCoord && <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: compact ? 16 : 20, height: compact ? 16 : 20 }} modifiers={modifiers().foregroundStyle('#FF3B30')} />}
+          {meta.hasCoord && <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: compact ? 16 : 20, height: compact ? 16 : 20 }} modifiers={modifiers().foregroundStyle('#007AFF')} />}
           {/* 坐标标签 */}
-          {meta.hasCoord && <Text styledText={{ content: coordText, foregroundColor: 'rgba(255,255,255,0.80)', font: compact ? 7 : 8, bold: true }} background="rgba(0,0,0,0.50)" cornerRadius={4} padding={{ top: 2, bottom: 2, leading: 4, trailing: 4 }} offset={{ x: 0, y: (panelHeight - headerHeight) / 2 - (compact ? 12 : 16) }} lineLimit={1} />}
+          {meta.hasCoord && <Text styledText={{ content: coordText, foregroundColor: '#555', font: compact ? 7 : 8, bold: true }} background="rgba(255,255,255,0.88)" cornerRadius={4} padding={{ top: 2, bottom: 2, leading: 4, trailing: 4 }} offset={{ x: 0, y: (panelHeight - headerHeight) / 2 - (compact ? 12 : 16) }} lineLimit={1} />}
         </ZStack>
       </VStack>
     </Link>
@@ -703,8 +700,9 @@ async function runWidget() {
     if (data.latitude && data.longitude) {
       const safeLat = Math.max(-85, Math.min(85, data.latitude));
       const safeLon = Math.max(-180, Math.min(180, data.longitude));
-      // 卫星影像 + 适中缩放级别，铺满面板区域（Yandex 最大支持约 312px）
-      const url = `https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${safeLon},${safeLat}&z=6&l=sat&size=312,312`;
+      // 浅色矢量地图 + 中文标注（Apple Maps 风格）
+      const mapZoom = getCountryMapZoom(data);
+      const url = buildStaticMapUrl(safeLat, safeLon, 312, 312, mapZoom);
       try {
         mapImage = await UIImage.fromURL(url);
       } catch (e) {
