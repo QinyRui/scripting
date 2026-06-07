@@ -57,14 +57,12 @@ function SettingsView(props: {
   branch: string
   authorName: string
   authorEmail: string
-  autoFolder: string
   commitMessage: string
   onRepoUrlChange: (value: string) => void
   onTokenChange: (value: string) => void
   onBranchChange: (value: string) => void
   onAuthorNameChange: (value: string) => void
   onAuthorEmailChange: (value: string) => void
-  onAutoFolderChange: (value: string) => void
   onCommitMessageChange: (value: string) => void
 }) {
   const dismiss = Navigation.useDismiss()
@@ -75,7 +73,6 @@ function SettingsView(props: {
   const [localAuthorName, setLocalAuthorName] = useState(props.authorName)
   const [localBranch, setLocalBranch] = useState(props.branch)
   const [localAuthorEmail, setLocalAuthorEmail] = useState(props.authorEmail)
-  const [localAutoFolder, setLocalAutoFolder] = useState(props.autoFolder)
   const [localCommitMessage, setLocalCommitMessage] = useState(props.commitMessage)
 
   // 创建文件夹相关状态
@@ -94,7 +91,6 @@ function SettingsView(props: {
   const updateAuthorName = (v: string) => { setLocalAuthorName(v); props.onAuthorNameChange(v) }
   const updateBranch = (v: string) => { setLocalBranch(v); props.onBranchChange(v) }
   const updateAuthorEmail = (v: string) => { setLocalAuthorEmail(v); props.onAuthorEmailChange(v) }
-  const updateAutoFolder = (v: string) => { setLocalAutoFolder(v); props.onAutoFolderChange(v) }
   const updateCommitMessage = (v: string) => { setLocalCommitMessage(v); props.onCommitMessageChange(v) }
 
   // 解析 owner/repo 辅助函数
@@ -248,17 +244,6 @@ function SettingsView(props: {
           ],
         }}
       >
-        {/* 自动保存提示 */}
-        <Section>
-          <HStack spacing={6} alignment="center" padding={{ top: 4, bottom: 4 }}>
-            <Image systemName="checkmark.circle.fill" font="body" foregroundStyle="systemGreen" />
-            <VStack spacing={1}>
-              <Text font="subheadline" fontWeight="semibold" foregroundStyle="systemGreen">设置已自动保存</Text>
-              <Text font="caption" foregroundStyle="tertiaryLabel">输入内容即时保存，无需手动操作</Text>
-            </VStack>
-          </HStack>
-        </Section>
-
         {/* 凭证配置 */}
         <Section
           header={<SectionHeader title="凭证配置" />}
@@ -294,23 +279,6 @@ function SettingsView(props: {
             title="提交邮箱"
             value={localAuthorEmail}
             onChanged={updateAuthorEmail}
-          />
-        </Section>
-
-        {/* 自动创建文件夹 */}
-        <Section
-          header={<SectionHeader title="自动创建文件夹" />}
-          footer={
-            <Text font="caption" foregroundStyle="tertiaryLabel">
-              上传时自动在仓库中创建该文件夹作为路径前缀，留空则上传到根目录。
-            </Text>
-          }
-        >
-          <TextField
-            title="文件夹名称"
-            value={localAutoFolder}
-            prompt="例如 生日、壁纸、备份"
-            onChanged={updateAutoFolder}
           />
         </Section>
 
@@ -542,9 +510,13 @@ async function scanFolderRecursively(
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text font="subheadline" fontWeight="semibold" foregroundStyle="systemTeal">
-      {title}
-    </Text>
+    <HStack frame={{ maxWidth: "infinity" }} alignment="center">
+      <Spacer />
+      <Text font="subheadline" fontWeight="semibold" foregroundStyle="systemTeal">
+        {title}
+      </Text>
+      <Spacer />
+    </HStack>
   )
 }
 
@@ -568,7 +540,9 @@ function GridButton(props: {
     : (props.color ?? "systemBlue");
   const darkCardFill: any = props.disabled
     ? "rgba(58,58,60,0.72)"
-    : "rgba(58,58,60,0.96)";
+    : (props.color === "#32ADE6"
+      ? "rgba(50,173,230,0.18)"
+      : "rgba(58,58,60,0.96)");
   return (
     <Button
       action={() => {
@@ -795,7 +769,7 @@ function FileEntryRow(props: {
 const SECTION_GRADIENTS: [string, string][] = [
   ["rgba(13,148,136,0.06)", "rgba(13,140,160,0.06)"],       // 设置：青→青蓝
   ["rgba(13,140,160,0.06)", "rgba(13,110,180,0.06)"],       // 文件队列：青蓝→蓝
-  ["rgba(13,110,180,0.06)", "rgba(50,80,200,0.06)"],        // 上传操作：蓝→靛蓝
+  ["rgba(50,173,230,0.12)", "rgba(50,173,230,0.06)"],
   ["rgba(50,80,200,0.06)", "rgba(90,60,200,0.06)"],         // 上传历史：靛蓝→紫蓝
 ];
 
@@ -951,14 +925,13 @@ function View() {
   const [branch, setBranchRaw] = useState(savedConfig.branch || "main")
   const [authorName, setAuthorNameRaw] = useState(savedConfig.authorName || "")
   const [authorEmail, setAuthorEmailRaw] = useState(savedConfig.authorEmail || "")
-  const [autoFolder, setAutoFolderRaw] = useState(savedConfig.autoFolder || "")
   const [commitMessage, setCommitMessageRaw] = useState(savedConfig.commitMessage || "")
 
 
   // 自动保存辅助：更新 state 同时立即写入 Storage
   function persistConfig(patch: Record<string, any>) {
     const merged = {
-      repoUrl, token, branch, authorName, authorEmail, autoFolder, commitMessage,
+      repoUrl, token, branch, authorName, authorEmail, commitMessage,
       ...patch,
     }
     if (typeof Storage !== "undefined") {
@@ -970,7 +943,6 @@ function View() {
   const setBranch = (v: string) => { setBranchRaw(v); persistConfig({ branch: v }) }
   const setAuthorName = (v: string) => { setAuthorNameRaw(v); persistConfig({ authorName: v }) }
   const setAuthorEmail = (v: string) => { setAuthorEmailRaw(v); persistConfig({ authorEmail: v }) }
-  const setAutoFolder = (v: string) => { setAutoFolderRaw(v); persistConfig({ autoFolder: v }) }
   const setCommitMessage = (v: string) => { setCommitMessageRaw(v); persistConfig({ commitMessage: v }) }
 
   const repoName = repoUrl
@@ -1012,8 +984,7 @@ function View() {
   function buildPreviewPath(entry: SelectedEntry): string {
     const effective = getEffectiveBranch(entry)
     const { actualBranch: entryBranch, uploadPrefix: entryPrefix } = parseBranchTarget(effective)
-    const folderPrefix = autoFolder ? `${autoFolder}/` : ""
-    const base = entryPrefix ? `${entryPrefix}/${folderPrefix}${entry.relativePath}` : `${folderPrefix}${entry.relativePath}`
+    const base = entryPrefix ? `${entryPrefix}/${entry.relativePath}` : entry.relativePath
     return `${previewOwner}/${previewRepo}@${entryBranch}/${base}`
   }
 
@@ -1194,8 +1165,8 @@ function View() {
           } 
           
           const targetPath = normalizedUploadPath
-            ? `${normalizedUploadPath}/${autoFolder ? autoFolder + '/' : ''}${relativePath}`
-            : `${autoFolder ? autoFolder + '/' : ''}${relativePath}`
+            ? `${normalizedUploadPath}/${relativePath}`
+            : relativePath
           const url = `https://api.github.com/repos/${ownerStr}/${repoStr}/contents/${targetPath}`;
           
           // 尝试获取现有文件的 sha (如果已存在)
@@ -1443,9 +1414,9 @@ function View() {
               </VStack>
             ) : (
               <GridButton
-                icon="chevron.left.forwardslash.chevron.right"
+                icon="square.and.arrow.up"
                 title="推送到 GitHub"
-                color="systemGreen"
+                color="#32ADE6"
                 disabled={selectedEntries.length === 0}
                 onPress={handleUpload}
               />
@@ -1498,14 +1469,12 @@ function View() {
                 branch={branch}
                 authorName={authorName}
                 authorEmail={authorEmail}
-                autoFolder={autoFolder}
                 commitMessage={commitMessage}
                 onRepoUrlChange={setRepoUrl}
                 onTokenChange={setToken}
                 onBranchChange={setBranch}
                 onAuthorNameChange={setAuthorName}
                 onAuthorEmailChange={setAuthorEmail}
-                onAutoFolderChange={setAutoFolder}
                 onCommitMessageChange={setCommitMessage}
               />
             )
