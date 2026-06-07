@@ -1,40 +1,48 @@
 {
+  "runInApp" : false,
+  "contributors" : [
+
+  ],
+  "version" : "1.0.1",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/main\/photos\/AF7F1085-9B6A-4D78-8D45-47B34D7C0086.png",
   "icon" : "square.and.arrow.up",
   "intentInputTypes" : [
     "FileURLs"
   ],
+  "description" : "更新优化",
   "entry" : "index.tsx",
-  "author" : null,
-  "description" : "",
-  "version" : "1.0.0",
-  "localizedNames" : {
-    "es" : "",
-    "pt" : "",
-    "en" : "",
-    "it" : "",
-    "zh" : "",
-    "ja" : "",
-    "fr" : "",
-    "de" : "",
-    "ru" : ""
+  "remoteResource" : {
+    "autoUpdateInterval" : 300,
+    "hash" : "9981dcde5426942cddd3a49ba4ddda2a",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/Github工具箱"
   },
-  "name" : "Github 多功能上传",
-  "runInApp" : false,
-  "remoteResource" : null,
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/main\/photos\/AF7F1085-9B6A-4D78-8D45-47B34D7C0086.png",
-  "contributors" : [
-
-  ],
   "localizedDescriptions" : {
-    "en" : "",
-    "ja" : "",
     "pt" : "",
-    "de" : "",
+    "es" : "",
     "fr" : "",
     "it" : "",
     "ru" : "",
-    "es" : "",
-    "zh" : ""
+    "en" : "",
+    "de" : "",
+    "zh" : "",
+    "ja" : ""
   },
-  "color" : "rgba(28, 140, 255,1)"
+  "localizedNames" : {
+    "pt" : "",
+    "it" : "",
+    "ru" : "",
+    "fr" : "",
+    "ja" : "",
+    "en" : "",
+    "es" : "",
+    "zh" : "",
+    "de" : ""
+  },
+  "color" : "rgba(28, 140, 255,1)",
+  "name" : "Github 多功能上传",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  }
 }
