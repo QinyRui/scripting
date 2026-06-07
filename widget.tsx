@@ -65,6 +65,11 @@ function IPWidgetView({ data, locationZh, mapImage }: { data: any, locationZh: s
   if (!data) return <ErrorView />;
   const family = Widget.family;
 
+  // 小号组件：全屏地图，无需壁纸叠加
+  if (family === 'systemSmall') {
+    return <SmallWidget data={data} locationZh={locationZh} mapImage={mapImage} />;
+  }
+
   const wallpaperKey = family === 'systemLarge' ? WALLPAPER_LARGE_KEY : WALLPAPER_MEDIUM_KEY;
   const wallpaperData = Storage.getData(wallpaperKey);
   const wallpaperImage = wallpaperData ? UIImage.fromData(wallpaperData) : null;
@@ -152,6 +157,20 @@ const COUNTRY_ZH: Record<string, string> = {
   'Mexico': '墨西哥', 'Argentina': '阿根廷', 'Colombia': '哥伦比亚', 'Chile': '智利',
   'Peru': '秘鲁', 'Venezuela': '委内瑞拉', 'Ukraine': '乌克兰', 'Romania': '罗马尼亚',
   'Czech Republic': '捷克', 'Hungary': '匈牙利', 'Israel': '以色列', 'Qatar': '卡塔尔',
+};
+
+// 国旗 Emoji 映射
+const FLAG_MAP: Record<string, string> = {
+  'CN': '🇨🇳', 'US': '🇺🇸', 'JP': '🇯🇵', 'KR': '🇰🇷', 'GB': '🇬🇧', 'DE': '🇩🇪',
+  'FR': '🇫🇷', 'CA': '🇨🇦', 'AU': '🇦🇺', 'RU': '🇷🇺', 'IN': '🇮🇳', 'BR': '🇧🇷',
+  'SG': '🇸🇬', 'HK': '🇭🇰', 'TW': '🇹🇼', 'MO': '🇲🇴', 'TH': '🇹🇭', 'VN': '🇻🇳',
+  'MY': '🇲🇾', 'ID': '🇮🇩', 'PH': '🇵🇭', 'IT': '🇮🇹', 'ES': '🇪🇸', 'NL': '🇳🇱',
+  'SE': '🇸🇪', 'PL': '🇵🇱', 'TR': '🇹🇷', 'SA': '🇸🇦', 'AE': '🇦🇪', 'MX': '🇲🇽',
+  'AR': '🇦🇷', 'CL': '🇨🇱', 'CO': '🇨🇴', 'ZA': '🇿🇦', 'NG': '🇳🇬', 'EG': '🇪🇬',
+  'NZ': '🇳🇿', 'IE': '🇮🇪', 'CH': '🇨🇭', 'AT': '🇦🇹', 'BE': '🇧🇪', 'DK': '🇩🇰',
+  'FI': '🇫🇮', 'NO': '🇳🇴', 'PT': '🇵🇹', 'GR': '🇬🇷', 'CZ': '🇨🇿', 'HU': '🇭🇺',
+  'UA': '🇺🇦', 'IL': '🇮🇱', 'PK': '🇵🇰', 'BD': '🇧🇩', 'LK': '🇱🇰', 'NP': '🇳🇵',
+  'MN': '🇲🇳', 'PR': '🇵🇷', 'CU': '🇨🇺', 'VE': '🇻🇪', 'PE': '🇵🇪',
 };
 
 function toChineseName(data: any): string {
@@ -304,6 +323,62 @@ function LargeWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any, 
         <Spacer />
       </HStack>
     </VStack>
+  );
+}
+
+// ─── 小号组件：全屏地图 + 定位标记 ─────────────────────────
+function SmallWidget({ data, locationZh, mapImage }: { data: any, locationZh: string, mapImage: any }) {
+  const meta = useIPMeta(data, locationZh);
+  const locationTitle = [meta.city, meta.region].filter(Boolean).join(' · ');
+  const briefLocation = locationTitle || meta.mapLocationName || '定位中';
+  const countryName = meta.country || '';
+  const flag = FLAG_MAP[meta.countryCode] || '🌐';
+
+  return (
+    <ZStack alignment="center" cornerRadius={22} padding={0} clipped={true}
+      background={widgetBg()}
+      widgetURL={Script.createRunSingleURLScheme(Script.name)}
+    >
+      {/* 全屏地图背景 */}
+      {mapImage ? (
+        <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
+      ) : (
+        <VStack alignment="center" spacing={6} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background={tertiaryBg()}>
+          <Image systemName="globe.asia.australia" resizable={{}} frame={{ width: 36, height: 36 }} modifiers={modifiers().foregroundStyle(SECONDARY_TEXT)} />
+          <Text styledText={{ content: '获取位置中...', foregroundColor: SECONDARY_TEXT, font: 11 }} />
+        </VStack>
+      )}
+
+      {/* 中心定位标记 */}
+      {meta.hasCoord && (
+        <VStack alignment="center" spacing={0} offset={{ x: 0, y: -22 }}>
+          <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: 26, height: 26 }}
+            modifiers={modifiers().foregroundStyle('#FF3B30')} />
+        </VStack>
+      )}
+
+      {/* 右上角风险状态指示灯 */}
+      <VStack alignment="trailing" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
+        <HStack alignment="center" spacing={0}>
+          <Spacer />
+          <Circle fill={meta.riskColor} frame={{ width: 10, height: 10 }}
+            background="rgba(0,0,0,0.4)" />
+          <Text styledText={{ content: '  ', font: 1 }} />
+        </HStack>
+      </VStack>
+
+      {/* 底部信息浮层 */}
+      <VStack alignment="leading" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
+        <Spacer />
+        <VStack alignment="leading" spacing={1}
+          background="rgba(0,0,0,0.6)"
+          padding={{ top: 8, bottom: 10, leading: 12, trailing: 12 }}
+          frame={{ maxWidth: 'infinity' }}>
+          <Text styledText={{ content: `${flag} ${briefLocation}${countryName ? ' · ' + countryName : ''}`, foregroundColor: 'white', font: 12, bold: true }} lineLimit={1} />
+          <Text styledText={{ content: data.ip || 'N/A', foregroundColor: 'rgba(255,255,255,0.5)', font: 10 }} lineLimit={1} />
+        </VStack>
+      </VStack>
+    </ZStack>
   );
 }
 
