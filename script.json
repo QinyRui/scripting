@@ -1,48 +1,52 @@
 {
-  "description" : null,
   "icon" : "network",
-  "version" : "1.0.0",
-  "localizedNames" : {
-    "en" : "",
-    "pt" : "",
-    "zh" : "",
-    "ru" : "",
-    "ja" : "",
-    "fr" : "",
-    "it" : "",
-    "de" : "",
-    "es" : ""
-  },
   "entry" : "index.tsx",
+  "localizedNames" : {
+    "ja" : "",
+    "pt" : "",
+    "ru" : "",
+    "es" : "",
+    "en" : "",
+    "zh" : "",
+    "de" : "",
+    "it" : "",
+    "fr" : ""
+  },
+  "iconImage" : "",
   "intentInputTypes" : [
 
   ],
-  "name" : "IP 定位",
-  "iconImage" : null,
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
+  "localizedDescriptions" : {
+    "ru" : "",
+    "it" : "",
+    "de" : "",
+    "zh" : "",
+    "pt" : "",
+    "es" : "",
+    "fr" : "",
+    "ja" : "",
+    "en" : ""
+  },
   "color" : "rgba(102, 196, 235,1)",
+  "name" : "IP 定位",
+  "remoteResource" : {
+    "autoUpdateInterval" : 300,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
+    "hash" : "02691c81cd81ef023405bb1a6d5f12f8"
+  },
+  "description" : "VNP实时定位",
+  "runInApp" : false,
   "author" : {
     "name" : "QinyRui",
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
   },
-  "contributors" : [
-
-  ],
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
-    "hash" : "95640841a3eec9eef1c8fbc71a93f5c4",
-    "autoUpdateInterval" : null
-  },
-  "localizedDescriptions" : {
-    "ru" : "",
-    "es" : "",
-    "ja" : "",
-    "en" : "",
-    "it" : "",
-    "de" : "",
-    "pt" : "",
-    "zh" : "",
-    "fr" : ""
-  },
-  "runInApp" : false
+  "version" : "1.0.1"
 }
