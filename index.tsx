@@ -653,14 +653,14 @@ function SettingsView() {
               <HomeQuickButton 
                 icon="shippingbox" 
                 title="BoxJs 配置" 
-                subtitle="订阅与同步" 
+                subtitle="点击安装与同步" 
                 action={openBoxJsSubscription} 
                 tint="systemBlue" 
               />
               <HomeQuickButton 
                 icon="puzzlepiece.extension" 
                 title="Loon 插件" 
-                subtitle="安装与使用" 
+                subtitle="点击安装与使用" 
                 action={installLoonPlugin} 
                 tint="systemPurple" 
               />
