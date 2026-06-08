@@ -402,28 +402,46 @@ function ConfigPage() {
               if (!location) {
                 throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
               }
+              // 逆向地理编码获取地名
+              let resolvedNames: any = {}
+              try {
+                const geoResult = await Location.reverseGeocode({
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  locale: "zh-CN",
+                })
+                const geo = geoResult?.[0] || {}
+                const t = String(geo.thoroughfare || "").trim()
+                const st = String(geo.subThoroughfare || "").trim()
+                const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
+                const poiName = geo.name || ""
+                const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
+                resolvedNames = {
+                  administrativeArea: geo.administrativeArea || "",
+                  locality: geo.locality || "",
+                  subLocality: geo.subLocality || "",
+                  neighborhood: "",
+                  quarter: "",
+                  street,
+                  subThoroughfare: geo.subThoroughfare || "",
+                  name: fineName,
+                }
+              } catch {}
               writeLocationCaches({
                 lockLocation: false,
                 locationData: {
                   latitude: location.latitude,
                   longitude: location.longitude,
-                  administrativeArea: "",
-                  locality: "",
-                  subLocality: "",
-                  neighborhood: "",
-                  quarter: "",
-                  street: "",
-                  name: "",
+                  ...resolvedNames,
+                  horizontalAccuracy: location.horizontalAccuracy || 0,
                   resolvedAt: Date.now(),
                 },
               })
-              // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
+              // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标和地名
               Storage.set("Location", {
                 latitude: location.latitude,
                 longitude: location.longitude,
-                locality: "",
-                subLocality: "",
-                name: "",
+                ...resolvedNames,
                 resolvedAt: Date.now(),
               })
               reloadWidgets()
@@ -855,29 +873,47 @@ function LocationSettingsPage() {
         throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
       }
 
-      // 写入缓存供 widget 自动读取
+      // 写入缓存供 widget 自动读取（先写坐标，地名由逆向地理编码填充）
+      let resolvedNames: any = {}
+      try {
+        const geoResult = await Location.reverseGeocode({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          locale: "zh-CN",
+        })
+        const geo = geoResult?.[0] || {}
+        const t = String(geo.thoroughfare || "").trim()
+        const st = String(geo.subThoroughfare || "").trim()
+        const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
+        const poiName = geo.name || ""
+        const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
+        resolvedNames = {
+          administrativeArea: geo.administrativeArea || "",
+          locality: geo.locality || "",
+          subLocality: geo.subLocality || "",
+          neighborhood: "",
+          quarter: "",
+          street,
+          subThoroughfare: geo.subThoroughfare || "",
+          name: fineName,
+        }
+      } catch {}
+
       writeLocationCaches({
         lockLocation: false,
         locationData: {
           latitude: location.latitude,
           longitude: location.longitude,
-          administrativeArea: "",
-          locality: "",
-          subLocality: "",
-          neighborhood: "",
-          quarter: "",
-          street: "",
-          name: "",
+          ...resolvedNames,
+          horizontalAccuracy: location.horizontalAccuracy || 0,
           resolvedAt: Date.now(),
         },
       })
-      // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标
+      // 同步写入 Storage，确保小组件 getLocation() 回退时用到正确坐标和地名
       Storage.set("Location", {
         latitude: location.latitude,
         longitude: location.longitude,
-        locality: "",
-        subLocality: "",
-        name: "",
+        ...resolvedNames,
         resolvedAt: Date.now(),
       })
       reloadWidgets()
