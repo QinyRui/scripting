@@ -264,7 +264,7 @@ export function getDisplayLocationText() {
                           isMeaningfulName(loc.name)
 
   if (!hasLocationName) {
-    return "请在主应用设置位置"
+    return "当前位置"
   }
 
   const province = String(loc.administrativeArea || "").trim()
