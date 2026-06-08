@@ -46,8 +46,7 @@ export async function clearAllNotifications() {
 export async function handleNotifications(
     result: any,
     isCurrentLocation: boolean,
-    notificationSettings: any,
-    locationName?: string
+    notificationSettings: any
 ) {
     if (!result || !notificationSettings) return;
 
@@ -70,7 +69,7 @@ export async function handleNotifications(
     const adcodes = result.alert?.adcodes || [];
     const location = isCurrentLocation
         ? "当前位置"
-        : locationName || adcodes[adcodes.length - 1]?.name || "指定位置";
+        : adcodes[adcodes.length - 1]?.name || "指定位置";
 
     const rainContent = result.minutely?.description || "";
     const storedRainContent = stored.rain.content || "";
