@@ -52,7 +52,7 @@ async function getJson(url: string) {
  * 优先级：Widget 参数 > 实时定位 > Storage 缓存
  * + 逆向地理编码获取地名（v2.5 API 没有 adcodes）
  */
-export async function getLocation(): Promise<{ latitude: number; longitude: number; isCurrentLocation: boolean; name: string }> {
+export async function getLocation(): Promise<{ latitude: number; longitude: number; isCurrentLocation: boolean }> {
   let location: any
   let isCurrentLocation = false
   const key = LOCATION_CACHE_KEY
@@ -119,7 +119,6 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
     latitude: location?.latitude,
     longitude: location?.longitude,
     isCurrentLocation,
-    name: resolved.name || resolved.locality || resolved.administrativeArea || '',
   }
 }
 
@@ -208,7 +207,7 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
   const notificationSettings = appProfile.notification || {}
   if (notificationSettings.Precipitation) {
     try {
-      handleNotifications(data.result, location.isCurrentLocation, notificationSettings, location.name).catch(err => {
+      handleNotifications(data.result, location.isCurrentLocation, notificationSettings).catch(err => {
         appendDebugLog("handleNotifications background error", { message: String(err) })
       })
     } catch (err) {
