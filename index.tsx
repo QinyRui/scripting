@@ -6,6 +6,7 @@ import { FontSettingsPage } from "./pages/font-settings"
 import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
 import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
+import { reverseGeocodeOSM } from "./utils/location"
 import {
   Script,
   Navigation,
@@ -402,29 +403,26 @@ function ConfigPage() {
               if (!location) {
                 throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
               }
-              // 逆向地理编码获取地名
+              // 用 OpenStreetMap 逆向地理编码获取地名（绕过原生API）
               let resolvedNames: any = {}
               try {
-                const geoResult = await Location.reverseGeocode({
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                  locale: "zh-CN",
-                })
-                const geo = geoResult?.[0] || {}
-                const t = String(geo.thoroughfare || "").trim()
-                const st = String(geo.subThoroughfare || "").trim()
-                const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
-                const poiName = geo.name || ""
-                const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
-                resolvedNames = {
-                  administrativeArea: geo.administrativeArea || "",
-                  locality: geo.locality || "",
-                  subLocality: geo.subLocality || "",
-                  neighborhood: "",
-                  quarter: "",
-                  street,
-                  subThoroughfare: geo.subThoroughfare || "",
-                  name: fineName,
+                const geo = await reverseGeocodeOSM(location.latitude, location.longitude)
+                if (geo) {
+                  const t = String(geo.thoroughfare || "").trim()
+                  const st = String(geo.subThoroughfare || "").trim()
+                  const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
+                  const poiName = geo.name || ""
+                  const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
+                  resolvedNames = {
+                    administrativeArea: geo.administrativeArea || "",
+                    locality: geo.locality || "",
+                    subLocality: geo.subLocality || "",
+                    neighborhood: geo.neighborhood || "",
+                    quarter: geo.quarter || "",
+                    street,
+                    subThoroughfare: geo.subThoroughfare || "",
+                    name: fineName,
+                  }
                 }
               } catch {}
               writeLocationCaches({
@@ -873,29 +871,26 @@ function LocationSettingsPage() {
         throw new Error("无法获取当前位置，请确认 Scripting 已允许使用定位权限")
       }
 
-      // 写入缓存供 widget 自动读取（先写坐标，地名由逆向地理编码填充）
+      // 用 OpenStreetMap 逆向地理编码获取地名（绕过原生API）
       let resolvedNames: any = {}
       try {
-        const geoResult = await Location.reverseGeocode({
-          latitude: location.latitude,
-          longitude: location.longitude,
-          locale: "zh-CN",
-        })
-        const geo = geoResult?.[0] || {}
-        const t = String(geo.thoroughfare || "").trim()
-        const st = String(geo.subThoroughfare || "").trim()
-        const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
-        const poiName = geo.name || ""
-        const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
-        resolvedNames = {
-          administrativeArea: geo.administrativeArea || "",
-          locality: geo.locality || "",
-          subLocality: geo.subLocality || "",
-          neighborhood: "",
-          quarter: "",
-          street,
-          subThoroughfare: geo.subThoroughfare || "",
-          name: fineName,
+        const geo = await reverseGeocodeOSM(location.latitude, location.longitude)
+        if (geo) {
+          const t = String(geo.thoroughfare || "").trim()
+          const st = String(geo.subThoroughfare || "").trim()
+          const street = t && st ? (t.includes(st) ? t : `${t}${st}`) : (t || st)
+          const poiName = geo.name || ""
+          const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
+          resolvedNames = {
+            administrativeArea: geo.administrativeArea || "",
+            locality: geo.locality || "",
+            subLocality: geo.subLocality || "",
+            neighborhood: geo.neighborhood || "",
+            quarter: geo.quarter || "",
+            street,
+            subThoroughfare: geo.subThoroughfare || "",
+            name: fineName,
+          }
         }
       } catch {}
 
