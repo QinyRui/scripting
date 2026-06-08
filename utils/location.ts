@@ -53,107 +53,158 @@ export function isNearby(lat1: number, lon1: number, lat2?: number, lon2?: numbe
   return Math.abs(lat1 - lat2) < 0.05 && Math.abs(lon1 - lon2) < 0.05
 }
 export async function callReverseGeocode(options: { latitude: number; longitude: number; locale?: string }): Promise<any[] | null> {
-  const nativeFn = (typeof Location !== "undefined" && Location.reverseGeocode) ? Location.reverseGeocode : (globalThis as any)?.reverseGeocode
-  let nativeResult: any[] | null = null
-  if (typeof nativeFn === "function") {
-    try {
-      nativeResult = await nativeFn(options)
-      return nativeResult
-    } catch {}
+  appendDebugLog("reverse geocode start", { latitude: options.latitude, longitude: options.longitude })
+
+  // ─── 第1优先：BigDataCloud（免费、无需key、国内可用） ───
+  try {
+    const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${options.latitude}&longitude=${options.longitude}&localityLanguage=zh`
+    const bdcResp = await Promise.race([
+      fetch(bdcUrl, { headers: { "User-Agent": "CaiyunWeather/1.0" } }),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("bdc timeout")), 8000)),
+    ])
+    if (bdcResp.ok) {
+      const bdcJson = await bdcResp.json()
+      if (bdcJson.city || bdcJson.locality || bdcJson.principalSubdivision) {
+        // 从 localityInfo 中提取更详细的地名
+        const admins = bdcJson.localityInfo?.administrative || []
+        const town = admins.find((a: any) => a.adminLevel === 8)?.name || ""
+        appendDebugLog("bigdatacloud reverseGeocode succeeded", { city: bdcJson.city, locality: bdcJson.locality })
+        return [{
+          locality: bdcJson.city || "",
+          administrativeArea: bdcJson.principalSubdivision || bdcJson.city || "",
+          subAdministrativeArea: bdcJson.locality || "",
+          subLocality: bdcJson.locality || "",
+          town: town,
+          neighborhood: "",
+          quarter: "",
+          thoroughfare: "",
+          subThoroughfare: "",
+          name: bdcJson.locality || bdcJson.city || bdcJson.principalSubdivision || "",
+        }]
+      }
+    }
+    appendDebugLog("bigdatacloud reverseGeocode empty, trying next service", { status: bdcResp.ok ? "ok" : "fail" })
+  } catch (err) {
+    appendDebugLog("bigdatacloud reverseGeocode failed", { error: String(err) })
   }
 
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(options.latitude))}&lon=${encodeURIComponent(String(options.longitude))}&accept-language=zh-CN&zoom=18&addressdetails=1`
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("请求超时")), 5000)
-  })
-
+  // ─── 第2优先：高德地图 ───
   try {
-    const fetchPromise = fetch(url, {
-      headers: {
-        "User-Agent": "Scripting-CaiyunWeather-Widget/1.0",
-        "Accept-Language": "zh-CN,zh;q=0.9",
-      },
-    })
-    const response = await Promise.race([fetchPromise, timeoutPromise])
-    if (!response.ok) throw new Error(`位置名称解析失败 HTTP ${response.status}`)
-    const json = await response.json()
-    const address = json?.address || {}
-    const city = address.city || address.municipality || ""
-    const town = address.town || address.village || address.suburb || ""
-    const area = address.city_district || address.district || address.county || ""
-    const block = address.neighbourhood || address.quarter || address.suburb || address.residential || address.city_block || address.hamlet || ""
-    const road = address.road || address.pedestrian || address.footway || address.cycleway || address.path || ""
-    const poi = address.amenity || address.building || address.shop || address.office || address.tourism || ""
-    const fineName = road || block || poi || json?.name || ""
-    const displayName = poi || block || road || area || city || json?.display_name || ""
-    if (!city && !area && !displayName && !address.state) return nativeResult
+    const amapUrl = `https://restapi.amap.com/v3/geocode/regeo?key=c90e620d06144fcb7e08dfc48ea95d4c&location=${options.longitude},${options.latitude}&language=zh_CN&extensions=base`
+    const amapResp = await Promise.race([
+      fetch(amapUrl, { headers: { "User-Agent": "CaiyunWeather/1.0" } }),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("amap timeout")), 8000)),
+    ])
+    if (amapResp.ok) {
+      const amapJson = await amapResp.json()
+      if (amapJson.status === "1" && amapJson.regeocode) {
+        const comp = amapJson.regeocode.addressComponent || {}
+        const addr = amapJson.regeocode.formatted_address || ""
+        appendDebugLog("amap reverseGeocode succeeded", { address: addr })
+        return [{
+          locality: comp.city || comp.province || "",
+          administrativeArea: comp.province || comp.city || "",
+          subAdministrativeArea: comp.district || "",
+          subLocality: comp.district || "",
+          town: comp.township || "",
+          neighborhood: comp.neighborhood || "",
+          quarter: "",
+          thoroughfare: comp.streetNumber?.street || "",
+          subThoroughfare: comp.streetNumber?.number || "",
+          name: addr || comp.district || comp.city || comp.province || "",
+        }]
+      }
+    }
+  } catch (err) {
+    appendDebugLog("amap reverseGeocode failed", { error: String(err) })
+  }
+
+  // ─── 第3优先：缓存的地名 ───
+  const cached = loadCachedGeoNames()
+  if (cached && isNearby(options.latitude, options.longitude, cached.latitude, cached.longitude)) {
+    appendDebugLog("geocode fallback: using cached location name")
     return [{
-      locality: city || address.state || "",
-      administrativeArea: address.state || city || "",
-      subAdministrativeArea: address.county || "",
-      subLocality: area,
-      town: town,
-      neighborhood: block,
-      quarter: address.quarter || "",
-      thoroughfare: road,
-      subThoroughfare: address.house_number || "",
-      name: displayName,
+      locality: cached.locality || "",
+      administrativeArea: cached.administrativeArea || "",
+      subAdministrativeArea: cached.subLocality || "",
+      subLocality: cached.subLocality || "",
+      name: cached.name || "",
+      town: cached.town || "",
     }]
-  } catch (error) {
-    appendDebugLog("OpenStreetMap reverse geocode failed, trying backup service", {
-      latitude: options.latitude,
-      longitude: options.longitude,
-      error: String(error),
-    })
-    try {
-      const backupUrl = `https://apis.map.qq.com/ws/geocoder/v1/?location=${options.latitude},${options.longitude}&key=OB4BZ-D4WMT-UUUQA-MSPIE-6T6E5-KABBR&get_poi=0`
-      const backupTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("备用服务请求超时")), 3000)
-      })
-      const backupFetchPromise = fetch(backupUrl, {
-        headers: {
-          "User-Agent": "Scripting-CaiyunWeather-Widget/1.0",
-          "Accept-Language": "zh-CN,zh;q=0.9",
-        },
-      })
-      const backupResponse = await Promise.race([backupFetchPromise, backupTimeoutPromise])
-      if (backupResponse.ok) {
-        const backupJson = await backupResponse.json()
-        if (backupJson?.result?.address_component) {
-          const comp = backupJson.result.address_component
-          return [{
-            locality: comp.city || comp.province || "",
-            administrativeArea: comp.province || comp.city || "",
-            subAdministrativeArea: comp.county || "",
-            subLocality: comp.district || "",
-            name: backupJson.result.formatted_addresses?.recommend || "",
-          }]
+  }
+
+  appendDebugLog("all reverse geocode services failed")
+  return null
+}
+
+// ─── 独立的逆向地理编码（供主应用直接调用，优先BigDataCloud） ───
+export async function reverseGeocodeOSM(latitude: number, longitude: number): Promise<any> {
+  // 优先 BigDataCloud（免费、无需key、国内可用）
+  try {
+    const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=zh`
+    const bdcResp = await Promise.race([
+      fetch(bdcUrl, { headers: { "User-Agent": "CaiyunWeather/1.0" } }),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("bdc timeout")), 8000)),
+    ])
+    if (bdcResp.ok) {
+      const bdcJson = await bdcResp.json()
+      if (bdcJson.city || bdcJson.locality || bdcJson.principalSubdivision) {
+        const admins = bdcJson.localityInfo?.administrative || []
+        const town = admins.find((a: any) => a.adminLevel === 8)?.name || ""
+        appendDebugLog("reverseGeocodeOSM: bigdatacloud succeeded", { city: bdcJson.city, locality: bdcJson.locality })
+        return {
+          locality: bdcJson.city || "",
+          administrativeArea: bdcJson.principalSubdivision || bdcJson.city || "",
+          subAdministrativeArea: bdcJson.locality || "",
+          subLocality: bdcJson.locality || "",
+          town: town,
+          neighborhood: "",
+          quarter: "",
+          thoroughfare: "",
+          subThoroughfare: "",
+          name: bdcJson.locality || bdcJson.city || bdcJson.principalSubdivision || "",
         }
       }
-    } catch (backupError) {
-      appendDebugLog("Backup geocode service also failed", { error: String(backupError) })
     }
-
-    // ─── 回退：使用缓存的地名 ───
-    if (nativeResult) return nativeResult
-    const cached = loadCachedGeoNames()
-    if (cached && isNearby(options.latitude, options.longitude, cached.latitude, cached.longitude)) {
-      appendDebugLog("geocode fallback: using cached location name", {
-        cachedLat: cached.latitude,
-        cachedLon: cached.longitude,
-        name: cached.locality || cached.administrativeArea || cached.name,
-      })
-      return [{
-        locality: cached.locality || "",
-        administrativeArea: cached.administrativeArea || "",
-        subAdministrativeArea: cached.subLocality || "",
-        subLocality: cached.subLocality || "",
-        name: cached.name || "",
-        town: cached.town || "",
-      }]
-    }
-    throw error
+  } catch (error) {
+    appendDebugLog("reverseGeocodeOSM: bigdatacloud failed", { error: String(error) })
   }
+  // 回退到 OpenStreetMap
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(latitude))}&lon=${encodeURIComponent(String(longitude))}&accept-language=zh-CN&zoom=18&addressdetails=1`
+    const response = await Promise.race([
+      fetch(url, { headers: { "User-Agent": "CaiyunWeather/1.0", "Accept-Language": "zh-CN,zh;q=0.9" } }),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("osm timeout")), 10000)),
+    ])
+    if (response.ok) {
+      const json = await response.json()
+      const address = json?.address || {}
+      const city = address.city || address.municipality || ""
+      const area = address.city_district || address.district || address.county || ""
+      const road = address.road || ""
+      const block = address.neighbourhood || address.quarter || address.suburb || ""
+      const poi = address.amenity || address.building || ""
+      const displayName = poi || block || road || area || city || json?.display_name || ""
+      if (city || area || displayName) {
+        appendDebugLog("reverseGeocodeOSM: osm succeeded")
+        return {
+          locality: city || address.state || "",
+          administrativeArea: address.state || city || "",
+          subAdministrativeArea: address.county || "",
+          subLocality: area,
+          town: address.town || address.village || address.suburb || "",
+          neighborhood: block,
+          quarter: address.quarter || "",
+          thoroughfare: road,
+          subThoroughfare: address.house_number || "",
+          name: displayName,
+        }
+      }
+    }
+  } catch (error) {
+    appendDebugLog("reverseGeocodeOSM: osm failed", { error: String(error) })
+  }
+  return null
 }
 
 // ─── 坐标工具 ───
