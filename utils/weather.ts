@@ -69,7 +69,9 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
       }
     }
   } else {
-    location = await Location.requestCurrent()
+    // 设置最高精度并强制刷新，与主应用一致
+    try { await Location.setAccuracy("best") } catch {}
+    location = await Location.requestCurrent({ forceRequest: true })
     isCurrentLocation = true
     if (!location) {
       location = Storage.get(key)
@@ -91,7 +93,9 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
           clearLocationCaches(`moved ${Math.round(movedDistance)}m from previous location`)
         }
       }
-      Storage.set(key, location)
+      // 合并已有地名数据，避免用原始坐标覆盖已解析的地名
+      const prevData = Storage.get(key) as any || {}
+      Storage.set(key, { ...prevData, latitude: location.latitude, longitude: location.longitude })
     }
   }
 
@@ -114,6 +118,20 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
   }
   const resolved = await resolveLocationNameIfNeeded(baseData, !hasCachedNames)
   updateLocationData(resolved)
+
+  // 将解析后的完整地名数据写回 Storage，确保下次渲染可直接使用
+  if (hasValidCoordinates(resolved) && (isMeaningfulName(resolved.locality) || isMeaningfulName(resolved.administrativeArea))) {
+    Storage.set(key, {
+      latitude: resolved.latitude,
+      longitude: resolved.longitude,
+      locality: resolved.locality || "",
+      subLocality: resolved.subLocality || "",
+      administrativeArea: resolved.administrativeArea || "",
+      name: resolved.name || "",
+      town: resolved.town || "",
+      resolvedAt: resolved.resolvedAt || Date.now(),
+    })
+  }
 
   return {
     latitude: location?.latitude,
