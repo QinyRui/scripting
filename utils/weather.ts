@@ -28,12 +28,12 @@ function clearLocationCaches(reason: string) {
   try {
     // 清除天气缓存
     if (FileManager.existsSync(weatherCachePath)) {
-      FileManager.removeFileSync(weatherCachePath)
+      FileManager.unlink(weatherCachePath)
       appendDebugLog("cleared weather cache", { reason })
     }
     // 清除地名缓存
     if (FileManager.existsSync(locationCachePath)) {
-      FileManager.removeFileSync(locationCachePath)
+      FileManager.unlink(locationCachePath)
       appendDebugLog("cleared location name cache", { reason })
     }
   } catch (err) {
