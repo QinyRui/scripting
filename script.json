@@ -1,0 +1,40 @@
+{
+  "contributors" : [
+
+  ],
+  "runInApp" : true,
+  "intentInputTypes" : [
+
+  ],
+  "localizedDescriptions" : {
+    "es" : "",
+    "it" : "",
+    "ja" : "",
+    "zh" : "",
+    "fr" : "",
+    "de" : "",
+    "ru" : "",
+    "pt" : "",
+    "en" : ""
+  },
+  "entry" : "index.tsx",
+  "name" : "tokei-dashboard",
+  "description" : null,
+  "localizedNames" : {
+    "es" : "",
+    "it" : "",
+    "ja" : "",
+    "zh" : "",
+    "fr" : "",
+    "de" : "",
+    "ru" : "",
+    "pt" : "",
+    "en" : ""
+  },
+  "icon" : "clock.fill",
+  "author" : null,
+  "remoteResource" : null,
+  "version" : "1.0.0",
+  "iconImage" : null,
+  "color" : "#6366F1"
+}
