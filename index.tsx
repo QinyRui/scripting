@@ -2,7 +2,7 @@ import { SettingView, profile } from "./pages/setting"
 import { safeGetWeather } from "./utils/weather"
 import { clearAllNotifications } from "./notification_logic"
 import { ApiKeySettingsPage } from "./pages/api-key-settings"
-import { FontSettingsPage } from "./pages/font-settings"
+import { FontSettingsPage, FontSizeSubPage, FontColorSubPage } from "./pages/font-settings"
 import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
 import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
@@ -495,14 +495,32 @@ function ConfigPage() {
         </Section>
 
         <Section header={<Text font="headline">外观设计</Text>}>
-          <NavigationLink destination={<FontSettingsPage />}>
-            <HStack padding={16} spacing={12} alignment="center">
-              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPurple" opacity={0.15} /><Image systemName="textformat.abc" foregroundStyle="systemPurple" font={16} /></ZStack>
-              <Text fontWeight="bold">字体设置</Text>
-              <Spacer />
-              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.fontSizeText} / {statusInfo.fontColorText}</Text>
-            </HStack>
-          </NavigationLink>
+          {/* 字体大小 — present() 模态展示，dismiss 后即时刷新状态 */}
+          <HStack
+            padding={16} spacing={12} alignment="center"
+            onTapGesture={async () => {
+              await Navigation.present(<FontSizeSubPage />)
+              setStatusInfo(loadStatusInfo())
+            }}>
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPurple" opacity={0.15} /><Image systemName="textformat.size" foregroundStyle="systemPurple" font={16} /></ZStack>
+            <Text fontWeight="bold">字体大小</Text>
+            <Spacer />
+            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.fontSizeText}</Text>
+            <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
+          </HStack>
+          {/* 字体颜色 — present() 模态展示，dismiss 后即时刷新状态 */}
+          <HStack
+            padding={16} spacing={12} alignment="center"
+            onTapGesture={async () => {
+              await Navigation.present(<FontColorSubPage />)
+              setStatusInfo(loadStatusInfo())
+            }}>
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPink" opacity={0.15} /><Image systemName="paintpalette.fill" foregroundStyle="systemPink" font={16} /></ZStack>
+            <Text fontWeight="bold">字体颜色</Text>
+            <Spacer />
+            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.fontColorText}</Text>
+            <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
+          </HStack>
           <NavigationLink destination={<WallpaperSettingsPage />}>
             <HStack padding={16} spacing={12} alignment="center">
               <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="photo.on.rectangle" foregroundStyle="systemTeal" font={16} /></ZStack>
