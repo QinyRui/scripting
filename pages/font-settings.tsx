@@ -122,7 +122,7 @@ const colorPresets = [
 //  字体大小设置子页
 // ═══════════════════════════════════════════
 
-function FontSizeSubPage() {
+export function FontSizeSubPage() {
   const dismiss = Navigation.useDismiss()
   const [cfg, setCfg] = useState(() => ensureStyleConfig())
   const keys = Object.keys(fontSizeKeys)
@@ -283,7 +283,7 @@ function FontSizeSubPage() {
 //  字体颜色设置子页
 // ═══════════════════════════════════════════
 
-function FontColorSubPage() {
+export function FontColorSubPage() {
   const dismiss = Navigation.useDismiss()
   const [cfg, setCfg] = useState(() => ensureStyleConfig())
   const keys = Object.keys(fontColorKeys)
