@@ -30,6 +30,12 @@ function fmt(n: number): string {
   return n.toString()
 }
 
+// 额度专用格式化（亿为单位）
+function fmtQ(n: number): string {
+  if (n >= 1e8) return (n / 1e8).toFixed(1) + "亿"
+  return fmt(n)
+}
+
 interface PlatformRecord {
   date: string; model: string; totalTokens: number
   inputCacheHit: number; inputCacheMiss: number; outputTokens: number; requests: number
@@ -111,10 +117,30 @@ async function main() {
   var now = new Date()
   var today = now.toISOString().split("T")[0]
   var todayRecords = data.records.filter(function(r: PlatformRecord) { return r.date === today })
-  var todayTokens = todayRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.totalTokens }, 0)
-  var todayHit = todayRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheHit }, 0)
-  var todayMiss = todayRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheMiss }, 0)
-  var todayOut = todayRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.outputTokens }, 0)
+
+  // 找出今日请求次数最多的模型
+  var modelMap: { [key: string]: number } = {}
+  todayRecords.forEach(function(r: PlatformRecord) {
+    modelMap[r.model] = (modelMap[r.model] || 0) + r.requests
+  })
+  var topModel = ""
+  var topReqCount = 0
+  for (var m in modelMap) {
+    if (modelMap[m] > topReqCount) {
+      topModel = m
+      topReqCount = modelMap[m]
+    }
+  }
+
+  // 仅使用该模型的数据
+  var modelRecords = topModel
+    ? todayRecords.filter(function(r: PlatformRecord) { return r.model === topModel })
+    : todayRecords
+  var todayTokens = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.totalTokens }, 0)
+  var todayHit = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheHit }, 0)
+  var todayMiss = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheMiss }, 0)
+  var todayOut = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.outputTokens }, 0)
+  var todayRequests = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.requests }, 0)
 
   var creditPct = data.creditsTotal > 0 ? Math.round((data.creditsUsed / data.creditsTotal) * 100) : 0
   var totalInput = todayHit + todayMiss
@@ -203,7 +229,7 @@ async function main() {
           fontSize={8}
           // @ts-ignore
           foregroundStyle={C.muted}
-        >{fmt(todayTokens)} tokens</Text>
+        >{fmtQ(data.creditsUsed)}/{fmtQ(data.creditsTotal)}</Text>
       </VStack>
 
       {/* ====== 右栏：标题 + 图例 ====== */}
@@ -214,23 +240,17 @@ async function main() {
         padding={{ top: 12, bottom: 12, leading: 8, trailing: 14 }}
         spacing={0}
       >
-        {/* 标题行 */}
+        {/* 标题行：模型名 + 同步时间 */}
         <HStack spacing={0}>
-          <VStack spacing={1}>
-            <Text
-              // @ts-ignore
-              fontSize={9}
-              // @ts-ignore
-              foregroundStyle={C.muted}
-            >TOKEN 用量</Text>
-            <Text
-              // @ts-ignore
-              fontSize={20}
-              font="headline"
-              // @ts-ignore
-              foregroundStyle={C.text}
-            >{creditPct}%</Text>
-          </VStack>
+          <Text
+            // @ts-ignore
+            fontSize={13}
+            font="headline"
+            // @ts-ignore
+            foregroundStyle={C.text}
+            // @ts-ignore
+            lineLimit={1}
+          >{topModel || "TOKEN 用量"}</Text>
           <Spacer />
           <VStack
             // @ts-ignore
@@ -257,7 +277,42 @@ async function main() {
           // @ts-ignore
           background={C.sep}
           // @ts-ignore
-          padding={{ top: 8, bottom: 8 }}
+          padding={{ top: 6, bottom: 6 }}
+        />
+
+        {/* 图例0：请求次数 */}
+        <HStack spacing={6}>
+          <VStack
+            // @ts-ignore
+            frame={{ width: 7, height: 7 }}
+            // @ts-ignore
+            background={C.cyan}
+            // @ts-ignore
+            cornerRadius={3.5}
+          />
+          <Text
+            // @ts-ignore
+            fontSize={10}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >请求次数</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            font="headline"
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >{fmt(todayRequests)}</Text>
+        </HStack>
+
+        <VStack
+          // @ts-ignore
+          frame={{ width: "100%", height: 1 }}
+          // @ts-ignore
+          background={C.sep}
+          // @ts-ignore
+          padding={{ top: 6, bottom: 6 }}
         />
 
         {/* 图例1：缓存命中 */}
