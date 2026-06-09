@@ -1,52 +1,52 @@
 {
-  "name" : "彩云天气",
-  "runInApp" : true,
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
-  "entry" : "index.tsx",
-  "icon" : "cloud.sun.rain.fill",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "ce16ed4e1edd5fcbe4a744253612af42",
-    "autoUpdateInterval" : 300
-  },
+  "version" : "6.2.6",
   "localizedNames" : {
+    "de" : "",
+    "ru" : "",
+    "en" : "",
+    "pt" : "",
+    "it" : "",
     "zh" : "",
-    "ja" : "",
-    "en" : "",
-    "de" : "",
-    "ru" : "",
-    "pt" : "",
-    "fr" : "",
-    "it" : "",
-    "es" : ""
-  },
-  "localizedDescriptions" : {
-    "ja" : "",
-    "en" : "",
-    "de" : "",
-    "fr" : "",
-    "it" : "",
     "es" : "",
-    "ru" : "",
+    "ja" : "",
+    "fr" : ""
+  },
+  "description" : "精准实时动态.下雨动态条.可选动态条",
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "color" : "rgba(143, 168, 149,1)",
+  "icon" : "cloud.sun.rain.fill",
+  "localizedDescriptions" : {
     "pt" : "",
+    "ru" : "",
+    "ja" : "",
+    "de" : "",
+    "en" : "",
+    "es" : "",
+    "it" : "",
+    "fr" : "",
     "zh" : ""
   },
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
-  "version" : "6.2.5",
-  "color" : "rgba(143, 168, 149,1)",
-  "description" : "精准实时动态.下雨动态条.可选动态条",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
+  },
+  "contributors" : [
+    {
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com"
+    }
+  ],
+  "entry" : "index.tsx",
+  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "contributors" : [
-    {
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "name" : "QinyRui"
-    }
-  ]
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "hash" : "fcc73a875ea51b4b364262a9fb3b671d",
+    "autoUpdateInterval" : 300
+  },
+  "name" : "彩云天气"
 }
