@@ -28,6 +28,8 @@ import {
   ScrollView,
   Divider,
   RoundedRectangle,
+  ColorPicker,
+  Color,
 } from "scripting"
 
 declare const FileManager: any
@@ -287,21 +289,15 @@ export function FontColorSubPage() {
   const dismiss = Navigation.useDismiss()
   const [cfg, setCfg] = useState(() => ensureStyleConfig())
   const keys = Object.keys(fontColorKeys)
-  const [activeKey, setActiveKey] = useState(keys[0])
 
-  function getColor(key: string) {
+  function getColor(key: string): string {
     return cfg[key]?.color || ""
   }
 
   function setColor(key: string, color: string) {
     const next = { ...cfg }
     if (!next[key]) next[key] = {}
-    if (color) {
-      next[key] = { ...next[key], color }
-    } else {
-      const { color: _, ...rest } = next[key]
-      next[key] = rest
-    }
+    next[key] = { ...next[key], color }
     setCfg(next)
     // 即时保存 + 刷新
     writeStyleConfig(next)
@@ -318,7 +314,8 @@ export function FontColorSubPage() {
     reloadWidgets("font-color:reset")
   }
 
-  const currentColor = getColor(activeKey)
+  // 统计已自定义颜色数
+  const customCount = keys.filter((k) => Boolean(getColor(k))).length
 
   return (
     <NavigationStack>
@@ -329,115 +326,58 @@ export function FontColorSubPage() {
           cancellationAction: <Button title="完成" action={dismiss} />,
         }}
       >
-        {/* ── 顶部说明 + 预览 ── */}
+        {/* ── 顶部说明 ── */}
         <Section>
-          <VStack spacing={12} alignment="center" padding={{ vertical: 16 }}>
+          <VStack spacing={12} alignment="center" padding={{ vertical: 16 }} frame={{ maxWidth: "infinity" }}>
             <ZStack frame={{ width: 48, height: 48 }}>
               <Circle fill={{ colors: ["#ec4899", "#be185d"], startPoint: "top", endPoint: "bottom" }} />
               <Image systemName="paintpalette.fill" font={22} foregroundStyle="white" />
             </ZStack>
-            <Text font="subheadline" foregroundStyle="secondaryLabel">
-              选择区域后挑选颜色，修改即时生效
+            <Text font="subheadline" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
+              点击色盘选择颜色，修改即时生效
             </Text>
-            {/* 实时预览 */}
-            <VStack spacing={4} alignment="center" padding={12}
-              background={{ style: "secondarySystemBackground", shape: { type: "rect", cornerRadius: 12 } }}
-              frame={{ maxWidth: "infinity" }}>
-              <Text font="title3" fontWeight="bold"
-                foregroundStyle={currentColor || "label" as any}>
-                示例文字预览
-              </Text>
-              <Text font="caption" foregroundStyle="secondaryLabel">
-                当前 {fontColorKeys[activeKey]}：{currentColor || "系统默认"}
-              </Text>
-            </VStack>
+            {customCount > 0 ? (
+              <HStack spacing={6} alignment="center"
+                padding={{ horizontal: 14, vertical: 6 }}
+                background={{ style: { color: "#be185d", opacity: 0.12 }, shape: { type: "rect", cornerRadius: 20 } }}>
+                <Image systemName="paintpalette" font={11} foregroundStyle="#be185d" />
+                <Text font="caption" fontWeight="medium" foregroundStyle="#be185d">
+                  {customCount} 项已自定义
+                </Text>
+              </HStack>
+            ) : (
+              <HStack spacing={6} alignment="center"
+                padding={{ horizontal: 14, vertical: 6 }}
+                background={{ style: { color: "#8e8e93", opacity: 0.12 }, shape: { type: "rect", cornerRadius: 20 } }}>
+                <Text font="caption" fontWeight="medium" foregroundStyle="#8e8e93">
+                  全部默认
+                </Text>
+              </HStack>
+            )}
           </VStack>
         </Section>
 
-        {/* ── 区域选择 ── */}
-        <Section header={<Text font="footnote" foregroundStyle="secondaryLabel">选择调整区域</Text>}>
-          <VStack spacing={6}>
-            {keys.map((key) => {
-              const c = getColor(key)
-              const isActive = key === activeKey
-              return (
-                <HStack
-                  key={key}
-                  spacing={10}
-                  alignment="center"
-                  padding={{ horizontal: 12, vertical: 10 }}
-                  background={{
-                    style: isActive ? { color: "#be185d", opacity: 0.10 } : "clear",
-                    shape: { type: "rect", cornerRadius: 10 }
-                  }}
-                  onTapGesture={() => setActiveKey(key)}
-                >
-                  {isActive ? (
-                    <Image systemName="checkmark.circle.fill" font={16} foregroundStyle="#be185d" />
-                  ) : (
-                    <ZStack frame={{ width: 16, height: 16 }}>
-                      <Circle fill="clear" stroke={{ color: "separator", opacity: 0.3 }} />
-                    </ZStack>
-                  )}
-                  <Text font="subheadline" fontWeight={isActive ? "bold" : "regular"}
-                    foregroundStyle={isActive ? "#be185d" : "label"}>
-                    {fontColorKeys[key]}
-                  </Text>
-                  <Spacer />
-                  <ZStack frame={{ width: 20, height: 20 }}>
-                    <Circle fill={(c || "systemBlue") as any} />
-                    <Circle fill="clear" stroke={{ color: "separator", opacity: 0.3 }} />
-                  </ZStack>
-                </HStack>
-              )
-            })}
-          </VStack>
-        </Section>
-
-        {/* ── 色块选择器 ── */}
-        <Section header={<Text font="footnote" foregroundStyle="secondaryLabel">选择颜色</Text>}>
-          <ScrollView axes="horizontal">
-            <HStack spacing={10} padding={{ horizontal: 4, vertical: 8 }}>
-              {colorPresets.map((preset) => {
-                const isSelected = currentColor === preset.value ||
-                  (!currentColor && preset.value === "")
-                return (
-                  <Button key={preset.value} action={() => setColor(activeKey, preset.value)}>
-                    <VStack spacing={4} alignment="center">
-                      <ZStack frame={{ width: 44, height: 44 }}>
-                        {preset.value ? (
-                          <Circle fill={preset.value as any} />
-                        ) : (
-                          <Circle fill="systemBlue" opacity={0.3} />
-                        )}
-                        {isSelected && (
-                          <ZStack alignment="center" frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-                            <Image systemName="checkmark" font={16} fontWeight="bold"
-                              foregroundStyle={preset.value === "#000000" ? "white" : "black"} />
-                          </ZStack>
-                        )}
-                        <Circle fill="clear" stroke={{ color: "separator", opacity: 0.3 }} />
-                      </ZStack>
-                      <Text font="caption2" foregroundStyle="secondaryLabel">{preset.name}</Text>
-                    </VStack>
-                  </Button>
-                )
-              })}
-            </HStack>
-          </ScrollView>
-        </Section>
-
-        {/* ── 自定义颜色输入 ── */}
-        <Section header={<Text font="footnote" foregroundStyle="secondaryLabel">自定义 Hex 颜色</Text>}>
-          <HStack spacing={8} alignment="center" padding={{ vertical: 4 }}>
-            <ZStack frame={{ width: 28, height: 28 }}>
-              <Circle fill={currentColor || "systemBlue" as any} opacity={0.8} />
-              <Circle fill="clear" stroke={{ color: "separator", opacity: 0.3 }} />
-            </ZStack>
-            <Text font="subheadline" foregroundStyle="secondaryLabel">
-              {currentColor || "#默认"}
-            </Text>
-          </HStack>
+        {/* ── 颜色选择列表（原生 ColorPicker） ── */}
+        <Section header={<Text font="footnote" foregroundStyle="secondaryLabel">前景</Text>}>
+          {keys.map((key) => {
+            const currentColor = getColor(key)
+            return (
+              <HStack key={key} spacing={12} alignment="center" padding={{ vertical: 6 }}>
+                <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="medium">{fontColorKeys[key]}</Text>
+                  {currentColor ? (
+                    <Text font="caption" foregroundStyle="secondaryLabel">已设置</Text>
+                  ) : null}
+                </VStack>
+                <ColorPicker
+                  title=""
+                  supportsOpacity={false}
+                  value={(currentColor || "#8e8e93") as Color}
+                  onChanged={(color: string) => setColor(key, color)}
+                />
+              </HStack>
+            )
+          })}
         </Section>
 
         {/* ── 恢复默认 ── */}
