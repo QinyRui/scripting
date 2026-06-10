@@ -1,356 +1,398 @@
 /**
- * 🌤️ 彩云天气 - 定位与地理编码
- * 从 widget.tsx 拆分
+ * 🌍 ios原生地图定位
  */
-import type { LocationData } from "./types"
-import { locationData, updateLocationData, appendDebugLog, Cache } from "./storage"
-import { weatherCachePath, locationCachePath, LOCATION_CACHE_KEY } from "./constants"
-import type { WeatherInfo } from "./types"
 
-declare const Location: any
+import type { LocationData } from "./types"
+import { Cache, appendDebugLog } from "./storage"
+import { locationCachePath, LOCATION_CACHE_KEY } from "./constants"
+
 declare const fetch: any
 
-// ─── 辅助 ───
-export function isMeaningfulName(value: any) {
-  const text = String(value || "").trim()
-  return Boolean(text && text !== "定位中" && text !== "等待定位" && text !== "定位失败")
+// =====================
+// 1. 基础工具
+// =====================
+
+export function isValid(v: any) {
+  return v !== undefined && v !== null && String(v).trim() !== ""
 }
 
-function placemarkHasDetailedAddress(placemark: any) {
-  if (!placemark) return false
-  const province = placemark.administrativeArea || placemark.state
-  const city = placemark.locality || placemark.city
-  const district = placemark.subLocality || placemark.subAdministrativeArea || placemark.district
-  const fine = placemark.neighborhood || placemark.quarter || placemark.thoroughfare || placemark.name || placemark.subLocality
+export function distance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371000
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
 
-  const hasRegion = isMeaningfulName(province) || isMeaningfulName(city) || isMeaningfulName(district)
-  return Boolean(hasRegion && isMeaningfulName(fine))
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// ─── 逆向地理编码 ───
-interface GeoNameCache {
+/**
+ * ⭐ iOS 原生逆向地理编码（主源）
+ * 使用 Apple 地图数据（中国区由高德提供），精确到街道级别
+ * 无需 API Key，免费且可靠
+ */
+async function appleGeocode(lat: number, lon: number) {
+  try {
+    const placemarks = await Location.reverseGeocode({
+      latitude: lat,
+      longitude: lon,
+      locale: "zh-CN",
+    })
+
+    const pm = placemarks?.[0]
+    if (!pm) return null
+
+    const street = pm.thoroughfare || ""
+    const number = pm.subThoroughfare || ""
+    const fullStreet = street + (number ? number + "号" : "")
+    const poiName = pm.name || ""
+    const areasOfInterest = pm.areasOfInterest || []
+
+    return {
+      source: "apple",
+      province: pm.administrativeArea || "",
+      city: pm.locality || "",
+      district: pm.subLocality || "",
+      subAdmin: pm.subAdministrativeArea || "",
+      street: fullStreet,
+      poiName: poiName,
+      town: pm.subAdministrativeArea || "",
+      neighborhood: areasOfInterest[0] || "",
+      fullName:
+        poiName ||
+        fullStreet ||
+        pm.subLocality ||
+        pm.locality ||
+        "",
+    }
+  } catch {
+    return null
+  }
+}
+
+// =====================
+// 4. BigDataCloud（行政补充）
+// =====================
+
+async function bdc(lat: number, lon: number) {
+  try {
+    const url =
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`
+
+    const res = await fetch(url)
+    const json = await res.json()
+
+    if (!json?.city && !json?.locality) return null
+
+    // ⭐ 从 localityInfo 中提取乡镇级数据
+    const adminList = json.localityInfo?.administrative || []
+    const town = adminList.find((a: any) => a.adminLevel >= 8 && a.adminLevel <= 9)?.name || ""
+
+    return {
+      source: "bdc",
+      city: json.city || "",
+      district: json.locality || "",
+      province: json.principalSubdivision || "",
+      town,
+      fullName: json.locality || json.city || "",
+    }
+  } catch {
+    return null
+  }
+}
+
+// =====================
+// 6. ⭐ 评分系统（核心）
+// =====================
+
+function score(item: any) {
+  let s = 0
+
+  if (item.poiName) s += 50       // POI 最重要
+  if (item.street) s += 35        // 街道
+  if (item.town) s += 25          // 乡镇
+  if (item.district) s += 20      // 区
+  if (item.city) s += 10          // 城市
+
+  if (item.poiScore && item.poiScore < 50) {
+    s += 20 // 距离近的 POI 加权
+  }
+
+  return s
+}
+
+// =====================
+// 7. 融合决策（关键）
+// =====================
+
+function merge(results: any[]) {
+  const valid = results.filter(Boolean)
+  if (valid.length === 0) return null
+  if (valid.length === 1) return valid[0]
+
+  // ⭐ 多源合并：以最高分来源为主体，用其他来源补全缺失字段
+  valid.sort((a, b) => score(b) - score(a))
+  const base = { ...valid[0] }
+
+  for (let i = 1; i < valid.length; i++) {
+    const r = valid[i]
+    // 用其他来源补全缺失字段
+    if (!base.street && r.street) base.street = r.street
+    if (!base.poiName && r.poiName) base.poiName = r.poiName
+    if (!base.neighborhood && r.neighborhood) base.neighborhood = r.neighborhood
+    if (!base.town && r.town) base.town = r.town
+    if (!base.district && r.district) base.district = r.district
+    if (!base.city && r.city) base.city = r.city
+  }
+
+  return base
+}
+
+// =====================
+// 8. 主入口（升级版）
+// =====================
+
+export async function callReverseGeocode(options: {
   latitude: number
   longitude: number
-  administrativeArea?: string
-  locality?: string
-  subLocality?: string
-  name?: string
-  town?: string
-  resolvedAt?: number
+}) {
+
+  // ⭐ 并行请求：Apple 原生（主源） + BDC（补充乡镇数据）
+  const [appleRes, bdcRes] = await Promise.all([
+    appleGeocode(options.latitude, options.longitude),
+    bdc(options.latitude, options.longitude),
+  ])
+
+  const best = merge([appleRes, bdcRes])
+
+  if (!best) return null
+
+  appendDebugLog("location v3 result", best)
+
+  return [best]
 }
 
-/** 从 locationCachePath 读取上次成功解析的地名 */
-function loadCachedGeoNames(): GeoNameCache | null {
-  try {
-    return Cache.read<GeoNameCache>(locationCachePath)
-  } catch { return null }
-}
+// =====================
+// 9. 写入 LocationData
+// =====================
 
-/** 判断缓存坐标与当前坐标的距离是否在可复用范围内（<5km） */
-export function isNearby(lat1: number, lon1: number, lat2?: number, lon2?: number): boolean {
-  if (!lat2 || !lon2) return false
-  // 简化计算：0.05°≈5km
-  return Math.abs(lat1 - lat2) < 0.05 && Math.abs(lon1 - lon2) < 0.05
-}
-export async function callReverseGeocode(options: { latitude: number; longitude: number; locale?: string }): Promise<any[] | null> {
-  appendDebugLog("reverse geocode start", { latitude: options.latitude, longitude: options.longitude })
+export function applyLocation(data: LocationData, geo: any): LocationData {
+  const street = geo.street || ""
+  const poiName = geo.poiName || ""
+  const district = geo.district || ""
+  const city = geo.city || ""
+  const town = geo.town || ""
+  const neighborhood = geo.neighborhood || ""
+  const quarter = geo.quarter || ""
 
-  // ─── 第1优先：BigDataCloud（免费、无需key、国内可用） ───
-  try {
-    const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${options.latitude}&longitude=${options.longitude}&localityLanguage=zh`
-    const bdcResp = await Promise.race([
-      fetch(bdcUrl, { headers: { "User-Agent": "CaiyunWeather/1.0" } }),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("bdc timeout")), 8000)),
-    ])
-    if (bdcResp.ok) {
-      const bdcJson = await bdcResp.json()
-      if (bdcJson.city || bdcJson.locality || bdcJson.principalSubdivision) {
-        // 从 localityInfo 中提取更详细的地名
-        const admins = bdcJson.localityInfo?.administrative || []
-        const town = admins.find((a: any) => a.adminLevel === 8)?.name || ""
-        appendDebugLog("bigdatacloud reverseGeocode succeeded", { city: bdcJson.city, locality: bdcJson.locality })
-        return [{
-          locality: bdcJson.city || "",
-          administrativeArea: bdcJson.principalSubdivision || bdcJson.city || "",
-          subAdministrativeArea: bdcJson.locality || "",
-          subLocality: bdcJson.locality || "",
-          town: town,
-          neighborhood: "",
-          quarter: "",
-          thoroughfare: "",
-          subThoroughfare: "",
-          name: bdcJson.locality || bdcJson.city || bdcJson.principalSubdivision || "",
-        }]
-      }
-    }
-    appendDebugLog("bigdatacloud reverseGeocode empty, trying next service", { status: bdcResp.ok ? "ok" : "fail" })
-  } catch (err) {
-    appendDebugLog("bigdatacloud reverseGeocode failed", { error: String(err) })
+  // ⭐ name 优先级：POI > 街道 > 小区 > 乡镇 > 区县（避免与 subLocality 重复）
+  const nameCandidates = [poiName, street, neighborhood, town]
+  let name = nameCandidates.find(Boolean) || ""
+  if (!name && district && district !== (data.subLocality || "")) {
+    name = district
   }
-
-  // ─── 第2优先：高德地图 ───
-  try {
-    const amapUrl = `https://restapi.amap.com/v3/geocode/regeo?key=c90e620d06144fcb7e08dfc48ea95d4c&location=${options.longitude},${options.latitude}&language=zh_CN&extensions=base`
-    const amapResp = await Promise.race([
-      fetch(amapUrl, { headers: { "User-Agent": "CaiyunWeather/1.0" } }),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("amap timeout")), 8000)),
-    ])
-    if (amapResp.ok) {
-      const amapJson = await amapResp.json()
-      if (amapJson.status === "1" && amapJson.regeocode) {
-        const comp = amapJson.regeocode.addressComponent || {}
-        const addr = amapJson.regeocode.formatted_address || ""
-        appendDebugLog("amap reverseGeocode succeeded", { address: addr })
-        return [{
-          locality: comp.city || comp.province || "",
-          administrativeArea: comp.province || comp.city || "",
-          subAdministrativeArea: comp.district || "",
-          subLocality: comp.district || "",
-          town: comp.township || "",
-          neighborhood: comp.neighborhood || "",
-          quarter: "",
-          thoroughfare: comp.streetNumber?.street || "",
-          subThoroughfare: comp.streetNumber?.number || "",
-          name: addr || comp.district || comp.city || comp.province || "",
-        }]
-      }
-    }
-  } catch (err) {
-    appendDebugLog("amap reverseGeocode failed", { error: String(err) })
-  }
-
-  // ─── 第3优先：缓存的地名 ───
-  const cached = loadCachedGeoNames()
-  if (cached && isNearby(options.latitude, options.longitude, cached.latitude, cached.longitude)) {
-    appendDebugLog("geocode fallback: using cached location name")
-    return [{
-      locality: cached.locality || "",
-      administrativeArea: cached.administrativeArea || "",
-      subAdministrativeArea: cached.subLocality || "",
-      subLocality: cached.subLocality || "",
-      name: cached.name || "",
-      town: cached.town || "",
-    }]
-  }
-
-  appendDebugLog("all reverse geocode services failed")
-  return null
-}
-
-// ─── 独立的逆向地理编码（供主应用直接调用，优先BigDataCloud） ───
-export async function reverseGeocodeOSM(latitude: number, longitude: number): Promise<any> {
-  // 优先 BigDataCloud（免费、无需key、国内可用）
-  try {
-    const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=zh`
-    const bdcResp = await Promise.race([
-      fetch(bdcUrl, { headers: { "User-Agent": "CaiyunWeather/1.0" } }),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("bdc timeout")), 8000)),
-    ])
-    if (bdcResp.ok) {
-      const bdcJson = await bdcResp.json()
-      if (bdcJson.city || bdcJson.locality || bdcJson.principalSubdivision) {
-        const admins = bdcJson.localityInfo?.administrative || []
-        const town = admins.find((a: any) => a.adminLevel === 8)?.name || ""
-        appendDebugLog("reverseGeocodeOSM: bigdatacloud succeeded", { city: bdcJson.city, locality: bdcJson.locality })
-        return {
-          locality: bdcJson.city || "",
-          administrativeArea: bdcJson.principalSubdivision || bdcJson.city || "",
-          subAdministrativeArea: bdcJson.locality || "",
-          subLocality: bdcJson.locality || "",
-          town: town,
-          neighborhood: "",
-          quarter: "",
-          thoroughfare: "",
-          subThoroughfare: "",
-          name: bdcJson.locality || bdcJson.city || bdcJson.principalSubdivision || "",
-        }
-      }
-    }
-  } catch (error) {
-    appendDebugLog("reverseGeocodeOSM: bigdatacloud failed", { error: String(error) })
-  }
-  // 回退到 OpenStreetMap
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(String(latitude))}&lon=${encodeURIComponent(String(longitude))}&accept-language=zh-CN&zoom=18&addressdetails=1`
-    const response = await Promise.race([
-      fetch(url, { headers: { "User-Agent": "CaiyunWeather/1.0", "Accept-Language": "zh-CN,zh;q=0.9" } }),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("osm timeout")), 10000)),
-    ])
-    if (response.ok) {
-      const json = await response.json()
-      const address = json?.address || {}
-      const city = address.city || address.municipality || ""
-      const area = address.city_district || address.district || address.county || ""
-      const road = address.road || ""
-      const block = address.neighbourhood || address.quarter || address.suburb || ""
-      const poi = address.amenity || address.building || ""
-      const displayName = poi || block || road || area || city || json?.display_name || ""
-      if (city || area || displayName) {
-        appendDebugLog("reverseGeocodeOSM: osm succeeded")
-        return {
-          locality: city || address.state || "",
-          administrativeArea: address.state || city || "",
-          subAdministrativeArea: address.county || "",
-          subLocality: area,
-          town: address.town || address.village || address.suburb || "",
-          neighborhood: block,
-          quarter: address.quarter || "",
-          thoroughfare: road,
-          subThoroughfare: address.house_number || "",
-          name: displayName,
-        }
-      }
-    }
-  } catch (error) {
-    appendDebugLog("reverseGeocodeOSM: osm failed", { error: String(error) })
-  }
-  return null
-}
-
-// ─── 坐标工具 ───
-export function hasValidCoordinates(data?: Partial<LocationData> | null) {
-  return Boolean(
-    data &&
-    Number.isFinite(Number(data.latitude)) &&
-    Number.isFinite(Number(data.longitude)) &&
-    (Number(data.latitude) !== 0 || Number(data.longitude) !== 0)
-  )
-}
-
-export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLon = (lon2 - lon1) * Math.PI / 180
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
-export function isWeatherCacheValid(cachedWeather: WeatherInfo | null, currentLat: number, currentLon: number): boolean {
-  if (!cachedWeather || !cachedWeather.cachedLatitude || !cachedWeather.cachedLongitude) return false
-  if (!cachedWeather.updatedAt) return false
-  const age = Date.now() - cachedWeather.updatedAt
-  if (age > 30 * 60 * 1000) return false
-  const distance = calculateDistance(
-    cachedWeather.cachedLatitude,
-    cachedWeather.cachedLongitude,
-    currentLat,
-    currentLon
-  )
-  appendDebugLog("weather cache location check", {
-    cachedLat: cachedWeather.cachedLatitude,
-    cachedLon: cachedWeather.cachedLongitude,
-    currentLat,
-    currentLon,
-    distance: Math.round(distance),
-    valid: distance < 5000
-  })
-  return distance < 5000
-}
-
-// ─── 地名解析 ───
-function applyPlacemarkToLocationData(base: LocationData, placemark: any): LocationData {
-  const province = String(placemark.administrativeArea || "").trim()
-  const city = String(placemark.locality || "").trim()
-  const district = String(placemark.subLocality || "").trim()
-  const street = String(placemark.thoroughfare || "").trim()
-  const streetNumber = String(placemark.subThoroughfare || "").trim()
-  const poiName = String(placemark.name || "").trim()
-
-  let streetName = street
-  if (streetNumber) {
-    streetName = street.includes(streetNumber) ? street : `${street}${streetNumber}`
-  }
-
-  let fineName = poiName
-  if (!fineName && streetName) {
-    fineName = streetName
-  }
+  if (!name) name = city || ""
 
   return {
-    ...base,
-    administrativeArea: province,
-    subAdministrativeArea: String(placemark.subAdministrativeArea || ""),
-    locality: city,
-    subLocality: district,
-    town: String(placemark.town || "").trim(),
-    neighborhood: "",
-    quarter: "",
-    street: streetName,
-    name: fineName || streetName || district || city || province,
+    ...data,
+
+    administrativeArea: geo.province || data.administrativeArea || "",
+    locality: geo.city || data.locality || "",
+    subLocality: geo.district || data.subLocality || "",
+
+    // ⭐ 不覆盖已有数据：新值为空时保留旧值
+    town: town || data.town || "",
+    street: street || data.street || "",
+    poiName: poiName || data.poiName || "",
+    neighborhood: neighborhood || data.neighborhood || "",
+    quarter: quarter || data.quarter || "",
+
+    name,
+
     resolvedAt: Date.now(),
   }
 }
 
-export async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
-  if (!hasValidCoordinates(data)) return data
-  if (!force && (isMeaningfulName(data.locality) || isMeaningfulName(data.administrativeArea))) return data
-  try {
-    const placemarks = await callReverseGeocode({ latitude: Number(data.latitude), longitude: Number(data.longitude), locale: "zh-CN" })
-    if (placemarks?.[0]) {
-      const resolved = applyPlacemarkToLocationData(data, placemarks[0])
-      Cache.write(locationCachePath, resolved)
-      appendDebugLog("resolved cached location name", resolved)
-      return resolved
-    }
-  } catch (error) {
-    appendDebugLog("reverse geocode cached location failed", {
-      message: String((error as any)?.message || error),
-      data,
-    })
-  }
-  return data
+// =====================
+// 10. 工具函数（缺失的导出）
+// =====================
+
+/** 检查 LocationData 是否包含有效坐标 */
+export function hasValidCoordinates(data: any): boolean {
+  if (!data) return false
+  const lat = Number(data.latitude)
+  const lon = Number(data.longitude)
+  return Number.isFinite(lat) && Number.isFinite(lon) && lat !== 0 && lon !== 0
 }
 
-// ─── 显示文本构建 ───
-export function getDisplayLocationText() {
-  const loc = locationData
-  if (!loc) return "未知位置"
+/** 检查两个坐标是否在指定距离内（默认 3000m） */
+export function isNearby(lat1: number, lon1: number, lat2: number, lon2: number, threshold = 3000): boolean {
+  return distance(lat1, lon1, lat2, lon2) < threshold
+}
 
-  const hasLocationName = isMeaningfulName(loc.administrativeArea) ||
-                          isMeaningfulName(loc.locality) ||
-                          isMeaningfulName(loc.subLocality) ||
-                          isMeaningfulName(loc.name)
+/** 检查地名是否有意义（非空且不是纯数字或无意义值） */
+export function isMeaningfulName(name: any): boolean {
+  if (!name) return false
+  const s = String(name).trim()
+  if (s === "" || s === "0" || s === "-" || s === "--" || s === "--") return false
+  return s.length >= 2
+}
 
-  if (!hasLocationName) {
-    return "当前位置"
+/** 计算两点间距离（米），与 distance 函数相同，用于外部调用 */
+export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  return distance(lat1, lon1, lat2, lon2)
+}
+
+/** 检查天气缓存是否有效（简单版本：存在且不超过 30 分钟） */
+export function isWeatherCacheValid(cachedAt: number | undefined, maxAgeMs = 30 * 60 * 1000): boolean {
+  if (!cachedAt) return false
+  return Date.now() - cachedAt < maxAgeMs
+}
+
+/**
+ * 获取当前定位的显示文本
+ * 从 storage 中读取已解析的地名数据，按优先级拼接
+ * 自动去重：当 name 与 subLocality 相同时不重复显示
+ */
+export function getDisplayLocationText(): string {
+  try {
+    const data = Storage.get(LOCATION_CACHE_KEY) as any
+    if (!data) return "定位中..."
+
+    const name = String(data.name || "").trim()
+    const street = String(data.street || "").trim()
+    const neighborhood = String(data.neighborhood || "").trim()
+    const town = String(data.town || "").trim()
+    const subLocality = String(data.subLocality || "").trim()
+    const locality = String(data.locality || "").trim()
+    const admin = String(data.administrativeArea || "").trim()
+
+    // 辅助：判断两个字符串是否本质上相同（去空格后一致，或互相包含）
+    const isSame = (a: string, b: string) => {
+      if (!a || !b) return false
+      const na = a.replace(/[\s·,，]/g, "")
+      const nb = b.replace(/[\s·,，]/g, "")
+      return na === nb || na.includes(nb) || nb.includes(na)
+    }
+
+    // 辅助：拼接两段不重复的文本
+    const joinDistinct = (a: string, b: string, sep = " · ") => {
+      if (!a) return b
+      if (!b) return a
+      if (isSame(a, b)) return a
+      return `${a}${sep}${b}`
+    }
+
+    // ⭐ 中文地址习惯从大到小：市 · 区 · 镇 · 精细名
+    // 先收集所有层级，再去重拼接
+    const parts: string[] = []
+
+    // 行政区划：市 > 区 > 镇（从大到小，去重）
+    if (locality && !parts.some(p => isSame(p, locality))) parts.push(locality)
+    if (subLocality && !parts.some(p => isSame(p, subLocality))) parts.push(subLocality)
+    if (town && !isSame(town, subLocality) && !parts.some(p => isSame(p, town))) parts.push(town)
+
+    // 精细名（POI / 街道 / 小区）追加在最后
+    const fineName = name || street || neighborhood
+    if (fineName && !parts.some(p => isSame(p, fineName))) parts.push(fineName)
+
+    if (parts.length > 0) return parts.join(" · ")
+    if (locality) {
+      if (isSame(locality, admin)) return locality
+      return joinDistinct(locality, admin)
+    }
+    if (admin) return admin
+
+    return "定位中..."
+  } catch {
+    return "定位中..."
   }
+}
 
-  const province = String(loc.administrativeArea || "").trim()
-  const city = String(loc.locality || "").trim()
-  const district = String(loc.subLocality || loc.subAdministrativeArea || "").trim()
+/**
+ * ⭐ iOS 原生逆向地理编码（返回 Apple CLPlacemark 风格的字段）
+ * 用于主应用页面设置定位时的地名解析
+ */
+export async function reverseGeocodeOSM(lat: number, lon: number): Promise<any> {
+  try {
+    const placemarks = await Location.reverseGeocode({
+      latitude: lat,
+      longitude: lon,
+      locale: "zh-CN",
+    })
 
-  const parts = []
-  if (province && province !== "未知省市") parts.push(province)
-  if (city && city !== province && city !== "未知省市") parts.push(city)
-  if (district && district !== city && district !== province) parts.push(district)
+    const pm = placemarks?.[0]
+    if (!pm) return null
 
-  const town = String(loc.town || "").trim()
-  if (town && !parts.includes(town)) parts.push(town)
+    return {
+      administrativeArea: pm.administrativeArea || "",
+      subAdministrativeArea: pm.subAdministrativeArea || "",
+      locality: pm.locality || "",
+      subLocality: pm.subLocality || "",
+      thoroughfare: pm.thoroughfare || "",
+      subThoroughfare: pm.subThoroughfare || "",
+      neighborhood: (pm.areasOfInterest || [])[0] || "",
+      quarter: "",
+      name: pm.name || "",
+      display_name: pm.name || pm.thoroughfare || pm.locality || "",
+    }
+  } catch {
+    return null
+  }
+}
 
-  const candidates = [
-    String(loc.neighborhood || "").trim(),
-    String(loc.quarter || "").trim(),
-    String(loc.street || "").trim(),
-    String(loc.name || "").trim()
-  ].filter(Boolean)
+// =====================
+// 11. 缓存优化
+// =====================
 
-  const uniqueCandidates: string[] = []
-  for (const item of candidates) {
-    if (parts.includes(item)) continue
-    if (uniqueCandidates.includes(item)) continue
-    if (uniqueCandidates.some(existing => existing.includes(item))) continue
-    const idx = uniqueCandidates.findIndex(existing => item.includes(existing))
-    if (idx !== -1) {
-      uniqueCandidates[idx] = item
-    } else {
-      uniqueCandidates.push(item)
+export function loadCache() {
+  return Cache.read<LocationData>(locationCachePath)
+}
+
+export function saveCache(data: LocationData) {
+  Cache.write(locationCachePath, data)
+}
+
+// =====================
+// 12. 对外接口
+// =====================
+
+export async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
+
+  if (!data?.latitude || !data?.longitude) return data
+
+  const cached = loadCache()
+
+  if (!force && cached) {
+    const dist = distance(
+      data.latitude,
+      data.longitude,
+      cached.latitude,
+      cached.longitude
+    )
+    // 80m 内复用缓存
+    if (dist < 80) {
+      // ⭐ 如果缓存缺少街道/乡镇信息，强制重新解析以获得更精确的地名
+      if (cached.street || cached.town || cached.neighborhood) {
+        return cached
+      }
     }
   }
 
-  parts.push(...uniqueCandidates)
+  const geo = await callReverseGeocode({
+    latitude: data.latitude,
+    longitude: data.longitude,
+  })
 
-  return parts.join("-") || "未知位置"
+  if (!geo?.[0]) return data
+
+  const updated = applyLocation(data, geo[0])
+
+  saveCache(updated)
+
+  return updated
 }
