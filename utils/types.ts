@@ -84,6 +84,7 @@ export type LocationData = {
   subLocality: string
   town?: string
   street?: string
+  poiName?: string
   neighborhood?: string
   quarter?: string
   name?: string
