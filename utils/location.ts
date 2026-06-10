@@ -374,10 +374,12 @@ export async function resolveLocationNameIfNeeded(data: LocationData, force = fa
       cached.latitude,
       cached.longitude
     )
-    // 80m 内复用缓存
+    // 80m 内尝试复用缓存
     if (dist < 80) {
-      // ⭐ 如果缓存缺少街道/乡镇信息，强制重新解析以获得更精确的地名
-      if (cached.street || cached.town || cached.neighborhood) {
+      // ⭐ 需要有精细地名（name 与 town 不同）才复用缓存
+      // 如果 name 缺失或等于 town，说明之前解析不够精确（Apple 可能失败过），需要重新解析
+      const hasFineName = (cached.name && cached.name !== cached.town) || cached.street || cached.neighborhood
+      if (hasFineName) {
         return cached
       }
     }
