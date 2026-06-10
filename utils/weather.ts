@@ -107,14 +107,22 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
     isNearby(location?.latitude || 0, location?.longitude || 0, cachedLoc.latitude, cachedLoc.longitude) &&
     (isMeaningfulName(cachedLoc.locality) || isMeaningfulName(cachedLoc.administrativeArea))
   )
+  // ⭐ 三级回退：cache_loc.json > Storage(locationData) > 空白
+  const storageFallback = locationData
+  const nameSource = hasCachedNames ? cachedLoc : (isMeaningfulName(storageFallback.locality) ? storageFallback : null)
+  const hasNames = Boolean(nameSource)
+
   const baseData: LocationData = {
     latitude: location?.latitude || 0,
     longitude: location?.longitude || 0,
-    locality: hasCachedNames ? (cachedLoc!.locality || "") : "",
-    subLocality: hasCachedNames ? (cachedLoc!.subLocality || "") : "",
-    administrativeArea: hasCachedNames ? (cachedLoc!.administrativeArea || "") : "",
-    name: hasCachedNames ? (cachedLoc!.name || "") : "",
-    town: hasCachedNames ? (cachedLoc!.town || "") : "",
+    locality: hasNames ? (nameSource!.locality || "") : "",
+    subLocality: hasNames ? (nameSource!.subLocality || "") : "",
+    administrativeArea: hasNames ? (nameSource!.administrativeArea || "") : "",
+    name: hasNames ? (nameSource!.name || "") : "",
+    town: hasNames ? (nameSource!.town || "") : "",
+    street: hasNames ? (nameSource!.street || "") : "",
+    neighborhood: hasNames ? (nameSource!.neighborhood || "") : "",
+    quarter: hasNames ? (nameSource!.quarter || "") : "",
   }
   const resolved = await resolveLocationNameIfNeeded(baseData, !hasCachedNames)
   updateLocationData(resolved)
@@ -129,6 +137,9 @@ export async function getLocation(): Promise<{ latitude: number; longitude: numb
       administrativeArea: resolved.administrativeArea || "",
       name: resolved.name || "",
       town: resolved.town || "",
+      street: resolved.street || "",
+      neighborhood: resolved.neighborhood || "",
+      quarter: resolved.quarter || "",
       resolvedAt: resolved.resolvedAt || Date.now(),
     })
   }
