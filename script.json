@@ -1,52 +1,52 @@
 {
-  "color" : "rgba(143, 168, 149,1)",
-  "remoteResource" : {
-    "hash" : "d722aeb96ab6c56b779b18b08df8ab6b",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "autoUpdateInterval" : 300
+  "localizedNames" : {
+    "fr" : "",
+    "de" : "",
+    "ru" : "",
+    "ja" : "",
+    "es" : "",
+    "it" : "",
+    "zh" : "",
+    "pt" : "",
+    "en" : ""
+  },
+  "name" : "彩云天气",
+  "icon" : "cloud.sun.rain.fill",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "localizedDescriptions" : {
+    "es" : "",
+    "ja" : "",
+    "ru" : "",
+    "de" : "",
+    "en" : "",
+    "it" : "",
+    "zh" : "",
+    "fr" : "",
+    "pt" : ""
   },
   "entry" : "index.tsx",
-  "localizedDescriptions" : {
-    "fr" : "",
-    "pt" : "",
-    "es" : "",
-    "ja" : "",
-    "en" : "",
-    "ru" : "",
-    "de" : "",
-    "zh" : "",
-    "it" : ""
-  },
-  "intentInputTypes" : [
-
-  ],
-  "runInApp" : true,
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
-  "description" : "更新：主界面字体颜色调整",
   "author" : {
+    "name" : "QinyRui",
     "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
   },
-  "localizedNames" : {
-    "ru" : "",
-    "it" : "",
-    "en" : "",
-    "zh" : "",
-    "pt" : "",
-    "ja" : "",
-    "es" : "",
-    "de" : "",
-    "fr" : ""
-  },
-  "name" : "彩云天气修改测试",
   "contributors" : [
     {
       "email" : "602839678@qq.com",
-      "name" : "QinyRui",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "name" : "QinyRui"
     }
   ],
-  "version" : "6.2.8",
-  "icon" : "cloud.sun.rain.fill"
+  "runInApp" : true,
+  "description" : "更新：修复地理位置精确度，优化主应用BUG",
+  "color" : "rgba(143, 168, 149,1)",
+  "version" : "6.2.9",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "hash" : "e82c856dc85d007c4240a58ff0785445",
+    "autoUpdateInterval" : 300
+  },
+  "intentInputTypes" : [
+
+  ]
 }
