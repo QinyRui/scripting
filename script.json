@@ -1,52 +1,52 @@
 {
+  "color" : "rgba(143, 168, 149,1)",
+  "remoteResource" : {
+    "hash" : "d722aeb96ab6c56b779b18b08df8ab6b",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "autoUpdateInterval" : 300
+  },
+  "entry" : "index.tsx",
   "localizedDescriptions" : {
-    "ja" : "",
     "fr" : "",
-    "it" : "",
+    "pt" : "",
     "es" : "",
+    "ja" : "",
     "en" : "",
     "ru" : "",
     "de" : "",
     "zh" : "",
-    "pt" : ""
+    "it" : ""
   },
+  "intentInputTypes" : [
+
+  ],
+  "runInApp" : true,
+  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
+  "description" : "更新：主界面字体颜色调整",
   "author" : {
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "name" : "QinyRui"
   },
-  "name" : "彩云天气",
-  "runInApp" : true,
-  "version" : "6.2.8",
+  "localizedNames" : {
+    "ru" : "",
+    "it" : "",
+    "en" : "",
+    "zh" : "",
+    "pt" : "",
+    "ja" : "",
+    "es" : "",
+    "de" : "",
+    "fr" : ""
+  },
+  "name" : "彩云天气修改测试",
   "contributors" : [
     {
-      "name" : "QinyRui",
       "email" : "602839678@qq.com",
+      "name" : "QinyRui",
       "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
     }
   ],
-  "localizedNames" : {
-    "de" : "",
-    "pt" : "",
-    "zh" : "",
-    "es" : "",
-    "ja" : "",
-    "it" : "",
-    "en" : "",
-    "ru" : "",
-    "fr" : ""
-  },
-  "iconImage" : "https:\/\/github.com\/QinyRui\/scripting\/blob\/main\/IMG_3683.jpeg",
-  "intentInputTypes" : [
-
-  ],
-  "color" : "rgba(143, 168, 149,1)",
-  "description" : "更新：主界面字体颜色调整",
-  "remoteResource" : {
-    "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "c201ec7f3cb27116473b2127c9893269"
-  },
-  "icon" : "cloud.sun.rain.fill",
-  "entry" : "index.tsx"
+  "version" : "6.2.8",
+  "icon" : "cloud.sun.rain.fill"
 }
