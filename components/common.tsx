@@ -277,9 +277,8 @@ function WeatherMetricLine({ label, value, color }: { label: string; value: stri
 // ─── 左侧信息面板 ───
 export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType }: { weatherInfo: WeatherInfo; lunarStr: string; poetry: PoetryInfo | null; schedules: ScheduleInfo[]; widgetType: "medium" | "large" }) {
   const currentDate = new Date()
-  const cityStr = getDisplayLocationText()
+  const cityStr = getDisplayLocationText(widgetType)
   const wDescText = shortenWeatherDesc(weatherInfo.alertWeatherTitle || weatherInfo.weatherDesc || "...", widgetType)
-
   const isRaining = weatherInfo.precipitation && weatherInfo.precipitation.some(v => v > 0.02)
   const showPrecipitationChart = isRaining && weatherInfo.precipitationDesc && !weatherInfo.precipitationDesc.includes("无雨")
 
@@ -290,7 +289,11 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .join("/")
+  // 地理位置默认 lineLimit=1，精细行 lineLimit=2（超长时允许折行）
   const locationLineLimit = 1
+  const fineLocationLineLimit = 2
+  // 超长阈值与阈值判断都在 location.ts 中完成，这里仅依据 mode 渲染
+  const isTwoLine = cityStr.mode === "two-line"
 
   appendDebugLog("widget info summary", {
     cityStr,
@@ -304,10 +307,25 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
       <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
         <SectionText text={dateLineText} font={s(widgetType === "medium" ? 12 : 13, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
       </HStack>
-      <HStack spacing={2} alignment="center" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
-        <Image systemName="mappin.and.ellipse" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
-        <SectionText text={cityStr} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} />
-      </HStack>
+      {/* 地理位置：自适应单/双行（超长自动转二行） */}
+      {isTwoLine ? (
+        // 双行模式：行政层级 + 精细位置（缩进表示层级）
+        <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
+          <HStack spacing={2} alignment="center" frame={{ width: leftWidth, alignment: "leading" }}>
+            <Image systemName="mappin.and.ellipse" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
+            <SectionText text={cityStr.admin} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} minScaleFactor={0.7} />
+          </HStack>
+          <HStack spacing={2} alignment="top" frame={{ width: leftWidth, alignment: "leading" }} padding={{ leading: 13, top: 0 }}>
+            <SectionText text={cityStr.fine} font={s(widgetType === "medium" ? 9.5 : 10.5, "info")} color={c("rgba(255,255,255,0.82)", "info")} lineLimit={fineLocationLineLimit} minScaleFactor={0.8} />
+          </HStack>
+        </VStack>
+      ) : (
+        // 单行模式：📍 完整地址
+        <HStack spacing={2} alignment="center" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
+          <Image systemName="mappin.and.ellipse" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
+          <SectionText text={cityStr.text} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} minScaleFactor={0.7} />
+        </HStack>
+      )}
       <Spacer minLength={widgetType === "medium" ? 0 : 1} />
       <HStack alignment="top" spacing={widgetType === "medium" ? 6 : 8} frame={{ width: leftWidth, alignment: "leading" }}>
         {showPrecipitationChart ? (
