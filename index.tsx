@@ -976,28 +976,35 @@ function TimeRangeSelector({ selected, onSelect }: {
   const ranges = ["今日", "本周", "本月"]
   return (
     <HStack spacing={4}>
-      {ranges.map((r) => (
-        <VStack
-          key={r}
-          // @ts-ignore
-          background={selected === r ? COLORS.accent : COLORS.cardBg}
-          // @ts-ignore
-          cornerRadius={10}
-          // @ts-ignore
-          padding={{ horizontal: 14, vertical: 7 }}
-          alignment="center"
-        >
-          <Text
-            // @ts-ignore
-            fontSize={12}
-            font="subheadline"
-            // @ts-ignore
-            foregroundStyle={selected === r ? "#FFFFFF" : COLORS.textSecondary}
+      {ranges.map((r) => {
+        const isActive = selected === r
+        return (
+          <Button
+            key={r}
+            action={() => onSelect(r)}
           >
-            {r}
-          </Text>
-        </VStack>
-      ))}
+            <VStack
+              // @ts-ignore
+              background={isActive ? COLORS.accent : COLORS.cardBg}
+              // @ts-ignore
+              cornerRadius={10}
+              // @ts-ignore
+              padding={{ horizontal: 14, vertical: 7 }}
+              alignment="center"
+            >
+              <Text
+                // @ts-ignore
+                fontSize={12}
+                font="subheadline"
+                // @ts-ignore
+                foregroundStyle={isActive ? "#FFFFFF" : COLORS.textSecondary}
+              >
+                {r}
+              </Text>
+            </VStack>
+          </Button>
+        )
+      })}
     </HStack>
   )
 }
@@ -1008,12 +1015,11 @@ function HeaderSection({ planName, validUntil }: { planName: string; validUntil:
 
   return (
     <VStack spacing={4}>
-      <HStack>
-        <VStack spacing={2}>
+      <HStack alignment="center">
+        <Spacer />
+        <VStack alignment="center" spacing={2}>
           <HStack spacing={6}>
-            <Text font="largeTitle">
-              時計
-            </Text>
+            <Text font="largeTitle">Xiaomi MIMO</Text>
             <Text
               // @ts-ignore
               fontSize={12}
@@ -1029,6 +1035,7 @@ function HeaderSection({ planName, validUntil }: { planName: string; validUntil:
             fontSize={13}
             // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
+            multilineTextAlignment="center"
           >
             MiMo 实时监控 · {dateStr}
           </Text>
