@@ -254,14 +254,21 @@ export function isWeatherCacheValid(cachedAt: number | undefined, maxAgeMs = 30 
 }
 
 /**
- * 获取当前定位的显示文本
- * 从 storage 中读取已解析的地名数据，按优先级拼接
- * 自动去重：当 name 与 subLocality 相同时不重复显示
+ * 获取当前定位的显示文本（自适应单/双行）
+ * - mode="single"：单行显示（适用于文字较短）
+ * - mode="two-line"：双行显示（适用于超长，避免被截断）
+ *   - admin: 市 · 区 · 镇
+ *   - fine:  POI / 街道 / 小区
+ * 根据 widget 尺寸与文字总宽度自动切换
  */
-export function getDisplayLocationText(): string {
+export type LocationDisplay =
+  | { mode: "single"; text: string }
+  | { mode: "two-line"; admin: string; fine: string }
+
+export function getDisplayLocationText(widgetType: "medium" | "large" = "medium"): LocationDisplay {
   try {
     const data = Storage.get(LOCATION_CACHE_KEY) as any
-    if (!data) return "定位中..."
+    if (!data) return { mode: "single", text: "定位中..." }
 
     const name = String(data.name || "").trim()
     const street = String(data.street || "").trim()
@@ -287,29 +294,45 @@ export function getDisplayLocationText(): string {
       return `${a}${sep}${b}`
     }
 
-    // ⭐ 中文地址习惯从大到小：市 · 区 · 镇 · 精细名
-    // 先收集所有层级，再去重拼接
-    const parts: string[] = []
+    // 第一行：行政层级（市 · 区 · 镇），从大到小，去重
+    const adminParts: string[] = []
+    if (locality && !adminParts.some(p => isSame(p, locality))) adminParts.push(locality)
+    if (subLocality && !adminParts.some(p => isSame(p, subLocality))) adminParts.push(subLocality)
+    if (town && !isSame(town, subLocality) && !adminParts.some(p => isSame(p, town))) adminParts.push(town)
 
-    // 行政区划：市 > 区 > 镇（从大到小，去重）
-    if (locality && !parts.some(p => isSame(p, locality))) parts.push(locality)
-    if (subLocality && !parts.some(p => isSame(p, subLocality))) parts.push(subLocality)
-    if (town && !isSame(town, subLocality) && !parts.some(p => isSame(p, town))) parts.push(town)
-
-    // 精细名（POI / 街道 / 小区）追加在最后
+    // 第二行（精细名）：POI / 街道 / 小区
     const fineName = name || street || neighborhood
-    if (fineName && !parts.some(p => isSame(p, fineName))) parts.push(fineName)
+    // 过滤掉与 admin 重复的精细名
+    const fineLine = fineName && !adminParts.some(p => isSame(p, fineName)) ? fineName : ""
 
-    if (parts.length > 0) return parts.join(" · ")
-    if (locality) {
-      if (isSame(locality, admin)) return locality
-      return joinDistinct(locality, admin)
+    let adminLine = adminParts.join(" · ")
+    if (!adminLine) {
+      if (locality) adminLine = isSame(locality, admin) ? locality : joinDistinct(locality, admin)
+      else if (admin) adminLine = admin
+      else adminLine = "定位中..."
     }
-    if (admin) return admin
 
-    return "定位中..."
+    // ⭐ 根据 widget 尺寸和文本总长度决定单/双行
+    // CJK 字符按 1em，ASCII/标点按 0.5em估算
+    const cjkWidth = (s: string) => {
+      let w = 0
+      for (const ch of s) {
+        w += /[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/.test(ch) ? 1 : 0.5
+      }
+      return w
+    }
+    // 经验阈值：medium 18em、large 16em（基于实测 widget 可用宽度）
+    const threshold = widgetType === "large" ? 16 : 18
+    const combinedWidth = cjkWidth(adminLine) + (fineLine ? cjkWidth(` · ${fineLine}`) : 0)
+
+    if (fineLine && combinedWidth > threshold) {
+      return { mode: "two-line", admin: adminLine, fine: fineLine }
+    } else {
+      const text = fineLine ? `${adminLine} · ${fineLine}` : adminLine
+      return { mode: "single", text }
+    }
   } catch {
-    return "定位中..."
+    return { mode: "single", text: "定位中..." }
   }
 }
 
