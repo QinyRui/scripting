@@ -1,52 +1,52 @@
 {
+  "version" : "6.3.1",
+  "runInApp" : true,
+  "color" : "rgba(143, 168, 149,1)",
+  "contributors" : [
+    {
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "email" : "602839678@qq.com",
+      "name" : "QinyRui"
+    }
+  ],
   "localizedNames" : {
-    "zh" : "",
-    "pt" : "",
     "de" : "",
-    "en" : "",
-    "ru" : "",
-    "fr" : "",
     "ja" : "",
     "es" : "",
-    "it" : ""
+    "pt" : "",
+    "zh" : "",
+    "it" : "",
+    "en" : "",
+    "ru" : "",
+    "fr" : ""
   },
-  "version" : "6.3.0",
+  "icon" : "cloud.sun.rain.fill",
   "intentInputTypes" : [
 
   ],
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "autoUpdateInterval" : 300,
-    "hash" : "d35566e16085fc6d89904ab8ce8b96d9"
-  },
-  "description" : "更新：修复地理位置精确度，优化主应用BUG",
-  "icon" : "cloud.sun.rain.fill",
+  "name" : "彩云天气",
+  "entry" : "index.tsx",
   "author" : {
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "name" : "QinyRui"
   },
-  "color" : "rgba(143, 168, 149,1)",
-  "entry" : "index.tsx",
-  "contributors" : [
-    {
-      "email" : "602839678@qq.com",
-      "name" : "QinyRui",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-    }
-  ],
-  "name" : "彩云天气",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "description" : "更新：优化锁屏界面显示bug",
+  "remoteResource" : {
+    "hash" : "1038b74ddbf52a4a6ae6e63eb9f7768f",
+    "autoUpdateInterval" : 300,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
+  },
   "localizedDescriptions" : {
-    "it" : "",
     "pt" : "",
-    "en" : "",
-    "ru" : "",
-    "de" : "",
-    "fr" : "",
+    "zh" : "",
     "ja" : "",
     "es" : "",
-    "zh" : ""
+    "ru" : "",
+    "it" : "",
+    "fr" : "",
+    "en" : "",
+    "de" : ""
   },
-  "runInApp" : true
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG"
 }
