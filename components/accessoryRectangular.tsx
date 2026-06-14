@@ -77,16 +77,19 @@ function firstNonZeroIndex(arr: number[]): number {
   return arr.findIndex((v: number) => v !== 0)
 }
 
-// ─── 降水条形图（锁屏版，与 Colorful Clouds 一致）───
+// ─── 降水条形图（锁屏版，增强可见性）───
 function RainingViewRectangle({ data }: { data: number[] }) {
-  const barHeight = 14
-  const barSpacing = 2
-  const barRadius = 1.5
+  const barHeight = 18
+  const barSpacing = 1.5
+  const barRadius = 2
+  // 降水条使用明亮的雨蓝色，在深色锁屏背景上清晰可见
+  const rainColor = "#4FC3F7"
 
   return (
     <HStack spacing={barSpacing} alignment="bottom">
       {compressTo20(data).map((length: number, index: number) => {
-        const h = length === 0 ? 0 : length < 0.01 ? 1 : barHeight * length
+        // 非零值至少 3px 高度，确保小雨也可辨识
+        const h = length === 0 ? 0 : length < 0.01 ? 3 : Math.max(3, barHeight * length)
         return (
           <VStack key={index} frame={{ height: barHeight + 4 }}>
             <Spacer />
@@ -96,7 +99,7 @@ function RainingViewRectangle({ data }: { data: number[] }) {
               bottomLeadingRadius={0}
               bottomTrailingRadius={0}
               frame={{ height: h }}
-              fill={{ color: "lightGray", gradient: true }}
+              fill={{ color: rainColor, gradient: true }}
             />
           </VStack>
         )
