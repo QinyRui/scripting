@@ -51,11 +51,22 @@ async function appleGeocode(lat: number, lon: number) {
     const fullStreet = street + (number ? number + "号" : "")
     const poiName = pm.name || ""
     const areasOfInterest = pm.areasOfInterest || []
+    const city = pm.locality || ""
+    let province = pm.administrativeArea || ""
+
+    // ⭐ 直辖市省份修正：Apple 地图在中国区偶尔返回错误的 administrativeArea
+    if (city && province && MUNICIPALITIES.includes(city) && province !== city) {
+      appendDebugLog("appleGeocode: corrected province", {
+        city,
+        wrongProvince: province,
+      })
+      province = city
+    }
 
     return {
       source: "apple",
-      province: pm.administrativeArea || "",
-      city: pm.locality || "",
+      province,
+      city,
       district: pm.subLocality || "",
       subAdmin: pm.subAdministrativeArea || "",
       street: fullStreet,
@@ -66,7 +77,7 @@ async function appleGeocode(lat: number, lon: number) {
         poiName ||
         fullStreet ||
         pm.subLocality ||
-        pm.locality ||
+        city ||
         "",
     }
   } catch {
@@ -129,6 +140,9 @@ function score(item: any) {
 // 7. 融合决策（关键）
 // =====================
 
+// 直辖市列表：province 应与 city 一致
+const MUNICIPALITIES = ["上海市", "北京市", "天津市", "重庆市"]
+
 function merge(results: any[]) {
   const valid = results.filter(Boolean)
   if (valid.length === 0) return null
@@ -147,6 +161,35 @@ function merge(results: any[]) {
     if (!base.town && r.town) base.town = r.town
     if (!base.district && r.district) base.district = r.district
     if (!base.city && r.city) base.city = r.city
+    if (!base.province && r.province) base.province = r.province
+  }
+
+  // ⭐ 交叉验证：修正省份与城市不一致的问题
+  if (base.city && base.province) {
+    // 直辖市：province 必须与 city 一致
+    if (MUNICIPALITIES.includes(base.city) && base.province !== base.city) {
+      appendDebugLog("merge: corrected province for municipality", {
+        city: base.city,
+        wrongProvince: base.province,
+        correctedTo: base.city,
+      })
+      base.province = base.city
+    }
+  }
+
+  // ⭐ 如果其他来源有不同且更详细的 town，用 BDC 的 town 覆盖
+  // Apple 的 subAdministrativeArea 在中国区经常返回区级而非乡镇级
+  if (base.town && valid.length > 1) {
+    const otherWithTown = valid.find((r: any) => r !== base && r.town && r.town !== base.town)
+    if (otherWithTown) {
+      appendDebugLog("merge: town conflict resolved", {
+        appleTown: base.town,
+        otherTown: otherWithTown.town,
+        otherSource: otherWithTown.source,
+        kept: otherWithTown.town,
+      })
+      base.town = otherWithTown.town
+    }
   }
 
   return base
@@ -197,10 +240,21 @@ export function applyLocation(data: LocationData, geo: any): LocationData {
   }
   if (!name) name = city || ""
 
+  // ⭐ 直辖市省份修正：province 必须与 city 一致
+  let province = geo.province || data.administrativeArea || ""
+  const resolvedCity = city || data.locality || ""
+  if (resolvedCity && province && MUNICIPALITIES.includes(resolvedCity) && province !== resolvedCity) {
+    appendDebugLog("applyLocation: corrected province", {
+      city: resolvedCity,
+      wrongProvince: province,
+    })
+    province = resolvedCity
+  }
+
   return {
     ...data,
 
-    administrativeArea: geo.province || data.administrativeArea || "",
+    administrativeArea: province,
     locality: geo.city || data.locality || "",
     subLocality: geo.district || data.subLocality || "",
 
@@ -351,10 +405,18 @@ export async function reverseGeocodeOSM(lat: number, lon: number): Promise<any> 
     const pm = placemarks?.[0]
     if (!pm) return null
 
+    let administrativeArea = pm.administrativeArea || ""
+    const locality = pm.locality || ""
+
+    // ⭐ 直辖市省份修正
+    if (locality && administrativeArea && MUNICIPALITIES.includes(locality) && administrativeArea !== locality) {
+      administrativeArea = locality
+    }
+
     return {
-      administrativeArea: pm.administrativeArea || "",
+      administrativeArea,
       subAdministrativeArea: pm.subAdministrativeArea || "",
-      locality: pm.locality || "",
+      locality,
       subLocality: pm.subLocality || "",
       thoroughfare: pm.thoroughfare || "",
       subThoroughfare: pm.subThoroughfare || "",
