@@ -23,11 +23,11 @@ export const solarTermOffsets = [0, 21208, 42467, 63836, 85337, 107014, 128867, 
 
 // ─── 问候语 ───
 export const greetingText = {
-  nightGreeting: "😈, A wonderful day~",
+  nightGreeting: "💭, A wonderful day~",
   morningGreeting: "💫,早上心情美美哒~",
   noonGreeting: "🥳,中午好呀~",
   afternoonGreeting: "🐡,下午好呀~",
-  eveningGreeting: "🐳,傍晚好呀!",
+  eveningGreeting: "🏜,傍晚好呀!",
   nightText: "🌙,晚上好呀!"
 }
 
