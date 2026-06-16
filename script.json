@@ -1,52 +1,53 @@
 {
-  "version" : "6.3.1",
-  "runInApp" : true,
-  "color" : "rgba(143, 168, 149,1)",
-  "contributors" : [
-    {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "email" : "602839678@qq.com",
-      "name" : "QinyRui"
-    }
-  ],
-  "localizedNames" : {
-    "de" : "",
-    "ja" : "",
-    "es" : "",
-    "pt" : "",
-    "zh" : "",
-    "it" : "",
-    "en" : "",
+  "localizedDescriptions" : {
     "ru" : "",
-    "fr" : ""
+    "fr" : "",
+    "en" : "",
+    "zh" : "",
+    "pt" : "",
+    "es" : "",
+    "it" : "",
+    "de" : "",
+    "ja" : ""
   },
-  "icon" : "cloud.sun.rain.fill",
   "intentInputTypes" : [
 
   ],
   "name" : "彩云天气",
+  "color" : "rgba(143, 168, 149,1)",
   "entry" : "index.tsx",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
-  },
-  "description" : "更新：优化锁屏界面显示bug",
+  "contributors" : [
+    {
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com"
+    }
+  ],
+  "runInApp" : true,
+  "version" : "6.3.2",
   "remoteResource" : {
-    "hash" : "1038b74ddbf52a4a6ae6e63eb9f7768f",
+    "hash" : "e7d88c8fdcb5303fae09d8e5ed74f262",
     "autoUpdateInterval" : 300,
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
   },
-  "localizedDescriptions" : {
-    "pt" : "",
+  "localizedNames" : {
     "zh" : "",
-    "ja" : "",
-    "es" : "",
-    "ru" : "",
-    "it" : "",
-    "fr" : "",
+    "pt" : "",
     "en" : "",
-    "de" : ""
+    "de" : "",
+    "it" : "",
+    "ru" : "",
+    "fr" : "",
+    "ja" : "",
+    "es" : ""
   },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG"
+  "permissions" : null,
+  "description" : "更新：优化地理位置错误bug",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "icon" : "cloud.sun.rain.fill"
 }
