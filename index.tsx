@@ -1767,13 +1767,21 @@ async function setupLocation() {
     const poiName = geo.name || ""
     const fineName = poiName || street || geo.subLocality || geo.locality || "已选位置"
 
+    // ⭐ 直辖市省份修正：Apple 地图偶尔返回错误的 administrativeArea
+    const municipalities = ["上海市", "北京市", "天津市", "重庆市"]
+    let adminArea = geo.administrativeArea || ""
+    const loc = geo.locality || ""
+    if (loc && adminArea && municipalities.includes(loc) && adminArea !== loc) {
+      adminArea = loc
+    }
+
     writeLocationCaches({
       lockLocation: false,
       locationData: {
         latitude: l.latitude,
         longitude: l.longitude,
-        administrativeArea: geo.administrativeArea || "",
-        locality: geo.locality || "",
+        administrativeArea: adminArea,
+        locality: loc,
         subLocality: geo.subLocality || "",
         neighborhood: "",
         quarter: "",
@@ -1788,9 +1796,9 @@ async function setupLocation() {
     Storage.set("Location", {
       latitude: l.latitude,
       longitude: l.longitude,
-      locality: geo.locality || "",
+      locality: loc,
       subLocality: geo.subLocality || "",
-      administrativeArea: geo.administrativeArea || "",
+      administrativeArea: adminArea,
       subAdministrativeArea: "",
       town: "",
       street: street || "",
