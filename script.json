@@ -1,21 +1,31 @@
 {
-  "localizedDescriptions" : {
-    "ru" : "",
-    "fr" : "",
-    "en" : "",
-    "zh" : "",
-    "pt" : "",
-    "es" : "",
-    "it" : "",
-    "de" : "",
-    "ja" : ""
-  },
+  "description" : "更新：优化地理位置错误bug",
+  "color" : "rgba(143, 168, 149,1)",
+  "name" : "彩云天气",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "name" : "彩云天气",
-  "color" : "rgba(143, 168, 149,1)",
+  "localizedNames" : {
+    "it" : "",
+    "en" : "",
+    "zh" : "",
+    "de" : "",
+    "ru" : "",
+    "es" : "",
+    "pt" : "",
+    "fr" : "",
+    "ja" : ""
+  },
+  "permissions" : null,
   "entry" : "index.tsx",
+  "icon" : "cloud.sun.rain.fill",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
+  },
   "contributors" : [
     {
       "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
@@ -23,31 +33,21 @@
       "email" : "602839678@qq.com"
     }
   ],
-  "runInApp" : true,
-  "version" : "6.3.2",
-  "remoteResource" : {
-    "hash" : "e7d88c8fdcb5303fae09d8e5ed74f262",
-    "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
-  },
-  "localizedNames" : {
+  "localizedDescriptions" : {
     "zh" : "",
-    "pt" : "",
-    "en" : "",
-    "de" : "",
-    "it" : "",
-    "ru" : "",
     "fr" : "",
     "ja" : "",
-    "es" : ""
+    "ru" : "",
+    "en" : "",
+    "pt" : "",
+    "es" : "",
+    "it" : "",
+    "de" : ""
   },
-  "permissions" : null,
-  "description" : "更新：优化地理位置错误bug",
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
-  "icon" : "cloud.sun.rain.fill"
+  "version" : "6.3.3",
+  "remoteResource" : {
+    "hash" : "6385b544ad7b49cdfd65dc215d31633e",
+    "autoUpdateInterval" : 300,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
+  }
 }
