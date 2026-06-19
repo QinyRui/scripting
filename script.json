@@ -1,52 +1,53 @@
 {
-  "version" : "1.2.1",
-  "color" : "rgba(0, 50, 222, 1.00)",
-  "description" : "",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
-    "autoUpdateInterval" : 300,
-    "hash" : "aa24b05f508a1600f2ccb28bc0f8bba2"
-  },
-  "localizedDescriptions" : {
-    "ja" : "",
-    "en" : "",
-    "de" : "",
-    "fr" : "",
-    "zh" : "",
-    "es" : "",
-    "it" : "",
-    "ru" : "",
-    "pt" : ""
-  },
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
-    "name" : "QinyRui"
-  },
-  "localizedNames" : {
-    "it" : "",
-    "de" : "",
-    "fr" : "",
-    "zh" : "",
-    "pt" : "",
-    "ru" : "",
-    "ja" : "",
-    "es" : "",
-    "en" : ""
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
-  "runInApp" : true,
-  "entry" : "index.tsx",
-  "icon" : "scooter",
   "intentInputTypes" : [
 
   ],
+  "description" : "",
+  "localizedNames" : {
+    "es" : "",
+    "ja" : "",
+    "fr" : "",
+    "en" : "",
+    "it" : "",
+    "ru" : "",
+    "de" : "",
+    "pt" : "",
+    "zh" : ""
+  },
   "contributors" : [
     {
-      "email" : "602839678@qq.com",
       "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "email" : "602839678@qq.com",
       "name" : "QinyRui"
     }
   ],
-  "name" : "九号系统签到"
+  "version" : "1.2.2",
+  "name" : "九号系统签到",
+  "runInApp" : true,
+  "permissions" : null,
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
+  "localizedDescriptions" : {
+    "de" : "",
+    "ja" : "",
+    "en" : "",
+    "it" : "",
+    "zh" : "",
+    "es" : "",
+    "fr" : "",
+    "pt" : "",
+    "ru" : ""
+  },
+  "icon" : "scooter",
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "entry" : "index.tsx",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  },
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
+    "hash" : "f277e61cad915f2be2761e1a1b56654a",
+    "autoUpdateInterval" : 300
+  }
 }
