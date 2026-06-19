@@ -1,0 +1,8 @@
+{
+  "name": "虚拟位置定位",
+  "entry": "index.tsx",
+  "version": "1.0.0",
+  "icon": "arcade.stick",
+  "color": "rgba(43, 190, 81,1)",
+  "runInApp": true
+}
