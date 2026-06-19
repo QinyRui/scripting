@@ -1,6 +1,18 @@
 import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
 import { getNinebotInfo, doSign, autoOpenBlindBoxes, type NinebotWidgetData } from './api'
-import { getStorage } from './utils/storage'
+import { getStorage, setStorage } from './utils/storage'
+
+// CalendarNotificationTrigger / DateComponents 为全局类型，不需要从 scripting 导入
+declare const CalendarNotificationTrigger: any
+declare const DateComponents: any
+
+// ==================== 通知 ID 与盲盒去重存储 ====================
+const NOTIF_ID_BLIND_BOX_READY = "ninebot-blindbox-ready"
+const STORAGE_KEY_BOX_READY = "ninebot.lastNotifiedReadyBoxIds"
+const STORAGE_KEY_BOX_SCHEDULED = "ninebot.scheduledBoxIds"
+
+// ==================== 当前脚本名（用于 tapAction.runScript）====================
+const CURRENT_SCRIPT_NAME = "九号系统签到原"
 
 interface ExtendedNinebotData extends NinebotWidgetData {
   waitingBoxDesc: string
@@ -212,17 +224,30 @@ const BlindBoxRow = ({ box }: { box: { awardDays: number, leftDaysToOpen: number
   const totalSeg = Math.min(box.awardDays, 7)
   const filledSeg = isReady ? totalSeg : Math.floor((daysPassed / box.awardDays) * totalSeg)
   const color = box.awardDays >= 100 ? Theme.colors.orange : box.awardDays >= 30 ? Theme.colors.purple : Theme.colors.cyan
+  // 仪式感：仅就绪状态使用光晕环 + 呼吸（widget 不能 setInterval，靠时间戳算 phase）
+  const phase = (Date.now() / 1500) % 1
+  const ringOpacity = isReady ? (0.10 + 0.20 * Math.abs(0.5 - phase) * 2) : 0
   return (
     <VStack spacing={S(2)}>
       {/* 标题行：图标 + 天数 + 倒计时 */}
       <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
-        <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={fs(9)}
-          foregroundStyle={{ color: isReady ? Theme.colors.green : color, opacity: 1 }} />
+        <ZStack frame={{ width: fs(13), height: fs(13) }} alignment="center">
+          {isReady ? (
+            <Circle fill={Theme.colors.green} frame={{ width: fs(13), height: fs(13) }} opacity={ringOpacity} />
+          ) : null}
+          <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={fs(9)}
+            foregroundStyle={{ color: isReady ? Theme.colors.green : color, opacity: 1 }} />
+        </ZStack>
         <Text font={fs(9)} fontWeight="semibold"
           foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{box.awardDays}天盲盒</Text>
         <Spacer />
         {isReady ? (
-          <Text font={fs(8)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>✓ 可开启</Text>
+          <HStack spacing={3} alignment="center" padding={{ horizontal: 5, vertical: 2 }}
+            background={{ style: Theme.colors.green, shape: { type: "rect", cornerRadius: 6 } }}>
+            <Circle fill={Theme.colors.text1} frame={{ width: 4, height: 4 }}
+              opacity={0.5 + 0.5 * Math.abs(0.5 - phase) * 2} />
+            <Text font={fs(7)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>READY</Text>
+          </HStack>
         ) : (
           <Text font={fs(8)} foregroundStyle={{ color, opacity: 0.9 }}>⏳ {box.leftDaysToOpen}天</Text>
         )}
@@ -324,22 +349,46 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           </TechCard>
 
           <TechCard padding={S(5)} glowColor={Theme.colors.purple}>
-            <HStack alignment="center">
-              <Image systemName="gift.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }} />
-              <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>待开盲盒</Text>
-              <Spacer />
-              <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>{info.notOpenedBlindBoxCount}个</Text>
-            </HStack>
-            {pendingBoxes.length > 0 ? (
-              <VStack spacing={S(2)}>
-                {pendingBoxes.slice(0, 1).map((box, i) => <BlindBoxRow key={i} box={box} />)}
-              </VStack>
-            ) : (
-              <HStack alignment="center" spacing={3}>
-                <Image systemName="checkmark.circle.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部已处理</Text>
-              </HStack>
-            )}
+            {(() => {
+              const readyCount = info.notOpenedBoxesDetail.filter(b => b.leftDaysToOpen === 0).length
+              const phase = (Date.now() / 1500) % 1
+              return (
+                <>
+                  <HStack alignment="center">
+                    <ZStack frame={{ width: fs(12), height: fs(12) }} alignment="center">
+                      {readyCount > 0 ? (
+                        <Circle fill={Theme.colors.green} frame={{ width: fs(12), height: fs(12) }}
+                          opacity={0.10 + 0.20 * Math.abs(0.5 - phase) * 2} />
+                      ) : null}
+                      <Image systemName="gift.fill" font={fs(8)}
+                        foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }} />
+                    </ZStack>
+                    <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>待开盲盒</Text>
+                    {readyCount > 0 ? (
+                      <HStack spacing={3} alignment="center" padding={{ horizontal: 5, vertical: 2 }}
+                        background={{ style: Theme.colors.green, shape: { type: "rect", cornerRadius: 6 } }}>
+                        <Circle fill={Theme.colors.text1} frame={{ width: 4, height: 4 }}
+                          opacity={0.5 + 0.5 * Math.abs(0.5 - phase) * 2} />
+                        <Text font={fs(7)} fontWeight="bold"
+                          foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{readyCount} READY</Text>
+                      </HStack>
+                    ) : null}
+                    <Spacer />
+                    <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>{info.notOpenedBlindBoxCount}个</Text>
+                  </HStack>
+                  {pendingBoxes.length > 0 ? (
+                    <VStack spacing={S(2)}>
+                      {pendingBoxes.slice(0, 1).map((box, i) => <BlindBoxRow key={i} box={box} />)}
+                    </VStack>
+                  ) : (
+                    <HStack alignment="center" spacing={3}>
+                      <Image systemName="checkmark.circle.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
+                      <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部已处理</Text>
+                    </HStack>
+                  )}
+                </>
+              )
+            })()}
           </TechCard>
         </VStack>
       </HStack>
@@ -409,22 +458,50 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
           {/* 盲盒区 */}
           <TechCard padding={S(4)} glowColor={Theme.colors.purple}>
-            <HStack alignment="center">
-              <Image systemName="gift.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }} />
-              <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>待开盲盒</Text>
-              <Spacer />
-              <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>{info.notOpenedBlindBoxCount}个</Text>
-            </HStack>
-            {pendingBoxes.length > 0 ? (
-              <VStack spacing={S(2)}>
-                {pendingBoxes.slice(0, 1).map((box, i) => <BlindBoxRow key={i} box={box} />)}
-              </VStack>
-            ) : (
-              <HStack alignment="center" spacing={3}>
-                <Image systemName="checkmark.circle.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部已处理</Text>
-              </HStack>
-            )}
+            {(() => {
+              const readyCount = info.notOpenedBoxesDetail.filter(b => b.leftDaysToOpen === 0).length
+              const phase = (Date.now() / 1500) % 1
+              return (
+                <>
+                  <HStack alignment="center">
+                    <ZStack frame={{ width: fs(14), height: fs(14) }} alignment="center">
+                      {readyCount > 0 ? (
+                        <>
+                          <Circle fill={Theme.colors.green} frame={{ width: fs(14), height: fs(14) }}
+                            opacity={0.06 + 0.10 * Math.abs(0.5 - phase) * 2} />
+                          <Circle fill={Theme.colors.green} frame={{ width: fs(11), height: fs(11) }}
+                            opacity={0.10 + 0.18 * Math.abs(0.5 - phase) * 2} />
+                        </>
+                      ) : null}
+                      <Image systemName={readyCount > 0 ? "gift.fill" : "gift"} font={fs(8)}
+                        foregroundStyle={{ color: Theme.colors.purple, opacity: 1 }} />
+                    </ZStack>
+                    <Text font={fs(9)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>待开盲盒</Text>
+                    {readyCount > 0 ? (
+                      <HStack spacing={3} alignment="center" padding={{ horizontal: 5, vertical: 2 }}
+                        background={{ style: Theme.colors.green, shape: { type: "rect", cornerRadius: 6 } }}>
+                        <Circle fill={Theme.colors.text1} frame={{ width: 4, height: 4 }}
+                          opacity={0.5 + 0.5 * Math.abs(0.5 - phase) * 2} />
+                        <Text font={fs(7)} fontWeight="bold"
+                          foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{readyCount} READY</Text>
+                      </HStack>
+                    ) : null}
+                    <Spacer />
+                    <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>{info.notOpenedBlindBoxCount}个</Text>
+                  </HStack>
+                  {pendingBoxes.length > 0 ? (
+                    <VStack spacing={S(2)}>
+                      {pendingBoxes.slice(0, 1).map((box, i) => <BlindBoxRow key={i} box={box} />)}
+                    </VStack>
+                  ) : (
+                    <HStack alignment="center" spacing={3}>
+                      <Image systemName="checkmark.circle.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
+                      <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部已处理</Text>
+                    </HStack>
+                  )}
+                </>
+              )
+            })()}
           </TechCard>
 
           {/* 最近记录 */}
@@ -463,6 +540,165 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 // ========================
 // 数据获取与入口
 // ========================
+
+// ========================
+// 通知辅助函数
+// ========================
+
+/**
+ * 组合盲盒的稳定 ID（优先用 box.id，缺失时用 awardDays+leftDaysToOpen 拼凑）
+ */
+const buildBoxKey = (box: any): string => {
+  if (box?.id) return String(box.id)
+  return `${box?.awardDays || 0}-${box?.leftDaysToOpen || 0}`
+}
+
+/**
+ * 从存储中读取上轮已通知过的盲盒 ID 集合
+ */
+const readNotifiedReadySet = (): Set<string> => {
+  try {
+    const raw = getStorage(STORAGE_KEY_BOX_READY)
+    if (Array.isArray(raw)) return new Set(raw.map(String))
+    if (typeof raw === "string" && raw) {
+      const arr = JSON.parse(raw)
+      if (Array.isArray(arr)) return new Set(arr.map(String))
+    }
+  } catch { }
+  return new Set()
+}
+
+/**
+ * 持久化本次已通知的盲盒 ID
+ */
+const writeNotifiedReadySet = (set: Set<string>) => {
+  try {
+    setStorage(STORAGE_KEY_BOX_READY, Array.from(set))
+  } catch (e) { console.log("写入盲盒已通知列表失败:", e) }
+}
+
+/**
+ * 当存在可领取（leftDaysToOpen === 0）的盲盒时发送提醒通知。
+ * 点击通知会重新拉起脚本，进入 index.tsx 的 BlindBoxView。
+ */
+const notifyReadyBlindBoxes = async (data: NinebotWidgetData) => {
+  const readyBoxes = (data.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen === 0)
+  if (readyBoxes.length === 0) {
+    // 如果所有待领盲盒都已不在可用状态（比如被自动开或手动开），同时取消之前调度过的提醒
+    try { await Notification.removePendings([NOTIF_ID_BLIND_BOX_READY]) } catch { }
+    return
+  }
+
+  // 去重：避免每 15 分钟重复推送
+  const currentKeys = new Set(readyBoxes.map(buildBoxKey))
+  const notifiedSet = readNotifiedReadySet()
+  const isSameSet = notifiedSet.size === currentKeys.size && [...currentKeys].every(k => notifiedSet.has(k))
+  if (isSameSet) {
+    console.log("🎁 盲盒可领通知已发送过，跳过重复推送")
+    return
+  }
+
+  // 合成描述
+  const readyAwards = readyBoxes.map(b => `${b.awardDays}天`).join("、")
+  const readyCount = readyBoxes.length
+
+  await Notification.schedule({
+    title: "🎁 盲盒可以领取啦",
+    subtitle: "九号电动车",
+    body: `你有 ${readyCount} 个盲盒（${readyAwards}）可领取\n点击进入一键开启`,
+    iconImageData: { systemImage: "gift.fill", color: "#FF9500" },
+    threadIdentifier: "ninebot-blindbox-ready",
+    customUI: true,
+    // 点击通知后重新拉起本脚本，index.tsx 靠 Notification.current 路由到 BlindBoxView
+    tapAction: { type: "runScript", scriptName: CURRENT_SCRIPT_NAME },
+    userInfo: {
+      type: "blindbox_ready",
+      readyCount,
+      notOpenedBlindBoxCount: data.notOpenedBlindBoxCount,
+      minLeftDaysToOpen: data.minLeftDaysToOpen,
+      notOpenedBoxesDetail: data.notOpenedBoxesDetail,
+    },
+  })
+
+  // 记录已通知，避免后续重复推送
+  writeNotifiedReadySet(currentKeys)
+  console.log("🎁 盲盒可领提醒已发送:", readyCount, "个")
+}
+
+/**
+ * 为冷却中的盲盒调度未来提醒（最多 7 天内到期的）。
+ * 同一个盲盒只调度一次（依据 STORAGE_KEY_BOX_SCHEDULED）。
+ */
+const scheduleFutureBlindBoxNotifications = async (data: NinebotWidgetData) => {
+  const waitingBoxes = (data.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen > 0)
+  if (waitingBoxes.length === 0) return
+
+  // 读取已经调度过的盲盒 key
+  let scheduledSet: Set<string> = new Set()
+  try {
+    const raw = getStorage(STORAGE_KEY_BOX_SCHEDULED)
+    if (Array.isArray(raw)) scheduledSet = new Set(raw.map(String))
+  } catch { }
+
+  const now = new Date()
+  for (const box of waitingBoxes) {
+    if (box.leftDaysToOpen > 7) continue // 超过 7 天不值得调度（widget 每日会重跑）
+    const key = buildBoxKey(box)
+    if (scheduledSet.has(key)) continue
+
+    // 触发时间：到期日上午 8:00（贴近九号日常签到推送时间）
+    const triggerDate = new Date(now)
+    triggerDate.setDate(triggerDate.getDate() + box.leftDaysToOpen)
+    triggerDate.setHours(8, 0, 0, 0)
+
+    // 过期时间不调度
+    if (triggerDate.getTime() <= now.getTime()) continue
+
+    const dc = new DateComponents()
+    dc.year = triggerDate.getFullYear()
+    dc.month = triggerDate.getMonth() + 1
+    dc.day = triggerDate.getDate()
+    dc.hour = triggerDate.getHours()
+    dc.minute = triggerDate.getMinutes()
+
+    try {
+      const trigger = new CalendarNotificationTrigger({
+        dateMatching: dc,
+        repeats: false,
+      })
+
+      const notifId = `ninebot-blindbox-future-${key}`
+      await Notification.schedule({
+        title: "🎁 盲盒明天可领取",
+        subtitle: "九号电动车",
+        body: `你的 ${box.awardDays} 天签到盲盒已冷却完成\n点击进入一键开启`,
+        iconImageData: { systemImage: "gift.fill", color: "#FF9500" },
+        threadIdentifier: "ninebot-blindbox-ready",
+        customUI: true,
+        trigger,
+        tapAction: { type: "runScript", scriptName: CURRENT_SCRIPT_NAME },
+        userInfo: {
+          type: "blindbox_ready",
+          readyCount: 1,
+          notOpenedBlindBoxCount: data.notOpenedBlindBoxCount,
+          minLeftDaysToOpen: 0,
+          notOpenedBoxesDetail: [box],
+        },
+      })
+      scheduledSet.add(key)
+      console.log("📅 盲盒未来通知已调度:", notifId, triggerDate.toISOString())
+    } catch (e) {
+      console.log("调度未来通知失败:", e)
+    }
+  }
+
+  // 清理已不再等待中的 box（被开启或过期）
+  const currentKeys = new Set(waitingBoxes.map(buildBoxKey))
+  for (const k of [...scheduledSet]) {
+    if (!currentKeys.has(k)) scheduledSet.delete(k)
+  }
+  try { setStorage(STORAGE_KEY_BOX_SCHEDULED, Array.from(scheduledSet)) } catch { }
+}
 
 const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
   try {
@@ -570,7 +806,17 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
           })
         } catch (e) { console.log("盲盒通知发送失败:", e) }
       }
+    } else {
+      // 未开启自动开盲盒 → 有可领的盲盒时发送提醒通知（点击打开 App 内的盲盒页面）
+      try {
+        await notifyReadyBlindBoxes(baseData)
+      } catch (e) { console.log("盲盒提醒通知发送失败:", e) }
     }
+
+    // 调度未来可领通知（对还在冷却中的盲盒）
+    try {
+      await scheduleFutureBlindBoxNotifications(baseData)
+    } catch (e) { console.log("盲盒未来通知调度失败:", e) }
 
     return {
       ...baseData,
