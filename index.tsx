@@ -9,6 +9,7 @@ import {
   Toggle,
   Script,
   useState,
+  useEffect,
   Color,
   HStack,
   Spacer,
@@ -17,14 +18,28 @@ import {
   Divider,
   ZStack,
   Circle,
+  Capsule,
   Image,
-  ScrollView
+  ScrollView,
+  ProgressView,
+  Notification,
+  Rectangle
 } from "scripting"
+
+import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, openBlindBox, receiveBlindBox, type NinebotWidgetData } from "./api"
+import { BlindBoxCeremony, GuideGesture, CeremonyTitle, BB } from "./utils/BlindBoxVisuals"
 
 declare const Storage: any
 declare const Dialog: any
 declare const Safari: any
 declare const Pasteboard: any
+declare const UIImage: any
+declare const setInterval: any
+declare const clearInterval: any
+
+// ==================== 应用 Logo ====================
+const LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到原/photos/LOUGO.png"
+const logoImage = UIImage.fromFile(LOGO_PATH)
 
 // ==================== 版本信息 ====================
 const VERSION = "1.2.0"
@@ -352,7 +367,359 @@ function HomeQuickButton({ icon, title, subtitle, action, tint }: { icon: string
   )
 }
 
-function SettingsView() {
+// ==================== 盲盒页面组件 ====================
+
+type BlindBoxInfo = {
+  id?: number | string
+  awardDays: number
+  leftDaysToOpen: number
+  status?: number
+  [k: string]: any
+}
+
+function BlindBoxRow({ box, status }: { box: BlindBoxInfo; status: "ready" | "waiting" }) {
+  const isReady = status === "ready"
+  const accent = isReady ? "#FF9500" : "#8E8E93"
+  return (
+    <HStack
+      background={{ style: "secondarySystemGroupedBackground", shape: { type: "rect", cornerRadius: 14 } }}
+      padding={14}
+      spacing={12}
+      alignment="center"
+      frame={{ maxWidth: "infinity" }}
+    >
+      <ZStack frame={{ width: 44, height: 44 }}>
+        <Circle fill={accent} opacity={0.15} />
+        <Image
+          systemName={isReady ? "gift.fill" : "lock.fill"}
+          font={22}
+          foregroundStyle={accent}
+        />
+      </ZStack>
+      <VStack spacing={2} frame={{ maxWidth: "infinity" }}>
+        <Text fontWeight="semibold" foregroundStyle="label">{box.awardDays} 天签到盲盒</Text>
+        <Text font="caption" foregroundStyle="secondaryLabel">
+          {isReady ? "已可领取" : `还剩 ${box.leftDaysToOpen} 天冷却`}
+        </Text>
+      </VStack>
+      {isReady ? (
+        <HStack padding={{ horizontal: 10, vertical: 4 }} background={{ style: "#FF9500", shape: { type: "rect", cornerRadius: 8 } }}>
+          <Text font="caption2" fontWeight="bold" foregroundStyle="white">READY</Text>
+        </HStack>
+      ) : (
+        <Text font="caption" fontWeight="medium" foregroundStyle="tertiaryLabel">D-{box.leftDaysToOpen}</Text>
+      )}
+    </HStack>
+  )
+}
+
+function BlindBoxView({ onBack }: { onBack: () => void }) {
+  const dismiss = Navigation.useDismiss()
+  const [data, setData] = useState<NinebotWidgetData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [opening, setOpening] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // 盒盖浮动动画相位（0~1，呼吸）
+  const [capPhase, setCapPhase] = useState(0)
+
+  const auth = (Storage.get("ninebot.authorization") as string) || ""
+  const deviceId = (Storage.get("ninebot.deviceId") as string) || ""
+  const hasAuth = !!auth && !!deviceId
+
+  const loadData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await getNinebotInfo(auth, deviceId)
+      setData(result)
+    } catch (e: any) {
+      setError(e?.message || String(e) || "加载失败，请检查网络或重新同步鉴权")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (hasAuth) loadData()
+    else { setLoading(false); setError("未配置 authorization 与 deviceId，请先在设置页同步") }
+  }, [])
+
+  const handleOpenAll = async () => {
+    if (opening || !data) return
+    setOpening(true)
+    try {
+      const result = await autoOpenBlindBoxes(auth, deviceId)
+      // 奖励描述
+      const rewardLines = (result.rewards || []).map((r: any) => {
+        const reward = r.reward
+        if (reward?.rewardType === 1) return `${r.awardDays}天盲盒 · +${reward.rewardValue} 等级经验`
+        if (reward?.rewardType === 2) return `${r.awardDays}天盲盒 · +${reward.rewardValue} 电动车币`
+        return `${r.awardDays}天盲盒 · +${reward?.rewardValue || 0} 奖励`
+      })
+      const summary = [
+        `成功领取 ${result.receiveSuccess} 个盲盒`,
+        ...rewardLines,
+        result.failed > 0 ? `失败 ${result.failed} 个` : "",
+      ].filter(Boolean).join("\n")
+      Dialog.alert({ title: result.receiveSuccess > 0 ? "🎁 开启完成" : "⚠️ 开启异常", message: summary })
+
+      // 清除已通知记录
+      try { Storage.set("ninebot.lastNotifiedReadyBoxIds", []) } catch { }
+      // 刷新数据
+      await loadData()
+    } catch (e: any) {
+      Dialog.alert({ title: "开启失败", message: e?.message || String(e) })
+    } finally {
+      setOpening(false)
+    }
+  }
+
+  const readyBoxes: BlindBoxInfo[] = (data?.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen === 0)
+  const waitingBoxes: BlindBoxInfo[] = (data?.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen > 0)
+  const openedCount = (data as any)?.openedBlindBoxCount ?? 0
+
+  // 盲盒盖子浮动呼吸动画（仅在有可领取盲盒时）
+  useEffect(() => {
+    if (readyBoxes.length === 0 || opening) return
+    const start = Date.now()
+    const cycle = 2000 // 一个完整呼吸周期 2 秒
+    const t = setInterval(() => {
+      const elapsed = (Date.now() - start) % cycle
+      setCapPhase(elapsed / cycle) // 0 ~ 1 循环
+    }, 32) // 约 30fps，足够顺滑
+    return () => clearInterval(t)
+  }, [readyBoxes.length, opening])
+
+  return (
+    <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} background="systemGroupedBackground">
+      {/* 顶部导航栏（固定在屏幕最上方） */}
+      <HStack
+        background="systemBackground"
+        padding={{ horizontal: 16, vertical: 10 }}
+        alignment="center"
+        frame={{ maxWidth: "infinity" }}
+      >
+        <Button action={onBack}>
+          <HStack spacing={4} padding={{ horizontal: 10, vertical: 6 }}>
+            <Image systemName="chevron.left" font={14} foregroundStyle="systemBlue" fontWeight="semibold" />
+            <Text foregroundStyle="systemBlue" fontWeight="medium">返回</Text>
+          </HStack>
+        </Button>
+        <Spacer />
+        <Text font="headline" fontWeight="bold">盲盒管理</Text>
+        <Spacer />
+        <Button action={loading ? () => {} : loadData}>
+          <HStack padding={{ horizontal: 10, vertical: 6 }}>
+            <Image
+              systemName={loading ? "arrow.triangle.2.circlepath" : "arrow.clockwise"}
+              font={14}
+              foregroundStyle={loading ? "tertiaryLabel" : "systemBlue"}
+            />
+          </HStack>
+        </Button>
+      </HStack>
+      <Divider />
+
+      <ScrollView
+        frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
+      >
+        <VStack spacing={16} padding={16}>
+          {loading && !data ? (
+            <VStack alignment="center" padding={40} spacing={12}>
+              <ProgressView />
+              <Text foregroundStyle="secondaryLabel" font="subheadline">加载中…</Text>
+            </VStack>
+          ) : error ? (
+            <VStack alignment="center" padding={40} spacing={12}>
+              <ZStack frame={{ width: 72, height: 72 }}>
+                <Circle fill="#FF9500" opacity={0.15} />
+                <Image systemName="exclamationmark.triangle.fill" font={36} foregroundStyle="systemOrange" />
+              </ZStack>
+              <Text fontWeight="semibold" font={17}>出错了</Text>
+              <Text foregroundStyle="secondaryLabel" multilineTextAlignment="center" font="subheadline">{error}</Text>
+              <Button action={loadData}>
+                <HStack padding={{ horizontal: 20, vertical: 10 }} background={{ style: "systemFill", shape: { type: "rect", cornerRadius: 10 } }}>
+                  <Text foregroundStyle="systemBlue" fontWeight="semibold">重试</Text>
+                </HStack>
+              </Button>
+            </VStack>
+          ) : !data ? null : (
+            <>
+              {/* === 仪式感区域：中央盲盒 + 大标题 + 引导手势 === */}
+              <VStack
+                frame={{ maxWidth: "infinity" }}
+                padding={20}
+                spacing={16}
+                background={{ style: "systemBackground", shape: { type: "rect", cornerRadius: 16 } }}
+                alignment="center"
+              >
+                {/* 大标题 */}
+                <VStack alignment="center" spacing={4} frame={{ maxWidth: "infinity" }}>
+                  {/* @ts-ignore - CommonViewProps fontSize/fontWeight/foregroundStyle on Text */}
+                  <Text font={22} fontWeight="bold" foregroundStyle="label">
+                    {opening ? "开启中…" : readyBoxes.length > 0 ? "开启你的盲盒" : "今日盲盒"}
+                  </Text>
+                  {/* @ts-ignore - CommonViewProps fontSize/foregroundStyle on Text */}
+                  <Text font={13} foregroundStyle="secondaryLabel">
+                    {opening 
+                      ? `正在领取 ${readyBoxes.length} 个盲盒` 
+                      : readyBoxes.length > 0 
+                        ? `有 ${readyBoxes.length} 个盲盒等待开启` 
+                        : "继续签到累积盲盒"
+                    }
+                  </Text>
+                </VStack>
+
+                {/* 中央盲盒主体（带光晕与浮动盒盖）*/}
+                {opening ? (
+                  <VStack alignment="center" spacing={10} padding={{ vertical: 40 }}>
+                    <ProgressView />
+                  </VStack>
+                ) : (
+                  <BlindBoxCeremony
+                    isReady={readyBoxes.length > 0}
+                    size={160}
+                    capPhase={capPhase}
+                  />
+                )}
+
+                {/* 引导手势 / 状态提示 */}
+                {opening ? null : readyBoxes.length > 0 ? (
+                  <GuideGesture label="点击下方按钮一键开启" />
+                ) : (
+                  <HStack
+                    spacing={6}
+                    alignment="center"
+                    padding={{ horizontal: 12, vertical: 6 }}
+                    background={{ style: BB.primarySoft, shape: { type: "rect", cornerRadius: 12 } }}
+                  >
+                    {/* @ts-ignore - CommonViewProps foregroundStyle/font on Image */}
+                    <Image systemName="lock.fill" font={12} foregroundStyle={BB.primary} />
+                    {/* @ts-ignore - CommonViewProps foregroundStyle/font on Text */}
+                    <Text font={12} foregroundStyle={BB.primary}>签到累积更多盲盒</Text>
+                  </HStack>
+                )}
+              </VStack>
+
+              {/* 概览统计卡 */}
+              <ZStack
+                frame={{ maxWidth: "infinity" }}
+                padding={20}
+                background={{ style: "systemBackground", shape: { type: "rect", cornerRadius: 16 } }}
+              >
+                <HStack alignment="center" spacing={0} frame={{ maxWidth: "infinity" }}>
+                  <VStack alignment="center" spacing={4} frame={{ maxWidth: "infinity" }}>
+                    <Text font="title" fontWeight="bold" foregroundStyle="label">{data.notOpenedBlindBoxCount}</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">待开启</Text>
+                  </VStack>
+                  <Rectangle frame={{ width: 1, height: 36 }} foregroundStyle="separator" />
+                  <VStack alignment="center" spacing={4} frame={{ maxWidth: "infinity" }}>
+                    <Text font="title" fontWeight="bold" foregroundStyle="systemOrange">{readyBoxes.length}</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">可领取</Text>
+                  </VStack>
+                  <Rectangle frame={{ width: 1, height: 36 }} foregroundStyle="separator" />
+                  <VStack alignment="center" spacing={4} frame={{ maxWidth: "infinity" }}>
+                    <Text font="title" fontWeight="bold" foregroundStyle="label">{openedCount}</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">已开启</Text>
+                  </VStack>
+                </HStack>
+              </ZStack>
+
+              {/* 主操作按钮 */}
+              {readyBoxes.length > 0 ? (
+                <Button action={opening ? () => {} : handleOpenAll}>
+                  <ZStack
+                    frame={{ maxWidth: "infinity" }}
+                    padding={16}
+                    background={{ style: "systemOrange", shape: { type: "rect", cornerRadius: 16 } }}
+                    alignment="center"
+                  >
+                    {opening && (
+                      <HStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} alignment="center" opacity={0.4}>
+                        <ProgressView />
+                      </HStack>
+                    )}
+                    <HStack spacing={8} alignment="center">
+                      <Image systemName={opening ? "hourglass" : "gift.fill"} font={18} foregroundStyle="white" />
+                      <Text foregroundStyle="white" fontWeight="bold" font={17}>
+                        {opening ? "开启中…" : `一键开启 ${readyBoxes.length} 个盲盒`}
+                      </Text>
+                    </HStack>
+                  </ZStack>
+                </Button>
+              ) : (
+                <HStack
+                  frame={{ maxWidth: "infinity" }}
+                  padding={16}
+                  background={{ style: "secondarySystemGroupedBackground", shape: { type: "rect", cornerRadius: 16 } }}
+                  alignment="center"
+                  spacing={12}
+                >
+                  <ZStack frame={{ width: 40, height: 40 }}>
+                    <Circle fill="#34C759" opacity={0.15} />
+                    <Image systemName="checkmark.seal.fill" font={22} foregroundStyle="systemGreen" />
+                  </ZStack>
+                  <VStack spacing={2} frame={{ maxWidth: "infinity" }}>
+                    <Text fontWeight="semibold" foregroundStyle="label">暂无可领取的盲盒</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">继续每日签到累积更多盲盒</Text>
+                  </VStack>
+                </HStack>
+              )}
+
+              {/* 可领取列表 */}
+              {readyBoxes.length > 0 && (
+                <VStack spacing={10} frame={{ maxWidth: "infinity" }}>
+                  <HStack padding={{ horizontal: 4 }}>
+                    <Text font="subheadline" fontWeight="semibold" foregroundStyle="secondaryLabel">可领取</Text>
+                    <Spacer />
+                    <Text font="caption" foregroundStyle="tertiaryLabel">{readyBoxes.length} 个</Text>
+                  </HStack>
+                  <VStack spacing={8}>
+                    {readyBoxes.map((box, idx) => (
+                      <BlindBoxRow key={`r-${box.id ?? idx}`} box={box} status="ready" />
+                    ))}
+                  </VStack>
+                </VStack>
+              )}
+
+              {/* 冷却中列表 */}
+              {waitingBoxes.length > 0 && (
+                <VStack spacing={10} frame={{ maxWidth: "infinity" }}>
+                  <HStack padding={{ horizontal: 4 }}>
+                    <Text font="subheadline" fontWeight="semibold" foregroundStyle="secondaryLabel">冷却中</Text>
+                    <Spacer />
+                    <Text font="caption" foregroundStyle="tertiaryLabel">{waitingBoxes.length} 个</Text>
+                  </HStack>
+                  <VStack spacing={8}>
+                    {waitingBoxes.map((box, idx) => (
+                      <BlindBoxRow key={`w-${box.id ?? idx}`} box={box} status="waiting" />
+                    ))}
+                  </VStack>
+                </VStack>
+              )}
+
+              {/* 底部提示 */}
+              <HStack
+                frame={{ maxWidth: "infinity" }}
+                padding={{ horizontal: 14, vertical: 12 }}
+                background={{ style: "secondarySystemGroupedBackground", shape: { type: "rect", cornerRadius: 12 } }}
+                spacing={10}
+                alignment="center"
+              >
+                <Image systemName="info.circle" font={16} foregroundStyle="tertiaryLabel" />
+                <Text font="caption" foregroundStyle="secondaryLabel" multilineTextAlignment="leading" frame={{ maxWidth: "infinity" }}>
+                  盲盒会从当日签到起开始计时，到期后变更为“READY”状态，可手动开启或开启自动领取。
+                </Text>
+              </HStack>
+            </>
+          )}
+        </VStack>
+      </ScrollView>
+    </VStack>
+  )
+}
+
+function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const dismiss = Navigation.useDismiss()
   
   const storedFullscreen = Storage.get(FULLSCREEN_KEY)
@@ -598,12 +965,16 @@ function SettingsView() {
         {/* ==================== 顶部视觉区域 ==================== */}
         <Section>
           <VStack spacing={24} padding={{ vertical: 20 }}>
-            {/* 应用图标和标题 */}
+            {/* 应用 Logo 和标题 */}
             <VStack spacing={16} alignment="center">
-              <ZStack frame={{ width: 100, height: 100 }}>
-                <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
-                <Text font={48}>🛴</Text>
-              </ZStack>
+              {logoImage ? (
+                <Image
+                  image={logoImage}
+                  resizable={true}
+                  // @ts-ignore
+                  frame={{ width: 120, height: 120 }}
+                />
+              ) : null}
               <VStack spacing={4} alignment="center">
                 <Text font="title" fontWeight="bold">九号电动车助手</Text>
                 <Text font="subheadline" foregroundStyle="secondaryLabel">Ninebot Assistant</Text>
@@ -857,6 +1228,26 @@ function SettingsView() {
               />
             </VStack>
           </HStack>
+
+          {onOpenBlindBox && (
+            <HStack
+              padding={16}
+              spacing={12}
+              alignment="center"
+              onTapGesture={onOpenBlindBox}
+              frame={{ maxWidth: "infinity" }}
+            >
+              <ZStack frame={{ width: 32, height: 32 }}>
+                <Circle fill="systemOrange" opacity={0.15} />
+                <Image systemName="gift.circle.fill" foregroundStyle="systemOrange" font={18} />
+              </ZStack>
+              <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                <Text fontWeight="semibold" foregroundStyle="label">盲盒管理</Text>
+                <Text font="caption" foregroundStyle="secondaryLabel">查看待开盲盒、一键领取</Text>
+              </VStack>
+              <Image systemName="chevron.right" font={14} foregroundStyle="tertiaryLabel" fontWeight="semibold" />
+            </HStack>
+          )}
         </Section>
 
       </List>
@@ -879,8 +1270,26 @@ function SettingsView() {
 }
 
 type AppProps = { interactiveDismissDisabled?: boolean }
+
+// 根据启动原因（点击通知 / 手动启动）决定首屏
+function getInitialView(): "settings" | "blindbox" {
+  try {
+    const notif = Notification.current
+    const type = (notif?.userInfo as any)?.type
+    if (type === "blindbox_ready" || type === "blindbox") {
+      return "blindbox"
+    }
+  } catch { }
+  return "settings"
+}
+
 export default function App(_props: AppProps) {
-  return <SettingsView />
+  const [view, setView] = useState<"settings" | "blindbox">(getInitialView)
+
+  if (view === "blindbox") {
+    return <BlindBoxView onBack={() => setView("settings")} />
+  }
+  return <SettingsView onOpenBlindBox={() => setView("blindbox")} />
 }
 
 function readFullscreenPrefForRun(): boolean {
