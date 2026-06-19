@@ -30,11 +30,16 @@ export function distance(lat1: number, lon1: number, lat2: number, lon2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-/**
- * ⭐ iOS 原生逆向地理编码（主源）
- * 使用 Apple 地图数据（中国区由高德提供），精确到街道级别
- * 无需 API Key，免费且可靠
- */
+// =====================
+// 2. 直辖市列表
+// =====================
+
+const MUNICIPALITIES = ["上海市", "北京市", "天津市", "重庆市"]
+
+// =====================
+// 3. Apple 逆向地理编码（主源）
+// =====================
+
 async function appleGeocode(lat: number, lon: number) {
   try {
     const placemarks = await Location.reverseGeocode({
@@ -54,12 +59,9 @@ async function appleGeocode(lat: number, lon: number) {
     const city = pm.locality || ""
     let province = pm.administrativeArea || ""
 
-    // ⭐ 直辖市省份修正：Apple 地图在中国区偶尔返回错误的 administrativeArea
+    // ⭐ 直辖市省份修正
     if (city && province && MUNICIPALITIES.includes(city) && province !== city) {
-      appendDebugLog("appleGeocode: corrected province", {
-        city,
-        wrongProvince: province,
-      })
+      appendDebugLog("appleGeocode: corrected province", { city, wrongProvince: province })
       province = city
     }
 
@@ -70,15 +72,10 @@ async function appleGeocode(lat: number, lon: number) {
       district: pm.subLocality || "",
       subAdmin: pm.subAdministrativeArea || "",
       street: fullStreet,
-      poiName: poiName,
+      poiName,
       town: pm.subAdministrativeArea || "",
       neighborhood: areasOfInterest[0] || "",
-      fullName:
-        poiName ||
-        fullStreet ||
-        pm.subLocality ||
-        city ||
-        "",
+      fullName: poiName || fullStreet || pm.subLocality || city || "",
     }
   } catch {
     return null
@@ -117,31 +114,23 @@ async function bdc(lat: number, lon: number) {
 }
 
 // =====================
-// 6. ⭐ 评分系统（核心）
+// 5. 评分系统
 // =====================
 
 function score(item: any) {
   let s = 0
-
-  if (item.poiName) s += 50       // POI 最重要
-  if (item.street) s += 35        // 街道
-  if (item.town) s += 25          // 乡镇
-  if (item.district) s += 20      // 区
-  if (item.city) s += 10          // 城市
-
-  if (item.poiScore && item.poiScore < 50) {
-    s += 20 // 距离近的 POI 加权
-  }
-
+  if (item.poiName) s += 50
+  if (item.street) s += 35
+  if (item.town) s += 25
+  if (item.district) s += 20
+  if (item.city) s += 10
+  if (item.poiScore && item.poiScore < 50) s += 20
   return s
 }
 
 // =====================
-// 7. 融合决策（关键）
+// 6. 融合决策
 // =====================
-
-// 直辖市列表：province 应与 city 一致
-const MUNICIPALITIES = ["上海市", "北京市", "天津市", "重庆市"]
 
 function merge(results: any[]) {
   const valid = results.filter(Boolean)
@@ -154,7 +143,6 @@ function merge(results: any[]) {
 
   for (let i = 1; i < valid.length; i++) {
     const r = valid[i]
-    // 用其他来源补全缺失字段
     if (!base.street && r.street) base.street = r.street
     if (!base.poiName && r.poiName) base.poiName = r.poiName
     if (!base.neighborhood && r.neighborhood) base.neighborhood = r.neighborhood
@@ -164,31 +152,34 @@ function merge(results: any[]) {
     if (!base.province && r.province) base.province = r.province
   }
 
-  // ⭐ 交叉验证：修正省份与城市不一致的问题
+  // ⭐ 直辖市省份修正
   if (base.city && base.province) {
-    // 直辖市：province 必须与 city 一致
     if (MUNICIPALITIES.includes(base.city) && base.province !== base.city) {
       appendDebugLog("merge: corrected province for municipality", {
-        city: base.city,
-        wrongProvince: base.province,
-        correctedTo: base.city,
+        city: base.city, wrongProvince: base.province,
       })
       base.province = base.city
     }
   }
 
-  // ⭐ 如果其他来源有不同且更详细的 town，用 BDC 的 town 覆盖
-  // Apple 的 subAdministrativeArea 在中国区经常返回区级而非乡镇级
+  // ⭐ town 冲突解决：仅当其他来源与 base 城市一致时才覆盖
   if (base.town && valid.length > 1) {
     const otherWithTown = valid.find((r: any) => r !== base && r.town && r.town !== base.town)
     if (otherWithTown) {
-      appendDebugLog("merge: town conflict resolved", {
-        appleTown: base.town,
-        otherTown: otherWithTown.town,
-        otherSource: otherWithTown.source,
-        kept: otherWithTown.town,
-      })
-      base.town = otherWithTown.town
+      const cityMatch = !base.city || !otherWithTown.city ||
+        base.city === otherWithTown.city ||
+        base.city.includes(otherWithTown.city) ||
+        otherWithTown.city.includes(base.city)
+      if (cityMatch) {
+        appendDebugLog("merge: town conflict resolved", {
+          appleTown: base.town, otherTown: otherWithTown.town, kept: otherWithTown.town,
+        })
+        base.town = otherWithTown.town
+      } else {
+        appendDebugLog("merge: town conflict kept base (city mismatch)", {
+          baseCity: base.city, otherCity: otherWithTown.city,
+        })
+      }
     }
   }
 
@@ -196,31 +187,27 @@ function merge(results: any[]) {
 }
 
 // =====================
-// 8. 主入口（升级版）
+// 7. 主入口
 // =====================
 
 export async function callReverseGeocode(options: {
   latitude: number
   longitude: number
 }) {
-
-  // ⭐ 并行请求：Apple 原生（主源） + BDC（补充乡镇数据）
   const [appleRes, bdcRes] = await Promise.all([
     appleGeocode(options.latitude, options.longitude),
     bdc(options.latitude, options.longitude),
   ])
 
   const best = merge([appleRes, bdcRes])
-
   if (!best) return null
 
   appendDebugLog("location v3 result", best)
-
   return [best]
 }
 
 // =====================
-// 9. 写入 LocationData
+// 8. 写入 LocationData（完全覆盖策略）
 // =====================
 
 export function applyLocation(data: LocationData, geo: any): LocationData {
@@ -232,7 +219,7 @@ export function applyLocation(data: LocationData, geo: any): LocationData {
   const neighborhood = geo.neighborhood || ""
   const quarter = geo.quarter || ""
 
-  // ⭐ name 优先级：POI > 街道 > 小区 > 乡镇 > 区县（避免与 subLocality 重复）
+  // ⭐ name 优先级：POI > 街道 > 小区 > 乡镇 > 区县
   const nameCandidates = [poiName, street, neighborhood, town]
   let name = nameCandidates.find(Boolean) || ""
   if (!name && district && district !== (data.subLocality || "")) {
@@ -240,39 +227,34 @@ export function applyLocation(data: LocationData, geo: any): LocationData {
   }
   if (!name) name = city || ""
 
-  // ⭐ 直辖市省份修正：province 必须与 city 一致
-  let province = geo.province || data.administrativeArea || ""
-  const resolvedCity = city || data.locality || ""
-  if (resolvedCity && province && MUNICIPALITIES.includes(resolvedCity) && province !== resolvedCity) {
-    appendDebugLog("applyLocation: corrected province", {
-      city: resolvedCity,
-      wrongProvince: province,
-    })
-    province = resolvedCity
+  // ⭐ 直辖市省份修正
+  let province = geo.province || ""
+  if (city && province && MUNICIPALITIES.includes(city) && province !== city) {
+    appendDebugLog("applyLocation: corrected province", { city, wrongProvince: province })
+    province = city
   }
 
+  // ⭐ 完全覆盖策略：只保留坐标，所有地名字段完全使用新解析结果
   return {
-    ...data,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    horizontalAccuracy: data.horizontalAccuracy || 0,
 
     administrativeArea: province,
-    locality: geo.city || data.locality || "",
-    subLocality: geo.district || data.subLocality || "",
-
-    // ⭐ 不覆盖已有数据：新值为空时保留旧值
-    town: town || data.town || "",
-    street: street || data.street || "",
-    poiName: poiName || data.poiName || "",
-    neighborhood: neighborhood || data.neighborhood || "",
-    quarter: quarter || data.quarter || "",
-
+    locality: city,
+    subLocality: district,
+    town,
+    street,
+    poiName,
+    neighborhood,
+    quarter,
     name,
-
     resolvedAt: Date.now(),
   }
 }
 
 // =====================
-// 10. 工具函数（缺失的导出）
+// 9. 工具函数
 // =====================
 
 /** 检查 LocationData 是否包含有效坐标 */
@@ -307,13 +289,13 @@ export function isWeatherCacheValid(cachedAt: number | undefined, maxAgeMs = 30 
   return Date.now() - cachedAt < maxAgeMs
 }
 
+// =====================
+// 10. 显示文本（从大到小排列）
+// =====================
+
 /**
  * 获取当前定位的显示文本（自适应单/双行）
- * - mode="single"：单行显示（适用于文字较短）
- * - mode="two-line"：双行显示（适用于超长，避免被截断）
- *   - admin: 市 · 区 · 镇
- *   - fine:  POI / 街道 / 小区
- * 根据 widget 尺寸与文字总宽度自动切换
+ * 地理层级严格从大到小：省级 > 市级 > 区级 > 镇级 > 街道 > POI
  */
 export type LocationDisplay =
   | { mode: "single"; text: string }
@@ -332,7 +314,7 @@ export function getDisplayLocationText(widgetType: "medium" | "large" = "medium"
     const locality = String(data.locality || "").trim()
     const admin = String(data.administrativeArea || "").trim()
 
-    // 辅助：判断两个字符串是否本质上相同（去空格后一致，或互相包含）
+    // 辅助：判断两个字符串是否本质上相同
     const isSame = (a: string, b: string) => {
       if (!a || !b) return false
       const na = a.replace(/[\s·,，]/g, "")
@@ -340,34 +322,32 @@ export function getDisplayLocationText(widgetType: "medium" | "large" = "medium"
       return na === nb || na.includes(nb) || nb.includes(na)
     }
 
-    // 辅助：拼接两段不重复的文本
-    const joinDistinct = (a: string, b: string, sep = " · ") => {
-      if (!a) return b
-      if (!b) return a
-      if (isSame(a, b)) return a
-      return `${a}${sep}${b}`
-    }
-
-    // 第一行：行政层级（市 · 区 · 镇），从大到小，去重
+    // ⭐ 第一行：行政层级，严格从大到小：省/直辖市 > 市/区 > 区/县 > 镇/乡 > 街道
     const adminParts: string[] = []
-    if (locality && !adminParts.some(p => isSame(p, locality))) adminParts.push(locality)
-    if (subLocality && !adminParts.some(p => isSame(p, subLocality))) adminParts.push(subLocality)
-    if (town && !isSame(town, subLocality) && !adminParts.some(p => isSame(p, town))) adminParts.push(town)
 
-    // 第二行（精细名）：POI / 街道 / 小区
-    const fineName = name || street || neighborhood
-    // 过滤掉与 admin 重复的精细名
-    const fineLine = fineName && !adminParts.some(p => isSame(p, fineName)) ? fineName : ""
+    // 省级（如：东京、山东省）
+    if (admin && !adminParts.some(p => isSame(p, admin))) adminParts.push(admin)
+    // 市级（如：墨田区、上海）
+    if (locality && !adminParts.some(p => isSame(p, locality))) adminParts.push(locality)
+    // 区级（如：两国、宝山区）
+    if (subLocality && !adminParts.some(p => isSame(p, subLocality))) adminParts.push(subLocality)
+    // 镇级（如：罗店镇）
+    if (town && !adminParts.some(p => isSame(p, town))) adminParts.push(town)
 
     let adminLine = adminParts.join(" · ")
+
+    // 兜底：如果所有字段都为空
     if (!adminLine) {
-      if (locality) adminLine = isSame(locality, admin) ? locality : joinDistinct(locality, admin)
+      if (locality) adminLine = locality
       else if (admin) adminLine = admin
       else adminLine = "定位中..."
     }
 
+    // ⭐ 第二行（精细名）：POI / 街道 / 小区
+    const fineName = name || street || neighborhood
+    const fineLine = fineName && !adminParts.some(p => isSame(p, fineName)) ? fineName : ""
+
     // ⭐ 根据 widget 尺寸和文本总长度决定单/双行
-    // CJK 字符按 1em，ASCII/标点按 0.5em估算
     const cjkWidth = (s: string) => {
       let w = 0
       for (const ch of s) {
@@ -375,7 +355,6 @@ export function getDisplayLocationText(widgetType: "medium" | "large" = "medium"
       }
       return w
     }
-    // 经验阈值：medium 18em、large 16em（基于实测 widget 可用宽度）
     const threshold = widgetType === "large" ? 16 : 18
     const combinedWidth = cjkWidth(adminLine) + (fineLine ? cjkWidth(` · ${fineLine}`) : 0)
 
@@ -390,10 +369,10 @@ export function getDisplayLocationText(widgetType: "medium" | "large" = "medium"
   }
 }
 
-/**
- * ⭐ iOS 原生逆向地理编码（返回 Apple CLPlacemark 风格的字段）
- * 用于主应用页面设置定位时的地名解析
- */
+// =====================
+// 11. 主应用页面使用的逆向地理编码
+// =====================
+
 export async function reverseGeocodeOSM(lat: number, lon: number): Promise<any> {
   try {
     const placemarks = await Location.reverseGeocode({
@@ -431,7 +410,7 @@ export async function reverseGeocodeOSM(lat: number, lon: number): Promise<any> 
 }
 
 // =====================
-// 11. 缓存优化
+// 12. 缓存优化
 // =====================
 
 export function loadCache() {
@@ -443,7 +422,7 @@ export function saveCache(data: LocationData) {
 }
 
 // =====================
-// 12. 对外接口
+// 13. 对外接口
 // =====================
 
 export async function resolveLocationNameIfNeeded(data: LocationData, force = false) {
@@ -461,8 +440,6 @@ export async function resolveLocationNameIfNeeded(data: LocationData, force = fa
     )
     // 80m 内尝试复用缓存
     if (dist < 80) {
-      // ⭐ 需要有精细地名（name 与 town 不同）才复用缓存
-      // 如果 name 缺失或等于 town，说明之前解析不够精确（Apple 可能失败过），需要重新解析
       const hasFineName = (cached.name && cached.name !== cached.town) || cached.street || cached.neighborhood
       if (hasFineName) {
         return cached
