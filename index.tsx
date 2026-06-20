@@ -70,6 +70,7 @@ const COLORS = {
 // --- Storage Keys ---
 const STORAGE_COOKIES = "tokei_mimo_cookies"
 const STORAGE_DATA = "tokei_mimo_realtime"
+const STORAGE_TIME_RANGE = "tokei_mimo_time_range"  // 主应用当前选中的时间范围（用于与 Widget 联动）
 
 // --- MiMo 平台 API ---
 const MIMO_BASE = "https://platform.xiaomimimo.com"
@@ -103,6 +104,23 @@ const MODELS: Record<string, { name: string; short: string; color: string }> = {
   "mimo-v2.5":    { name: "MiMo V2.5",   short: "V2.5", color: "#10B981" },
   "mimo-v2-pro":  { name: "MiMo V2 Pro",  short: "Pro",  color: "#6366F1" },
   "mimo-v2-omni": { name: "MiMo V2 Omni", short: "Omni", color: "#F59E0B" },
+}
+
+// 时间范围常量（主应用与桌面组件共用，保持字符串一致）
+const TIME_RANGES = ["今日", "本周", "本月"] as const
+type TimeRange = typeof TIME_RANGES[number]
+const DEFAULT_TIME_RANGE: TimeRange = "本月"
+
+function loadTimeRange(): TimeRange {
+  try {
+    const raw = Storage.get(STORAGE_TIME_RANGE) as string | undefined
+    if (raw && (TIME_RANGES as readonly string[]).indexOf(raw) >= 0) return raw as TimeRange
+  } catch (e) {}
+  return DEFAULT_TIME_RANGE
+}
+
+function saveTimeRange(range: TimeRange) {
+  try { Storage.set(STORAGE_TIME_RANGE, range) } catch (e) {}
 }
 
 // --- 自动刷新配置 ---
@@ -971,12 +989,11 @@ function ModelRow({ modelId, tokens, requests, totalTokens }: {
 }
 
 function TimeRangeSelector({ selected, onSelect }: {
-  selected: string; onSelect: (s: string) => void
+  selected: TimeRange; onSelect: (s: TimeRange) => void
 }) {
-  const ranges = ["今日", "本周", "本月"]
   return (
     <HStack spacing={4}>
-      {ranges.map((r) => {
+      {TIME_RANGES.map((r) => {
         const isActive = selected === r
         return (
           <Button
@@ -1069,13 +1086,22 @@ function HeaderSection({ planName, validUntil }: { planName: string; validUntil:
 // ============================================================
 export default function DashboardView() {
   const [data, setData] = useState<PlatformData>(EMPTY_DATA)
-  const [timeRange, setTimeRange] = useState("本月")
+  // 初始化时从 Storage 恢复上次选择，保证与桌面组件一致
+  const [timeRange, setTimeRangeState] = useState<TimeRange>(loadTimeRange())
   const [syncing, setSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState("")
   const [isLoggedIn, setIsLoggedIn] = useState(hasCookies())
   const [autoRefresh, setAutoRefresh] = useState(true)
 
-  // 获取筛选后的记录
+  // 切换时间范围：持久化 + 触发 Widget 刷新
+  const setTimeRange = (range: TimeRange) => {
+    setTimeRangeState(range)
+    saveTimeRange(range)
+    // 立刻通知桌面组件刷新，让它读取新的时间范围
+    try { Widget.reloadAll() } catch (e) {}
+  }
+
+  // 获取筛选后的记录（与 Widget 共用同一套筛选逻辑）
   function getFilteredRecords(records: PlatformRecord[]): PlatformRecord[] {
     const now = new Date()
     const today = now.toISOString().split("T")[0]
