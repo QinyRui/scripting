@@ -49,7 +49,20 @@ interface PlatformData {
 
 var STORAGE_DATA = "tokei_mimo_realtime"
 var STORAGE_COOKIES = "tokei_mimo_cookies"
+var STORAGE_TIME_RANGE = "tokei_mimo_time_range"  // 主应用选择的时间范围
 var MIMO_BASE = "https://platform.xiaomimimo.com"
+
+// 时间范围配置（必须与主应用 index.tsx 中的 TIME_RANGES 完全一致）
+var TIME_RANGES = ["今日", "本周", "本月"]
+var DEFAULT_TIME_RANGE = "本月"
+
+function loadTimeRange(): string {
+  try {
+    var raw = Storage.get(STORAGE_TIME_RANGE) as string
+    if (raw && TIME_RANGES.indexOf(raw) >= 0) return raw
+  } catch (e) {}
+  return DEFAULT_TIME_RANGE
+}
 
 var EMPTY: PlatformData = {
   creditsUsed: 0, creditsTotal: 11e9, creditsPercent: 0,
@@ -78,6 +91,76 @@ function loadCookieStr(): string {
   return ""
 }
 
+/** 从 Cookie 字符串中提取指定 Cookie 值 */
+function getCookieValue(cookieStr: string, name: string): string {
+  const parts = cookieStr.split(";")
+  for (var i = 0; i < parts.length; i++) {
+    const pair = parts[i].trim().split("=")
+    if (pair[0] === name) {
+      return pair.slice(1).join("=")
+    }
+  }
+  return ""
+}
+
+/**
+ * 拉取当月每日用量明细（POST /api/v1/usage/token-plan/list）
+ * 不依赖 WebView，直接用 cookie 中的 api-platform_ph 作为查询参数
+ * 桌面 Widget 必须能独立拉到 records，否则今日数据全 0
+ */
+async function fetchUsageRecords(): Promise<PlatformRecord[]> {
+  var cookieStr = loadCookieStr()
+  if (!cookieStr) return []
+
+  // 从 cookie 中提取 api-platform_ph（去引号包裹）
+  var phValue = getCookieValue(cookieStr, "api-platform_ph")
+  if (phValue && (phValue.startsWith('"') || phValue.startsWith("'"))) {
+    phValue = phValue.replace(/^["']|["']$/g, '')
+  }
+  if (!phValue) return []
+
+  try {
+    var now = new Date()
+    var year = now.getFullYear()
+    var month = now.getMonth() + 1
+    var url = MIMO_BASE + "/api/v1/usage/token-plan/list?api-platform_ph=" + encodeURIComponent(phValue)
+    var res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Cookie": cookieStr,
+      },
+      body: JSON.stringify({ year: year, month: month }),
+    })
+    var json = await res.json()
+    if (!json || json.code !== 0) return []
+
+    var items: any[] = []
+    var payload: any = json.data
+    if (Array.isArray(payload)) {
+      items = payload
+    } else if (payload && Array.isArray(payload.items)) {
+      items = payload.items
+    }
+    if (items.length === 0) return []
+
+    var today = now.toISOString().split("T")[0]
+    return items.map(function(item: any): PlatformRecord {
+      return {
+        date: item.date || item.day || today,
+        model: item.model || item.name || "unknown",
+        totalTokens: item.totalTokens || item.tokens || item.totalToken || 0,
+        inputCacheHit: item.cacheHits || item.hitCacheTokens || item.inputHitToken || 0,
+        inputCacheMiss: item.cacheMisses || item.missCacheTokens || item.inputMissToken || 0,
+        outputTokens: item.outputTokens || item.output || item.outputToken || 0,
+        requests: item.requestCount || item.requests || 0,
+      }
+    })
+  } catch (e) {}
+  return []
+}
+
 async function fetchFreshCredits(data: PlatformData): Promise<PlatformData> {
   var cookieStr = loadCookieStr()
   if (!cookieStr) return data
@@ -104,6 +187,11 @@ async function fetchFreshCredits(data: PlatformData): Promise<PlatformData> {
       data.planName = detailResp.data.planName || data.planName
       data.validUntil = (detailResp.data.currentPeriodEnd || data.validUntil).split(" ")[0]
     }
+    // 拉取每日 records（修复桌面 widget 今日明细全为 0 的问题）
+    var records = await fetchUsageRecords()
+    if (records.length > 0) {
+      data.records = records
+    }
     data.lastUpdated = new Date().toISOString()
     saveData(data)
   } catch (e) {}
@@ -114,15 +202,30 @@ async function main() {
   var data = loadData()
   try { data = await fetchFreshCredits(data) } catch (e) {}
 
+  // 读取主应用当前选择的时间范围（联动同步）
+  var timeRange = loadTimeRange()
+
   var now = new Date()
   var today = now.toISOString().split("T")[0]
-  var todayRecords = data.records.filter(function(r: PlatformRecord) { return r.date === today })
 
-  // 找出今日请求次数最多的模型
+  // 与主应用 index.tsx getFilteredRecords 保持完全一致的筛选逻辑
+  var filteredRecords: PlatformRecord[]
+  if (timeRange === "今日") {
+    filteredRecords = data.records.filter(function(r: PlatformRecord) { return r.date === today })
+  } else if (timeRange === "本周") {
+    var weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0]
+    filteredRecords = data.records.filter(function(r: PlatformRecord) { return r.date >= weekAgo })
+  } else {
+    // 本月：使用全部当月记录（API 返回的就是当月）
+    filteredRecords = data.records
+  }
+
+  // 找出该范围内请求次数最多的模型（用于顶栏副标题）
   var modelMap: { [key: string]: number } = {}
-  todayRecords.forEach(function(r: PlatformRecord) {
+  filteredRecords.forEach(function(r: PlatformRecord) {
     modelMap[r.model] = (modelMap[r.model] || 0) + r.requests
   })
+
   var topModel = ""
   var topReqCount = 0
   for (var m in modelMap) {
@@ -132,15 +235,11 @@ async function main() {
     }
   }
 
-  // 仅使用该模型的数据
-  var modelRecords = topModel
-    ? todayRecords.filter(function(r: PlatformRecord) { return r.model === topModel })
-    : todayRecords
-  var todayTokens = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.totalTokens }, 0)
-  var todayHit = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheHit }, 0)
-  var todayMiss = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheMiss }, 0)
-  var todayOut = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.outputTokens }, 0)
-  var todayRequests = modelRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.requests }, 0)
+  // 汇总该时间范围内的 Token 数据
+  var todayHit = filteredRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheHit }, 0)
+  var todayMiss = filteredRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.inputCacheMiss }, 0)
+  var todayOut = filteredRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.outputTokens }, 0)
+  var todayRequests = filteredRecords.reduce(function(s: number, r: PlatformRecord) { return s + r.requests }, 0)
 
   var creditPct = data.creditsTotal > 0 ? Math.round((data.creditsUsed / data.creditsTotal) * 100) : 0
   var totalInput = todayHit + todayMiss
@@ -149,6 +248,17 @@ async function main() {
   var syncTime = data.lastUpdated
     ? new Date(data.lastUpdated).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
     : "--:--"
+
+  // 顶部主标题随主应用切换：今日用量 / 本周用量 / 本月用量
+  var titleText = timeRange + "用量"
+
+  // 模型名映射（与主应用 index.tsx MODELS 保持一致）
+  var MODEL_NAMES: { [key: string]: string } = {
+    "mimo-v2.5": "MiMo V2.5",
+    "mimo-v2-pro": "MiMo V2 Pro",
+    "mimo-v2-omni": "MiMo V2 Omni",
+  }
+  var topModelLabel = topModel ? (MODEL_NAMES[topModel] || topModel) : ""
 
   // ============================================================
   // 渲染 — 左右分栏
@@ -166,17 +276,17 @@ async function main() {
       {/* ====== 左栏：圆环 + 品牌 ====== */}
       <VStack
         // @ts-ignore
-        frame={{ width: 130 }}
+        frame={{ width: 100 }}
         // @ts-ignore
         background="clear"
         // @ts-ignore
-        padding={{ top: 12, bottom: 10, leading: 10, trailing: 6 }}
-        spacing={4}
+        padding={{ top: 8, bottom: 6, leading: 6, trailing: 4 }}
+        spacing={2}
         alignment="center"
       >
         <Canvas
           // @ts-ignore
-          frame={{ width: 100, height: 100 }}
+          frame={{ width: 80, height: 80 }}
           // @ts-ignore
           opaque={false}
           draw={function(ctx: any, size: any) {
@@ -186,39 +296,39 @@ async function main() {
             var cy = size.height / 2
 
             // 外环：额度（仅进度弧）
-            var r1 = 46
+            var r1 = 35
             var e1 = -Math.PI / 2 + (creditPct / 100) * Math.PI * 2
             ctx.beginPath()
             ctx.arc(cx, cy, r1, -Math.PI / 2, e1)
             ctx.strokeStyle = C.cyan
-            ctx.lineWidth = 7
-            ctx.lineCap = "round"
-            ctx.stroke()
-
-            // 中环：缓存（仅进度弧）
-            var r2 = 37
-            var ca = (cachePct / 100) * Math.PI * 2
-            ctx.beginPath()
-            ctx.arc(cx, cy, r2, -Math.PI / 2, -Math.PI / 2 + ca)
-            ctx.strokeStyle = C.green
             ctx.lineWidth = 6
             ctx.lineCap = "round"
             ctx.stroke()
 
+            // 中环：缓存（仅进度弧）
+            var r2 = 27
+            var ca = (cachePct / 100) * Math.PI * 2
+            ctx.beginPath()
+            ctx.arc(cx, cy, r2, -Math.PI / 2, -Math.PI / 2 + ca)
+            ctx.strokeStyle = C.green
+            ctx.lineWidth = 5
+            ctx.lineCap = "round"
+            ctx.stroke()
+
             // 内环：输出占比（仅进度弧）
-            var r3 = 29
+            var r3 = 20
             var outPct = totalInput > 0 ? (todayOut / (totalInput + todayOut)) * 100 : 0
             var oa = (outPct / 100) * Math.PI * 2
             ctx.beginPath()
             ctx.arc(cx, cy, r3, -Math.PI / 2, -Math.PI / 2 + oa)
             ctx.strokeStyle = C.yellow
-            ctx.lineWidth = 5
+            ctx.lineWidth = 4
             ctx.lineCap = "round"
             ctx.stroke()
 
             // 中心数字
             ctx.fillStyle = C.text
-            ctx.font = "bold 22px system"
+            ctx.font = "bold 16px system"
             ctx.textAlign = "center"
             ctx.textBaseline = "middle"
             ctx.fillText(creditPct + "%", cx, cy)
@@ -226,7 +336,7 @@ async function main() {
         />
         <Text
           // @ts-ignore
-          fontSize={8}
+          fontSize={7}
           // @ts-ignore
           foregroundStyle={C.muted}
         >{fmtQ(data.creditsUsed)}/{fmtQ(data.creditsTotal)}</Text>
@@ -237,33 +347,33 @@ async function main() {
         // @ts-ignore
         frame={{ width: "100%" }}
         // @ts-ignore
-        padding={{ top: 12, bottom: 12, leading: 8, trailing: 14 }}
+        padding={{ top: 6, bottom: 6, leading: 6, trailing: 10 }}
         spacing={0}
       >
-        {/* 标题行：模型名 + 同步时间 */}
+        {/* 标题行：今日用量/本周用量/本月用量 + 同步时间 */}
         <HStack spacing={0}>
           <Text
             // @ts-ignore
-            fontSize={13}
+            fontSize={12}
             font="headline"
             // @ts-ignore
             foregroundStyle={C.text}
             // @ts-ignore
             lineLimit={1}
-          >{topModel || "TOKEN 用量"}</Text>
+          >{titleText}</Text>
           <Spacer />
           <VStack
             // @ts-ignore
             background={C.card}
             // @ts-ignore
-            cornerRadius={8}
+            cornerRadius={6}
             // @ts-ignore
-            padding={{ top: 4, bottom: 4, leading: 8, trailing: 8 }}
+            padding={{ top: 2, bottom: 2, leading: 6, trailing: 6 }}
             alignment="center"
           >
             <Text
               // @ts-ignore
-              fontSize={8}
+              fontSize={7}
               // @ts-ignore
               foregroundStyle={C.muted}
             >{syncTime}</Text>
@@ -277,29 +387,29 @@ async function main() {
           // @ts-ignore
           background={C.sep}
           // @ts-ignore
-          padding={{ top: 6, bottom: 6 }}
+          padding={{ top: 3, bottom: 3 }}
         />
 
         {/* 图例0：请求次数 */}
-        <HStack spacing={6}>
+        <HStack spacing={4}>
           <VStack
             // @ts-ignore
-            frame={{ width: 7, height: 7 }}
+            frame={{ width: 5, height: 5 }}
             // @ts-ignore
             background={C.cyan}
             // @ts-ignore
-            cornerRadius={3.5}
+            cornerRadius={2.5}
           />
           <Text
             // @ts-ignore
-            fontSize={10}
+            fontSize={8}
             // @ts-ignore
             foregroundStyle={C.muted}
-          >请求次数</Text>
+          >请求</Text>
           <Spacer />
           <Text
             // @ts-ignore
-            fontSize={11}
+            fontSize={10}
             font="headline"
             // @ts-ignore
             foregroundStyle={C.text}
@@ -312,29 +422,29 @@ async function main() {
           // @ts-ignore
           background={C.sep}
           // @ts-ignore
-          padding={{ top: 6, bottom: 6 }}
+          padding={{ top: 2, bottom: 2 }}
         />
 
         {/* 图例1：缓存命中 */}
-        <HStack spacing={6}>
+        <HStack spacing={4}>
           <VStack
             // @ts-ignore
-            frame={{ width: 7, height: 7 }}
+            frame={{ width: 5, height: 5 }}
             // @ts-ignore
             background={C.blue}
             // @ts-ignore
-            cornerRadius={3.5}
+            cornerRadius={2.5}
           />
           <Text
             // @ts-ignore
-            fontSize={10}
+            fontSize={8}
             // @ts-ignore
             foregroundStyle={C.muted}
           >缓存命中</Text>
           <Spacer />
           <Text
             // @ts-ignore
-            fontSize={11}
+            fontSize={10}
             font="headline"
             // @ts-ignore
             foregroundStyle={C.text}
@@ -347,29 +457,29 @@ async function main() {
           // @ts-ignore
           background={C.sep}
           // @ts-ignore
-          padding={{ top: 6, bottom: 6 }}
+          padding={{ top: 2, bottom: 2 }}
         />
 
         {/* 图例2：未命中 */}
-        <HStack spacing={6}>
+        <HStack spacing={4}>
           <VStack
             // @ts-ignore
-            frame={{ width: 7, height: 7 }}
+            frame={{ width: 5, height: 5 }}
             // @ts-ignore
             background={C.purple}
             // @ts-ignore
-            cornerRadius={3.5}
+            cornerRadius={2.5}
           />
           <Text
             // @ts-ignore
-            fontSize={10}
+            fontSize={8}
             // @ts-ignore
             foregroundStyle={C.muted}
           >未命中</Text>
           <Spacer />
           <Text
             // @ts-ignore
-            fontSize={11}
+            fontSize={10}
             font="headline"
             // @ts-ignore
             foregroundStyle={C.text}
@@ -382,29 +492,29 @@ async function main() {
           // @ts-ignore
           background={C.sep}
           // @ts-ignore
-          padding={{ top: 6, bottom: 6 }}
+          padding={{ top: 2, bottom: 2 }}
         />
 
         {/* 图例3：输出 */}
-        <HStack spacing={6}>
+        <HStack spacing={4}>
           <VStack
             // @ts-ignore
-            frame={{ width: 7, height: 7 }}
+            frame={{ width: 5, height: 5 }}
             // @ts-ignore
             background={C.green}
             // @ts-ignore
-            cornerRadius={3.5}
+            cornerRadius={2.5}
           />
           <Text
             // @ts-ignore
-            fontSize={10}
+            fontSize={8}
             // @ts-ignore
             foregroundStyle={C.muted}
           >输出</Text>
           <Spacer />
           <Text
             // @ts-ignore
-            fontSize={11}
+            fontSize={10}
             font="headline"
             // @ts-ignore
             foregroundStyle={C.text}
