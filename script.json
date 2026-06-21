@@ -1,52 +1,53 @@
 {
+  "localizedNames" : {
+    "ru" : "",
+    "de" : "",
+    "it" : "",
+    "ja" : "",
+    "en" : "",
+    "es" : "",
+    "pt" : "",
+    "fr" : "",
+    "zh" : ""
+  },
+  "localizedDescriptions" : {
+    "de" : "",
+    "zh" : "",
+    "fr" : "",
+    "it" : "",
+    "ja" : "",
+    "en" : "",
+    "pt" : "",
+    "es" : "",
+    "ru" : ""
+  },
+  "name" : "IP 定位",
+  "permissions" : null,
   "intentInputTypes" : [
 
   ],
-  "name" : "IP 定位",
-  "entry" : "index.tsx",
+  "icon" : "network",
+  "iconImage" : "",
+  "color" : "rgba(102, 196, 235,1)",
   "runInApp" : false,
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
-    "autoUpdateInterval" : 300,
-    "hash" : "1338b33da0e158e2da1867004e74be2e"
-  },
-  "localizedNames" : {
-    "en" : "",
-    "ja" : "",
-    "de" : "",
-    "ru" : "",
-    "fr" : "",
-    "it" : "",
-    "pt" : "",
-    "es" : "",
-    "zh" : ""
-  },
+  "entry" : "index.tsx",
   "contributors" : [
     {
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
       "name" : "QinyRui",
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+      "email" : "602839678@qq.com"
     }
   ],
-  "icon" : "network",
-  "version" : "1.0.1",
-  "iconImage" : "",
-  "localizedDescriptions" : {
-    "en" : "",
-    "fr" : "",
-    "es" : "",
-    "it" : "",
-    "ja" : "",
-    "de" : "",
-    "ru" : "",
-    "zh" : "",
-    "pt" : ""
-  },
-  "color" : "rgba(102, 196, 235,1)",
-  "description" : "VNP实时定位",
   "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-",
     "name" : "QinyRui",
-    "email" : "602839678@qq.com"
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  },
+  "description" : "VNP实时定位",
+  "version" : "1.0.1",
+  "remoteResource" : {
+    "hash" : "8560e703d141f585fb5dd2f87b66682b",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
+    "autoUpdateInterval" : 300
   }
 }
