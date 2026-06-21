@@ -31,6 +31,7 @@ import {
 import {
   getPrimaryCountdownText,
   getSecondaryCountdownText,
+  getLunarFestivalCountdownText,
   getLunarDate_Precise,
   getSolarTerm,
   getMonthGrid,
@@ -118,24 +119,33 @@ function DashedDivider({ widgetType }: { widgetType: "medium" | "large" }) {
   )
 }
 
-// ─── 倒计时行 ───
+// ─── 倒计时行（图形化前缀，使用 SF Symbols） ───
 function CompactCountdownRow({ icon, text, accent, widgetType }: { icon: string; text: string; accent: string; widgetType: "medium" | "large" }) {
+  // 用 font 控制 SF Symbols 渲染尺寸（项目其他地方都用 font）；中号 9 / 大号 10，略小于或等于文字 8/9pt
+  const iconFont = widgetType === "medium" ? 9 : 10
   return (
-    <HStack spacing={3} frame={{ maxWidth: widgetType === "medium" ? 200 : 195, alignment: "leading" }}>
-      <SectionText text={icon} font={s(widgetType === "medium" ? 8 : 9, "timeInfo")} color={accent} lineLimit={1} />
+    <HStack spacing={3} alignment="center" frame={{ maxWidth: widgetType === "medium" ? 200 : 195, alignment: "leading" }}>
+      {/* 图形化前缀：SF Symbols 染色图标 */}
+      <Image
+        systemName={icon}
+        font={iconFont}
+        renderingMode="template"
+        foregroundStyle={accent as any}
+      />
       <SectionText text={text} font={s(widgetType === "medium" ? 8 : 9, "timeInfo")} color={c("rgba(255,255,255,0.78)", "timeInfo")} lineLimit={1} />
     </HStack>
   )
 }
 
-// ─── 倒计时区块 ───
-function BottomCountdownBlock({ primary, secondary, widgetType }: { primary: string; secondary: string; widgetType: "medium" | "large" }) {
-  if (!primary && !secondary) return null
+// ─── 倒计时区块（三行：节气 / 阳历节日 / 农历节日） ───
+function BottomCountdownBlock({ primary, secondary, tertiary, widgetType }: { primary: string; secondary: string; tertiary: string; widgetType: "medium" | "large" }) {
+  if (!primary && !secondary && !tertiary) return null
   return (
     <VStack alignment="leading" spacing={1} padding={{ top: widgetType === "medium" ? 1 : 2 }}>
       <DashedDivider widgetType={widgetType} />
-      {primary ? <CompactCountdownRow icon="▣" text={primary} accent="#ffd166" widgetType={widgetType} /> : null}
-      {secondary ? <CompactCountdownRow icon="♥" text={secondary} accent="#ff8fab" widgetType={widgetType} /> : null}
+      {primary ? <CompactCountdownRow icon="sun.max.fill" text={primary} accent="#ffd166" widgetType={widgetType} /> : null}
+      {secondary ? <CompactCountdownRow icon="heart.fill" text={secondary} accent="#ff8fab" widgetType={widgetType} /> : null}
+      {tertiary ? <CompactCountdownRow icon="moon.stars.fill" text={tertiary} accent="#ff7a5a" widgetType={widgetType} /> : null}
     </VStack>
   )
 }
@@ -284,6 +294,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
 
   const primaryCountdownText = getPrimaryCountdownText(currentDate)
   const secondaryCountdownText = getSecondaryCountdownText(currentDate)
+  const tertiaryCountdownText = getLunarFestivalCountdownText(currentDate)
   const leftWidth = widgetType === "medium" ? 210 : 200
   const dateLineText = [getDateStr(currentDate), weekTitle[currentDate.getDay()], lunarStr || ""]
     .map((item) => String(item || "").trim())
@@ -299,6 +310,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
     cityStr,
     primaryCountdownText,
     secondaryCountdownText,
+    tertiaryCountdownText,
   })
 
   return (
@@ -338,7 +350,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
         <SectionText text={wDescText} font={s(widgetType === "medium" ? 10 : 13, "weather")} color={c("#ffffff", "weather")} lineLimit={0} minScaleFactor={0.5} />
       </VStack>
       <Spacer minLength={widgetType === "medium" ? 1 : 2} />
-      <BottomCountdownBlock primary={primaryCountdownText} secondary={secondaryCountdownText} widgetType={widgetType} />
+      <BottomCountdownBlock primary={primaryCountdownText} secondary={secondaryCountdownText} tertiary={tertiaryCountdownText} widgetType={widgetType} />
     </VStack>
   )
 }
