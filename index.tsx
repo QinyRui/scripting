@@ -658,9 +658,20 @@ function FileEntryRow(props: {
   progress?: number;
   index: number;
   onTargetChange: (index: number, value: string) => void;
+  onRemove: (index: number) => void;
 }) {
-  const { entry, previewPath, status, progress, index, onTargetChange } = props;
+  const { entry, previewPath, status, progress, index, onTargetChange, onRemove } = props;
   const hasCustom = Boolean(entry.targetBranch?.trim());
+  // 仅在 pending 状态下允许删除，避免上传中、成功或失败后误删
+  const canRemove = status === "pending";
+
+  const handleRemove = () => {
+    // 给用户一个触觉反馈，遵循 HIG 的破坏性操作反馈
+    try {
+      (globalThis as any).HapticFeedback?.mediumImpact?.();
+    } catch {}
+    onRemove(index);
+  };
   
   const statusIcon = () => {
     switch (status) {
@@ -704,8 +715,8 @@ function FileEntryRow(props: {
         <Spacer />
       </HStack>
       
-      {/* 第二行：图标、文件名 */}
-      <HStack spacing={8}>
+      {/* 第二行：图标、文件名、删除按钮 */}
+      <HStack spacing={8} alignment="center">
         <Image
           systemName={statusIcon()}
           font="body"
@@ -729,6 +740,20 @@ function FileEntryRow(props: {
             → {previewPath}
           </Text>
         </VStack>
+        {canRemove ? (
+          <Button
+            buttonStyle="plain"
+            tint="systemRed"
+            frame={{ width: 32, height: 32 }}
+            action={handleRemove}
+          >
+            <Image
+              systemName="xmark.circle.fill"
+              font="title3"
+              foregroundStyle="systemRed"
+            />
+          </Button>
+        ) : null}
       </HStack>
       
       {/* 目标输入框 */}
@@ -1262,6 +1287,12 @@ function View() {
     })
   }
 
+  /** 从队列中删除指定索引的文件（仅 pending 状态调用） */
+  const handleRemoveEntry = (index: number) => {
+    setSelectedEntries(prev => prev.filter((_, i) => i !== index))
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
   // 清空历史
   const handleClearHistory = () => {
     setUploadHistory([])
@@ -1355,6 +1386,7 @@ function View() {
                       status="pending"
                       index={index}
                       onTargetChange={updateEntryTargetBranch}
+                      onRemove={handleRemoveEntry}
                     />
                   )
                 })}
