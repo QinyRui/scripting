@@ -1,6 +1,6 @@
 {
   "color" : "rgba(143, 168, 149,1)",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/天气\/photos\/云.PNG",
   "intentInputTypes" : [
 
   ],
@@ -10,9 +10,9 @@
   "remoteResource" : {
     "hash" : "4d890856279a574c71d6b2b5dae8bdb0",
     "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/天气"
   },
-  "name" : "彩云天气",
+  "name" : "天气",
   "version" : "6.3.4",
   "localizedDescriptions" : {
     "it" : "",
