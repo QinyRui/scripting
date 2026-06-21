@@ -382,14 +382,19 @@ function ConfigPage() {
         </Section>
 
         <Section header={<Text font="headline">基础配置</Text>}>
-          <NavigationLink destination={<ApiKeySettingsPage />}>
-            <HStack padding={16} spacing={12} alignment="center">
-              <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemYellow" opacity={0.15} /><Image systemName="key.fill" foregroundStyle="systemYellow" font={16} /></ZStack>
-              <Text fontWeight="bold">API Key</Text>
-              <Spacer />
-              <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.apiKeyText}</Text>
-            </HStack>
-          </NavigationLink>
+          {/* API Key — present() 模态展示，dismiss 后即时刷新状态 */}
+          <HStack
+            padding={16} spacing={12} alignment="center"
+            onTapGesture={async () => {
+              await Navigation.present(<ApiKeySettingsPage />)
+              setStatusInfo(loadStatusInfo())
+            }}>
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemYellow" opacity={0.15} /><Image systemName="key.fill" foregroundStyle="systemYellow" font={16} /></ZStack>
+            <Text fontWeight="bold">API Key</Text>
+            <Spacer />
+            <Text font="subheadline" foregroundStyle="secondaryLabel" lineLimit={1}>{statusInfo.apiKeyText}</Text>
+            <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
+          </HStack>
         </Section>
 
         {/* 与 Colorful Clouds 一致的「获取位置」板块 */}
