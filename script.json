@@ -1,5 +1,5 @@
 {
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/天气\/photos\/云.PNG",
   "author" : {
     "name" : "QinyRui",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
@@ -9,7 +9,7 @@
   "intentInputTypes" : [
 
   ],
-  "version" : "6.3.4",
+  "version" : "5.3.4",
   "icon" : "cloud.sun.rain.fill",
   "permissions" : null,
   "contributors" : [
@@ -19,7 +19,7 @@
       "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
     }
   ],
-  "name" : "彩云天气",
+  "name" : "天气",
   "localizedDescriptions" : {
     "ja" : "",
     "fr" : "",
@@ -35,7 +35,7 @@
   "description" : "更新：1. 新增农历节日倒计时数据（utils\/lunar.ts）",
   "remoteResource" : {
     "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/天气",
     "hash" : "125df1399f3bffe778ff1f42acb24493"
   },
   "entry" : "index.tsx",
