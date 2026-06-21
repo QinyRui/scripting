@@ -252,6 +252,89 @@ export function getSecondaryCountdownText(date: Date) {
   return nextFestivalInfo.daysLeft === 0 ? `${nextFestivalInfo.name}` : `距离${nextFestivalInfo.name}还有${nextFestivalInfo.daysLeft}天`
 }
 
+// ─── 农历月日编号映射（用于反向匹配节日） ───
+const LUNAR_MONTH_INDEX: Record<string, number> = {
+  "正月": 1, "二月": 2, "三月": 3, "四月": 4, "五月": 5, "六月": 6,
+  "七月": 7, "八月": 8, "九月": 9, "十月": 10, "冬月": 11, "腊月": 12,
+}
+const LUNAR_DAY_INDEX: Record<string, number> = {
+  "初一": 1, "初二": 2, "初三": 3, "初四": 4, "初五": 5, "初六": 6, "初七": 7, "初八": 8, "初九": 9, "初十": 10,
+  "十一": 11, "十二": 12, "十三": 13, "十四": 14, "十五": 15, "十六": 16, "十七": 17, "十八": 18, "十九": 19, "二十": 20,
+  "廿一": 21, "廿二": 22, "廿三": 23, "廿四": 24, "廿五": 25, "廿六": 26, "廿七": 27, "廿八": 28, "廿九": 29, "三十": 30,
+}
+
+// 农历节日：[农历月, 农历日, 名称]
+// 说明：
+//   · 春节是 1 月 1 日，正常枚举匹配
+//   · 端午、七夕、中秋等是固定农历日期，不受闰月影响
+//   · 闰月节日（如闰四月端午）通常仍按原月计算，这里以主月为准
+//   · 除夕是腊月最后一天（非固定日），单独判定
+const LUNAR_FESTIVALS: Array<[number, number, string]> = [
+  [1, 1, "春节"],
+  [1, 15, "元宵节"],
+  [2, 2, "龙抬头"],
+  [5, 5, "端午节"],
+  [7, 7, "七夕节"],
+  [7, 15, "中元节"],
+  [8, 15, "中秋节"],
+  [9, 9, "重阳节"],
+  [10, 1, "寒衣节"],
+  [10, 15, "下元节"],
+  [12, 8, "腊八节"],
+  [12, 23, "小年"],
+]
+
+/**
+ * 判断给定公历日期是否为农历除夕（腊月最后一天）。
+ * 判断逻辑：今天 lunar.month === "腊月" 且明天是正月初一。
+ */
+function isLunarNewYearsEve(date: Date, baseDayMs: number) {
+  const lunar = getLunarDate_Precise(date)
+  if (lunar.month !== "腊月") return false
+  const tomorrowLunar = getLunarDate_Precise(new Date(baseDayMs + 86400000))
+  return tomorrowLunar.month === "正月" && tomorrowLunar.day === "初一"
+}
+
+/**
+ * 查找距离指定日期最近的下一个农历节日。
+ * 返回 { name, daysLeft }；daysLeft=0 表示今天就是该节日。
+ *
+ * 算法：
+ *   从今天起逐天枚举（最多 400 天），每天检查除夕（腊月最后一天）
+ *   或匹配节日表中的固定节日；命中即返回。
+ */
+export function getNextLunarFestivalInfo(date: Date) {
+  try {
+    const today = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+    for (let i = 0; i <= 400; i++) {
+      const targetMs = today + i * 86400000
+      const target = new Date(targetMs)
+      const lunar = getLunarDate_Precise(target)
+      const m = LUNAR_MONTH_INDEX[lunar.month.replace("闰", "")] || 0
+      const d = LUNAR_DAY_INDEX[lunar.day] || 0
+      // 1. 检查除夕（腊月最后一天）
+      if (isLunarNewYearsEve(target, targetMs)) {
+        return { name: "除夕", daysLeft: i }
+      }
+      // 2. 检查其他固定节日（含春节）
+      for (const [fm, fd, fname] of LUNAR_FESTIVALS) {
+        if (m === fm && d === fd) {
+          return { name: fname, daysLeft: i }
+        }
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function getLunarFestivalCountdownText(date: Date) {
+  const info = getNextLunarFestivalInfo(date)
+  if (!info) return ""
+  return info.daysLeft === 0 ? `${info.name}` : `距离${info.name}还有${info.daysLeft}天`
+}
+
 // ─── 月历网格 ───
 export function getMonthGrid(year: number, month: number) {
   const first = new Date(year, month, 1)
