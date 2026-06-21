@@ -10,7 +10,7 @@
     "zh" : "",
     "es" : ""
   },
-  "name" : "彩云天气",
+  "name" : "天气",
   "intentInputTypes" : [
 
   ],
@@ -38,12 +38,12 @@
     "de" : "",
     "ja" : ""
   },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/天气\/photos\/云.PNG",
   "color" : "rgba(143, 168, 149,1)",
   "entry" : "index.tsx",
   "remoteResource" : {
     "hash" : "f4d538a779182c3329cc4989091cf732",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/天气",
     "autoUpdateInterval" : 300
   },
   "description" : "更新：优化地理位置错误bug",
