@@ -100,6 +100,14 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       isSigned = statusResp.data.data.currentSignStatus === 1
       consecutiveDays = statusResp.data.data.consecutiveDays || 0
       signCardsNum = statusResp.data.data.signCardsNum || 0 
+      // 从日历中提取 rewardId 存入 Storage
+      const calInfo = statusResp.data.data.calendarInfo || []
+      for (const c of calInfo) {
+        if (c.rewardInfo && c.rewardInfo.rewardId) {
+          try { Storage.set('ninebot.blindBoxRewardId', c.rewardInfo.rewardId) } catch { }
+          break
+        }
+      }
       console.log("✅ 签到状态解析成功:", { isSigned, consecutiveDays, signCardsNum })
     } else {
       console.warn("⚠️ 签到状态 API 返回错误:", statusResp.data?.msg || statusResp.data?.message || JSON.stringify(statusResp.data))
@@ -222,7 +230,7 @@ export async function getOpenableBlindBoxes(authorization: string, deviceId: str
       })
       
       const openableBoxes = notOpenedBoxes
-        .filter((box: any) => box.leftDaysToOpen === 0)
+        .filter((box: any) => (box.leftDaysToOpen || 0) === 0)
         .map((box: any) => ({
           id: box.id,
           leftDaysToOpen: box.leftDaysToOpen,
@@ -355,8 +363,62 @@ export async function doSign(authorization: string, deviceId: string): Promise<{
   }
 }
 
+async function directReceiveBlindBox(
+  authorization: string,
+  deviceId: string,
+  box: BlindBoxInfo
+): Promise<{success: boolean, reward?: any, message?: string}> {
+  const headers = getAuthHeaders(authorization, deviceId)
+  const url = `${API_ENDPOINTS.receiveBlindBox}?t=${Date.now()}`
+  
+  // 策略1: awardDays 作为 rewardId (string)
+  const body1 = { rewardId: String(box.awardDays) }
+  console.log(`📦 尝试直接领取 (策略1: rewardId="${box.awardDays}")`)
+  let response = await httpPost(url, { body: body1, headers })
+  console.log(`📦 策略1 返回:`, JSON.stringify(response.data))
+  if (response.data && response.data.code === 0) {
+    return { success: true, reward: response.data.data, message: '领取成功' }
+  }
+  
+  await new Promise<void>((r) => setTimeout(() => r(), 500))
+  
+  // 策略2: awardDays 作为 rewardId (number)
+  const body2 = { rewardId: box.awardDays }
+  console.log(`📦 尝试直接领取 (策略2: rewardId=${box.awardDays})`)
+  response = await httpPost(url, { body: body2, headers })
+  console.log(`📦 策略2 返回:`, JSON.stringify(response.data))
+  if (response.data && response.data.code === 0) {
+    return { success: true, reward: response.data.data, message: '领取成功' }
+  }
+  
+  await new Promise<void>((r) => setTimeout(() => r(), 500))
+  
+  // 策略3: awardDays + boxId
+  const body3 = { boxId: box.awardDays, awardDays: box.awardDays }
+  console.log(`📦 尝试直接领取 (策略3: boxId+awardDays)`)
+  response = await httpPost(url, { body: body3, headers })
+  console.log(`📦 策略3 返回:`, JSON.stringify(response.data))
+  if (response.data && response.data.code === 0) {
+    return { success: true, reward: response.data.data, message: '领取成功' }
+  }
+  
+  await new Promise<void>((r) => setTimeout(() => r(), 500))
+  
+  // 策略4: 空 body
+  console.log(`📦 尝试直接领取 (策略4: 空 body)`)
+  response = await httpPost(url, { body: {}, headers })
+  console.log(`📦 策略4 返回:`, JSON.stringify(response.data))
+  if (response.data && response.data.code === 0) {
+    return { success: true, reward: response.data.data, message: '领取成功' }
+  }
+  
+  return { success: false, message: '所有领取策略均失败' }
+}
+
 /**
- * 自动开启所有可开启的盲盒（包含开启和领取两步）
+ * 自动开启所有可开启的盲盒
+ * 流程: 1) 尝试旧的 open+receive 两步流程
+ *       2) 如果 open 端点 404，直接调用 receive 尝试一步领取
  */
 export async function autoOpenBlindBoxes(authorization: string, deviceId: string): Promise<{
   total: number
@@ -373,14 +435,7 @@ export async function autoOpenBlindBoxes(authorization: string, deviceId: string
     
     if (openableBoxes.length === 0) {
       console.log("ℹ️ 暂无可开启的盲盒")
-      return {
-        total: 0,
-        openSuccess: 0,
-        receiveSuccess: 0,
-        failed: 0,
-        rewards: [],
-        errors: []
-      }
+      return { total: 0, openSuccess: 0, receiveSuccess: 0, failed: 0, rewards: [], errors: [] }
     }
     
     const results = {
@@ -392,53 +447,77 @@ export async function autoOpenBlindBoxes(authorization: string, deviceId: string
       errors: [] as string[]
     }
     
+    let useDirectReceive = false
+    
     for (const box of openableBoxes) {
       console.log(`🎁 处理盲盒 (${box.awardDays}天, rewardStatus=${box.rewardStatus})...`)
       
-      // 第一步: 开启盲盒，获取 rewardId
-      const openResult = await openBlindBox(authorization, deviceId)
-      
-      if (!openResult.success || !openResult.rewardId) {
-        results.failed++
-        const reason = openResult.success ? '未返回 rewardId' : openResult.message
-        results.errors.push(`盲盒开启失败: ${reason}`)
-        console.log(`❌ 盲盒开启失败: ${reason}`)
-        await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000))
-        continue
-      }
-      
-      results.openSuccess++
-      const rewardId = openResult.rewardId
-      console.log(`✅ 盲盒开启成功, rewardId=${rewardId}`)
-      
-      // 等待1秒再领取
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000))
-      
-      // 第二步: 使用 rewardId 领取奖励
-      const receiveResult = await receiveBlindBox(authorization, deviceId, rewardId)
-      
-      if (receiveResult.success) {
-        results.receiveSuccess++
-        if (receiveResult.reward) {
-          results.rewards.push({
-            awardDays: box.awardDays,
-            rewardId,
-            reward: receiveResult.reward
-          })
+      if (!useDirectReceive) {
+        const openResult = await openBlindBox(authorization, deviceId)
+        
+        if (!openResult.success) {
+          const msg = openResult.message || ''
+          if (msg.includes('404') || msg.includes('Not Found') || msg.includes('开启失败')) {
+            console.log("⚠️ /open 端点不可用 (404)，切换到直接领取模式")
+            useDirectReceive = true
+          } else {
+            results.failed++
+            results.errors.push(`盲盒开启失败: ${msg}`)
+            console.log(`❌ 盲盒开启失败: ${msg}`)
+            await new Promise<void>((r) => setTimeout(() => r(), 1000))
+            continue
+          }
+        } else if (!openResult.rewardId) {
+          results.failed++
+          results.errors.push('盲盒开启失败: 未返回 rewardId')
+          console.log("❌ 未返回 rewardId")
+          await new Promise<void>((r) => setTimeout(() => r(), 1000))
+          continue
+        } else {
+          results.openSuccess++
+          const rewardId = openResult.rewardId
+          console.log(`✅ 盲盒开启成功, rewardId=${rewardId}`)
+          await new Promise<void>((r) => setTimeout(() => r(), 1000))
+          
+          const receiveResult = await receiveBlindBox(authorization, deviceId, rewardId)
+          if (receiveResult.success) {
+            results.receiveSuccess++
+            if (receiveResult.reward) {
+              results.rewards.push({ awardDays: box.awardDays, rewardId, reward: receiveResult.reward })
+            }
+            console.log(`✅ 盲盒领取成功! reward=${JSON.stringify(receiveResult.reward)}`)
+          } else {
+            results.failed++
+            results.errors.push(`盲盒领取失败: ${receiveResult.message}`)
+            console.log(`❌ 盲盒领取失败: ${receiveResult.message}`)
+          }
+          await new Promise<void>((r) => setTimeout(() => r(), 1000))
+          continue
         }
-        console.log(`✅ 盲盒领取成功! reward=${JSON.stringify(receiveResult.reward)}`)
-      } else {
-        results.failed++
-        results.errors.push(`盲盒领取失败 (rewardId=${rewardId}): ${receiveResult.message}`)
-        console.log(`❌ 盲盒领取失败: ${receiveResult.message}`)
       }
       
-      // 等待1秒再处理下一个
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000))
+      // 直接领取模式
+      if (useDirectReceive) {
+        console.log(`📦 直接领取模式: awardDays=${box.awardDays}`)
+        const recvResult = await directReceiveBlindBox(authorization, deviceId, box)
+        
+        if (recvResult.success) {
+          results.receiveSuccess++
+          results.openSuccess++
+          if (recvResult.reward) {
+            results.rewards.push({ awardDays: box.awardDays, rewardId: String(box.awardDays), reward: recvResult.reward })
+          }
+          console.log(`✅ 盲盒直接领取成功! reward=${JSON.stringify(recvResult.reward)}`)
+        } else {
+          results.failed++
+          results.errors.push(`盲盒领取失败 (${box.awardDays}天): ${recvResult.message}`)
+          console.log(`❌ 盲盒领取失败: ${recvResult.message}`)
+        }
+        await new Promise<void>((r) => setTimeout(() => r(), 1000))
+      }
     }
     
     console.log(`🎁 盲盒处理完成: 总计 ${results.total}, 开启成功 ${results.openSuccess}, 领取成功 ${results.receiveSuccess}, 失败 ${results.failed}`)
-    
     return results
   } catch (error) {
     console.error("❌ 自动开启盲盒错误:", error)
