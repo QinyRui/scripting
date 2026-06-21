@@ -1,53 +1,53 @@
 {
-  "description" : "更新：优化地理位置错误bug",
   "color" : "rgba(143, 168, 149,1)",
-  "name" : "彩云天气",
   "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
-  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "localizedNames" : {
-    "it" : "",
-    "en" : "",
-    "zh" : "",
-    "de" : "",
-    "ru" : "",
-    "es" : "",
-    "pt" : "",
-    "fr" : "",
-    "ja" : ""
-  },
-  "permissions" : null,
-  "entry" : "index.tsx",
+  "description" : "更新：1. 新增农历节日倒计时数据（utils\/lunar.ts）",
   "icon" : "cloud.sun.rain.fill",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
-  },
-  "contributors" : [
-    {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "name" : "QinyRui",
-      "email" : "602839678@qq.com"
-    }
-  ],
-  "localizedDescriptions" : {
-    "zh" : "",
-    "fr" : "",
-    "ja" : "",
-    "ru" : "",
-    "en" : "",
-    "pt" : "",
-    "es" : "",
-    "it" : "",
-    "de" : ""
-  },
-  "version" : "6.3.3",
+  "entry" : "index.tsx",
   "remoteResource" : {
-    "hash" : "6385b544ad7b49cdfd65dc215d31633e",
+    "hash" : "4d890856279a574c71d6b2b5dae8bdb0",
     "autoUpdateInterval" : 300,
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
-  }
+  },
+  "name" : "彩云天气",
+  "version" : "6.3.4",
+  "localizedDescriptions" : {
+    "it" : "",
+    "pt" : "",
+    "en" : "",
+    "ru" : "",
+    "de" : "",
+    "zh" : "",
+    "fr" : "",
+    "es" : "",
+    "ja" : ""
+  },
+  "localizedNames" : {
+    "pt" : "",
+    "it" : "",
+    "es" : "",
+    "ja" : "",
+    "en" : "",
+    "zh" : "",
+    "fr" : "",
+    "de" : "",
+    "ru" : ""
+  },
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
+  },
+  "permissions" : null,
+  "runInApp" : true,
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ]
 }
