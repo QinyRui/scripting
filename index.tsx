@@ -34,12 +34,15 @@ declare const Dialog: any
 declare const Safari: any
 declare const Pasteboard: any
 declare const UIImage: any
-declare const setInterval: any
-declare const clearInterval: any
+
 
 // ==================== 应用 Logo ====================
-const LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到原/photos/LOUGO.png"
+// 使用当前项目 photos 目录下的真实品牌 logo（紫底抽象"7"形）
+const LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/ninebot-logo-new.jpg"
 const logoImage = UIImage.fromFile(LOGO_PATH)
+
+// 顶部品牌区固定尺寸（与原本 emoji 圆形视觉权重对齐）
+const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
 const VERSION = "1.2.0"
@@ -419,8 +422,6 @@ function BlindBoxView({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true)
   const [opening, setOpening] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // 盒盖浮动动画相位（0~1，呼吸）
-  const [capPhase, setCapPhase] = useState(0)
 
   const auth = (Storage.get("ninebot.authorization") as string) || ""
   const deviceId = (Storage.get("ninebot.deviceId") as string) || ""
@@ -448,7 +449,32 @@ function BlindBoxView({ onBack }: { onBack: () => void }) {
     if (opening || !data) return
     setOpening(true)
     try {
-      const result = await autoOpenBlindBoxes(auth, deviceId)
+      // 从 Storage 获取 rewardId（由 getNinebotInfo 从日历数据中提取并存储）
+      const rewardId = (Storage.get('ninebot.blindBoxRewardId') as string) || ''
+      if (!rewardId) {
+        Dialog.alert({ title: '⚠️ 无法领取', message: '未找到 rewardId，请刷新数据后重试' })
+        setOpening(false)
+        return
+      }
+      console.log(`🔑 使用 rewardId: ${rewardId}`)
+
+      const result = { total: readyBoxes.length, openSuccess: 0, receiveSuccess: 0, failed: 0, rewards: [] as any[], errors: [] as string[] }
+      for (const box of readyBoxes) {
+        console.log(`📦 调用 /receive, rewardId=${rewardId}`)
+        const recvResult = await receiveBlindBox(auth, deviceId, rewardId)
+        if (recvResult.success) {
+          result.receiveSuccess++
+          result.openSuccess++
+          result.rewards.push({ awardDays: box.awardDays || 0, rewardId, reward: recvResult.reward })
+          console.log(`✅ 盲盒领取成功! reward=${JSON.stringify(recvResult.reward)}`)
+        } else {
+          result.failed++
+          result.errors.push(`领取失败 (${box.awardDays}天): ${recvResult.message}`)
+          console.log(`❌ 盲盒领取失败: ${recvResult.message}`)
+        }
+        await new Promise<void>((r) => setTimeout(() => r(), 1000))
+      }
+
       // 奖励描述
       const rewardLines = (result.rewards || []).map((r: any) => {
         const reward = r.reward
@@ -478,17 +504,10 @@ function BlindBoxView({ onBack }: { onBack: () => void }) {
   const waitingBoxes: BlindBoxInfo[] = (data?.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen > 0)
   const openedCount = (data as any)?.openedBlindBoxCount ?? 0
 
-  // 盲盒盖子浮动呼吸动画（仅在有可领取盲盒时）
-  useEffect(() => {
-    if (readyBoxes.length === 0 || opening) return
-    const start = Date.now()
-    const cycle = 2000 // 一个完整呼吸周期 2 秒
-    const t = setInterval(() => {
-      const elapsed = (Date.now() - start) % cycle
-      setCapPhase(elapsed / cycle) // 0 ~ 1 循环
-    }, 32) // 约 30fps，足够顺滑
-    return () => clearInterval(t)
-  }, [readyBoxes.length, opening])
+  // 盒盖浮动动画相位（每次渲染时从 Date.now() 计算，无需 setInterval）
+  const capPhase = readyBoxes.length > 0 && !opening
+    ? ((Date.now() % 2000) / 2000)
+    : 0
 
   return (
     <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} background="systemGroupedBackground">
@@ -968,13 +987,24 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
             {/* 应用 Logo 和标题 */}
             <VStack spacing={16} alignment="center">
               {logoImage ? (
+                // 用 Circle 作为 mask 将方形 logo 图片裁剪为圆形，并增加紫色发光阴影
                 <Image
                   image={logoImage}
                   resizable={true}
                   // @ts-ignore
-                  frame={{ width: 120, height: 120 }}
+                  frame={{ width: HERO_LOGO_SIZE, height: HERO_LOGO_SIZE }}
+                  // @ts-ignore
+                  mask={<Circle />}
+                  // @ts-ignore
+                  shadow={{ color: "#9B7BD8", radius: 18, x: 0, y: 8 }}
                 />
-              ) : null}
+              ) : (
+                // Logo 文件缺失时的降级方案：保留原本的 emoji 圆形
+                <ZStack frame={{ width: HERO_LOGO_SIZE, height: HERO_LOGO_SIZE }}>
+                  <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
+                  <Text font={48}>🛴</Text>
+                </ZStack>
+              )}
               <VStack spacing={4} alignment="center">
                 <Text font="title" fontWeight="bold">九号电动车助手</Text>
                 <Text font="subheadline" foregroundStyle="secondaryLabel">Ninebot Assistant</Text>
