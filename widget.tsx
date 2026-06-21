@@ -274,7 +274,7 @@ function MediumWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any,
       widgetURL={Script.createRunSingleURLScheme(Script.name)}
     >
       <HStack alignment="center" spacing={6}>
-        <Text styledText={{ content: '虚拟IP定位', foregroundColor: '#1F7A3A', font: { name: 'System', size: 14 }, bold: true }} />
+        <Text styledText={{ content: '虚拟IP定位', foregroundColor: '#1F7A3A', font: 13, bold: true }} lineLimit={1} />
         <Spacer />
       </HStack>
 
