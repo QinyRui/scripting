@@ -22,6 +22,7 @@ import {
   ZStack,
   Circle,
   Image,
+  Link,
   Widget,
   useState,
 } from "scripting"
@@ -218,6 +219,36 @@ export function ApiKeySettingsPage() {
               </HStack>
             ))}
           </VStack>
+        </Section>
+
+        {/* ── 申请彩云 Token ── */}
+        <Section>
+          <Link url="https://platform.caiyunapp.com/login">
+            <HStack
+              alignment="center"
+              spacing={10}
+              padding={{ vertical: 14 }}
+              frame={{ maxWidth: "infinity" }}
+              background={{
+                style: { color: "#007aff", opacity: 0.08 },
+                shape: { type: "rect", cornerRadius: 12 }
+              }}>
+              <Image
+                systemName="globe.asia.australia.fill"
+                font={16}
+                foregroundStyle="systemCyan"
+              />
+              <Text font="headline" fontWeight="bold" foregroundStyle="systemCyan">
+                申请彩云 Token
+              </Text>
+              <Spacer />
+              <Image
+                systemName="arrow.up.right"
+                font={14}
+                foregroundStyle="tertiaryLabel"
+              />
+            </HStack>
+          </Link>
         </Section>
       </List>
     </NavigationStack>
