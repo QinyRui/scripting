@@ -85,6 +85,10 @@ function SettingsView(props: {
   const [sourceBranchName, setSourceBranchName] = useState("")
   const [isCreatingBranch, setIsCreatingBranch] = useState(false)
 
+  // 删除分支相关状态
+  const [deleteBranchName, setDeleteBranchName] = useState("")
+  const [isDeletingBranch, setIsDeletingBranch] = useState(false)
+
   // 包装函数：同时更新本地 state + 通知父组件持久化
   const updateToken = (v: string) => { setLocalToken(v); props.onTokenChange(v) }
   const updateRepoUrl = (v: string) => { setLocalRepoUrl(v); props.onRepoUrlChange(v) }
@@ -233,6 +237,81 @@ function SettingsView(props: {
     }
   }
 
+  // 删除仓库中的分支
+  const handleDeleteBranch = async () => {
+    if (!props.repoUrl || !props.token || !props.authorName) {
+      await showAlert("配置不完整", "请先填写仓库 URL、Token 和仓库所有者")
+      return
+    }
+    const branchToDelete = deleteBranchName.trim()
+    if (!branchToDelete) {
+      await showAlert("分支名为空", "请输入要删除的分支名称")
+      return
+    }
+
+    // 安全检查：不能删除主分支（main/master）
+    const protectedBranches = ["main", "master", "develop"]
+    if (protectedBranches.includes(branchToDelete.toLowerCase())) {
+      await showAlert("操作被阻止", `\"${branchToDelete}\" 是受保护的主分支，不能删除！\n\n只能删除功能分支或临时分支。`)
+      return
+    }
+
+    const { owner, repo } = parseOwnerRepo()
+    const url = `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branchToDelete}`
+
+    setIsDeletingBranch(true)
+    try {
+      // 步骤 1：验证分支是否存在
+      console.log(`[删除分支] 尝试删除分支: ${branchToDelete}`)
+      const checkRes = await fetch(url, { headers: headers() })
+      if (!checkRes.ok) {
+        const errText = await checkRes.text()
+        let errorMsg = `分支不存在或获取失败: ${checkRes.status}`
+        if (checkRes.status === 404) {
+          errorMsg += "\n\n可能的原因："
+          errorMsg += "\n1. 分支名称拼写错误（区分大小写）"
+          errorMsg += "\n2. 分支已被删除"
+          errorMsg += "\n3. 仓库中没有这个分支"
+          errorMsg += `\n\n尝试的分支: ${branchToDelete}`
+        }
+        throw new Error(errorMsg + "\n\nAPI 原始错误: " + errText)
+      }
+
+      // 步骤 2：确认删除（显示警告）
+      const confirmMessage = `⚠️ 警告：此操作不可逆！\n\n确定要删除分支 \"${branchToDelete}\" 吗？\n\n删除后将无法恢复。`
+      // @ts-ignore
+      const confirmResult = await Dialog.confirm({
+        title: "确认删除分支",
+        message: confirmMessage,
+        confirmLabel: "确认删除",
+        cancelLabel: "取消"
+      })
+
+      if (!confirmResult) {
+        setIsDeletingBranch(false)
+        return
+      }
+
+      // 步骤 3：执行删除
+      const deleteRes = await fetch(url, {
+        method: "DELETE",
+        headers: headers()
+      })
+
+      if (!deleteRes.ok) {
+        const errText = await deleteRes.text()
+        throw new Error(`删除失败: ${deleteRes.status} ${errText}`)
+      }
+
+      await showAlert("删除成功", `已成功删除分支：\n${branchToDelete}`)
+      setDeleteBranchName("")
+    } catch (error) {
+      await showAlert("删除失败", String(error))
+    } finally {
+      setIsDeletingBranch(false)
+    }
+  }
+
   return (
     <NavigationStack>
       <List
@@ -353,6 +432,30 @@ function SettingsView(props: {
             systemImage="arrow.triangle.branch"
             disabled={!newBranchName.trim() || isCreatingBranch}
             action={handleCreateBranch}
+          />
+        </Section>
+
+        {/* 删除分支 */}
+        <Section
+          header={<SectionHeader title="删除分支" />}
+          footer={
+            <Text font="caption" foregroundStyle="tertiaryLabel">
+              ⚠️ 此操作不可逆，分支将被永久删除。主分支（main/master/develop）受保护无法删除。
+            </Text>
+          }
+        >
+          <TextField
+            title="分支名称"
+            value={deleteBranchName}
+            prompt="例如 photos, feature/xxx"
+            onChanged={setDeleteBranchName}
+          />
+          <Button
+            title={isDeletingBranch ? "删除中…" : "删除分支"}
+            systemImage="trash"
+            tint="systemRed"
+            disabled={!deleteBranchName.trim() || isDeletingBranch}
+            action={handleDeleteBranch}
           />
         </Section>
       </List>
