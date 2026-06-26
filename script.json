@@ -1,0 +1,52 @@
+{
+  "description" : null,
+  "icon" : "square.2.layers.3d.fill",
+  "author" : null,
+  "iconImage" : null,
+  "name" : "多功能宝箱",
+  "remoteResource" : null,
+  "contributors" : [
+
+  ],
+  "entry" : "index.tsx",
+  "version" : "1.0.0",
+  "localizedDescriptions" : {
+    "ja" : "",
+    "it" : "",
+    "zh" : "",
+    "de" : "",
+    "fr" : "",
+    "pt" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : ""
+  },
+  "color" : "rgba(124, 76, 179,1)",
+  "runInApp" : true,
+  "localizedNames" : {
+    "ja" : "",
+    "it" : "",
+    "zh" : "",
+    "de" : "",
+    "fr" : "",
+    "pt" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : ""
+  },
+  "intentInputTypes" : [
+
+  ],
+  "permissions" : [
+    "calendar",
+    "reminders",
+    "alarms",
+    "contacts",
+    "location",
+    "homeKit",
+    "photos",
+    "health",
+    "clipboard",
+    "fileSystem"
+  ]
+}
