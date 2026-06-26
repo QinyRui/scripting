@@ -27,6 +27,7 @@ export interface NinebotWidgetData {
 // 盲盒信息
 export interface BlindBoxInfo {
   id: string
+  blindBoxIds?: string[]
   leftDaysToOpen: number
   status: number
   type: number
@@ -102,8 +103,11 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       signCardsNum = statusResp.data.data.signCardsNum || 0 
       // 从日历中提取 rewardId 存入 Storage
       const calInfo = statusResp.data.data.calendarInfo || []
+      console.log(`📅 calendarInfo 条目数: ${calInfo.length}`)
       for (const c of calInfo) {
+        console.log(`  📅 calendar 条目:`, JSON.stringify(c))
         if (c.rewardInfo && c.rewardInfo.rewardId) {
+          console.log(`  🔑 找到 rewardId: ${c.rewardInfo.rewardId}`)
           try { Storage.set('ninebot.blindBoxRewardId', c.rewardInfo.rewardId) } catch { }
           break
         }
@@ -149,7 +153,7 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
     let notOpenedBlindBoxCount = 0
     let openedBlindBoxCount = 0
     let minLeftDaysToOpen: number | null = null
-    let notOpenedBoxesDetail: Array<{awardDays: number, leftDaysToOpen: number, rewardStatus: number}> = []
+    let notOpenedBoxesDetail: Array<{awardDays: number, leftDaysToOpen: number, rewardStatus: number, blindBoxIds?: string[]}> = []
     let openedBoxesDetail: Array<{awardDays: number, openedTime: string}> = []
 
     if (blindBoxResp.data && blindBoxResp.data.code === 0 && blindBoxResp.data.data) {
@@ -164,7 +168,8 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       notOpenedBoxesDetail = notOpenedBoxes.map((box: any) => ({
         awardDays: box.awardDays || 0,
         leftDaysToOpen: box.leftDaysToOpen || 0,
-        rewardStatus: box.rewardStatus || 0
+        rewardStatus: box.rewardStatus || 0,
+        blindBoxIds: box.blindBoxIds || []
       }))
 
       openedBoxesDetail = openedBoxes.map((box: any) => ({
@@ -226,13 +231,14 @@ export async function getOpenableBlindBoxes(authorization: string, deviceId: str
       // 详细日志：打印所有盲盒原始数据
       console.log(`📋 盲盒列表: 未开启 ${notOpenedBoxes.length} 个, 已开启 ${openedBoxes.length} 个`)
       notOpenedBoxes.forEach((box: any, i: number) => {
-        console.log(`  [${i}] id=${box.id}, awardDays=${box.awardDays}, leftDaysToOpen=${box.leftDaysToOpen}, rewardStatus=${box.rewardStatus}, status=${box.status}`)
+        console.log(`  [${i}] blindBoxIds=${JSON.stringify(box.blindBoxIds)}, awardDays=${box.awardDays}, leftDaysToOpen=${box.leftDaysToOpen}, rewardStatus=${box.rewardStatus}, status=${box.status}`)
       })
       
       const openableBoxes = notOpenedBoxes
         .filter((box: any) => (box.leftDaysToOpen || 0) === 0)
         .map((box: any) => ({
           id: box.id,
+          blindBoxIds: box.blindBoxIds || [],
           leftDaysToOpen: box.leftDaysToOpen,
           status: box.status || 0,
           type: box.type || 0,
@@ -255,14 +261,16 @@ export async function getOpenableBlindBoxes(authorization: string, deviceId: str
 /**
  * 开启盲盒 — 返回 rewardId 供后续领取使用
  */
-export async function openBlindBox(authorization: string, deviceId: string): Promise<{success: boolean, rewardId?: string, data?: any, message?: string}> {
+export async function openBlindBox(authorization: string, deviceId: string, boxId?: string | number): Promise<{success: boolean, rewardId?: string, data?: any, message?: string}> {
   try {
     const headers = getAuthHeaders(authorization, deviceId)
     const url = `${API_ENDPOINTS.openBlindBox}?t=${Date.now()}`
     
-    // open 不需要传 id，服务端自动处理下一个到期盲盒
+    // 优先传 boxId（如果有），否则空 body 让服务端自动处理下一个到期盲盒
+    const body = boxId != null ? { id: boxId, boxId: boxId } : {}
+    console.log(`📦 open 请求 body:`, JSON.stringify(body))
     const response = await httpPost(url, { 
-      body: {},
+      body,
       headers: headers
     })
     
@@ -270,9 +278,19 @@ export async function openBlindBox(authorization: string, deviceId: string): Pro
     
     if (response.data && response.data.code === 0) {
       const data = response.data.data || {}
-      // 从返回数据中提取 rewardId（兼容多种字段名）
-      const rewardId = data.rewardId || data.id || data.rewardID || ''
-      console.log(`✅ 盲盒开启成功, rewardId=${rewardId}`)
+      // 多层嵌套提取 rewardId —— 兼容各种可能的响应结构
+      const rewardId = (
+        data.rewardId || data.id || data.rewardID ||
+        // 深层嵌套：openBoxInfo / reward / boxInfo
+        data.openBoxInfo?.rewardId ||
+        data.reward?.rewardId ||
+        data.boxInfo?.rewardId ||
+        // 数组形式：data.list[0].rewardId
+        (Array.isArray(data.list) && data.list[0]?.rewardId) ||
+        // 用 awardDays 作为兜底（如果存在）
+        (data.awardDays != null ? String(data.awardDays) : '')
+      )
+      console.log(`✅ 盲盒开启成功, rewardId=${rewardId}, data keys=${Object.keys(data).join(',')}`)
       return {
         success: true,
         rewardId,
@@ -280,11 +298,14 @@ export async function openBlindBox(authorization: string, deviceId: string): Pro
         message: '开启成功'
       }
     } else {
-      const errorMsg = response.data?.msg || response.data?.message || '开启失败'
-      console.warn(`⚠️ 盲盒开启失败:`, errorMsg)
+      const rawMsg = response.data?.msg || response.data?.message || ''
+      const rawCode = response.data?.code ?? 'unknown'
+      const errorMsg = `code=${rawCode}, msg=${rawMsg}`
+      console.warn(`⚠️ 盲盒开启失败:`, errorMsg, '完整返回:', JSON.stringify(response.data))
       return {
         success: false,
-        message: errorMsg
+        message: errorMsg,
+        data: response.data
       }
     }
   } catch (error) {
@@ -447,74 +468,32 @@ export async function autoOpenBlindBoxes(authorization: string, deviceId: string
       errors: [] as string[]
     }
     
-    let useDirectReceive = false
-    
     for (const box of openableBoxes) {
-      console.log(`🎁 处理盲盒 (${box.awardDays}天, rewardStatus=${box.rewardStatus})...`)
-      
-      if (!useDirectReceive) {
-        const openResult = await openBlindBox(authorization, deviceId)
-        
-        if (!openResult.success) {
-          const msg = openResult.message || ''
-          if (msg.includes('404') || msg.includes('Not Found') || msg.includes('开启失败')) {
-            console.log("⚠️ /open 端点不可用 (404)，切换到直接领取模式")
-            useDirectReceive = true
-          } else {
-            results.failed++
-            results.errors.push(`盲盒开启失败: ${msg}`)
-            console.log(`❌ 盲盒开启失败: ${msg}`)
-            await new Promise<void>((r) => setTimeout(() => r(), 1000))
-            continue
-          }
-        } else if (!openResult.rewardId) {
-          results.failed++
-          results.errors.push('盲盒开启失败: 未返回 rewardId')
-          console.log("❌ 未返回 rewardId")
-          await new Promise<void>((r) => setTimeout(() => r(), 1000))
-          continue
-        } else {
-          results.openSuccess++
-          const rewardId = openResult.rewardId
-          console.log(`✅ 盲盒开启成功, rewardId=${rewardId}`)
-          await new Promise<void>((r) => setTimeout(() => r(), 1000))
-          
-          const receiveResult = await receiveBlindBox(authorization, deviceId, rewardId)
-          if (receiveResult.success) {
-            results.receiveSuccess++
-            if (receiveResult.reward) {
-              results.rewards.push({ awardDays: box.awardDays, rewardId, reward: receiveResult.reward })
-            }
-            console.log(`✅ 盲盒领取成功! reward=${JSON.stringify(receiveResult.reward)}`)
-          } else {
-            results.failed++
-            results.errors.push(`盲盒领取失败: ${receiveResult.message}`)
-            console.log(`❌ 盲盒领取失败: ${receiveResult.message}`)
-          }
-          await new Promise<void>((r) => setTimeout(() => r(), 1000))
-          continue
-        }
+      // 直接使用 blindBoxIds[0] 作为 rewardId 调用 /receive（/open 端点已下线）
+      const rewardId = box.blindBoxIds?.[0] || ''
+      console.log(`🎁 处理盲盒 (${box.awardDays}天, rewardStatus=${box.rewardStatus}): blindBoxId=${rewardId}`)
+
+      if (!rewardId) {
+        results.failed++
+        results.errors.push(`盲盒 (${box.awardDays}天): 无 blindBoxId`)
+        console.log(`❌ 盲盒 (${box.awardDays}天) blindBoxIds 为空`, JSON.stringify(box))
+        continue
       }
-      
-      // 直接领取模式
-      if (useDirectReceive) {
-        console.log(`📦 直接领取模式: awardDays=${box.awardDays}`)
-        const recvResult = await directReceiveBlindBox(authorization, deviceId, box)
-        
-        if (recvResult.success) {
-          results.receiveSuccess++
-          results.openSuccess++
-          if (recvResult.reward) {
-            results.rewards.push({ awardDays: box.awardDays, rewardId: String(box.awardDays), reward: recvResult.reward })
-          }
-          console.log(`✅ 盲盒直接领取成功! reward=${JSON.stringify(recvResult.reward)}`)
-        } else {
-          results.failed++
-          results.errors.push(`盲盒领取失败 (${box.awardDays}天): ${recvResult.message}`)
-          console.log(`❌ 盲盒领取失败: ${recvResult.message}`)
+
+      results.openSuccess++
+      const receiveResult = await receiveBlindBox(authorization, deviceId, rewardId)
+      if (receiveResult.success) {
+        results.receiveSuccess++
+        if (receiveResult.reward) {
+          results.rewards.push({ awardDays: box.awardDays, rewardId, reward: receiveResult.reward })
         }
-        await new Promise<void>((r) => setTimeout(() => r(), 1000))
+        console.log(`✅ 盲盒领取成功! reward=${JSON.stringify(receiveResult.reward)}`)
+      } else {
+        results.failed++
+        results.errors.push(`盲盒领取失败 (${box.awardDays}天): ${receiveResult.message}`)
+        console.log(`❌ 盲盒领取失败: ${receiveResult.message}`)
       }
+      await new Promise<void>((r) => setTimeout(() => r(), 1000))
     }
     
     console.log(`🎁 盲盒处理完成: 总计 ${results.total}, 开启成功 ${results.openSuccess}, 领取成功 ${results.receiveSuccess}, 失败 ${results.failed}`)
@@ -523,4 +502,75 @@ export async function autoOpenBlindBoxes(authorization: string, deviceId: string
     console.error("❌ 自动开启盲盒错误:", error)
     throw error
   }
+}
+
+/**
+ * API 诊断探测 —— 尝试多种端点和参数组合，找出可用的盲盒领取方式
+ */
+export async function diagnoseBlindBoxApi(authorization: string, deviceId: string): Promise<string> {
+  const headers = getAuthHeaders(authorization, deviceId)
+  const t = Date.now()
+  const lines: string[] = []
+  const log = (s: string) => { lines.push(s); console.log(s) }
+
+  log('===== 盲盒 API 诊断开始 =====')
+
+  // 获取盲盒列表，提取第一个可领取的盲盒信息
+  const listResp = await httpGet(API_ENDPOINTS.blindBoxList, { headers })
+  const boxes = listResp.data?.data?.notOpenedBoxes || []
+  const readyBox = boxes.find((b: any) => (b.leftDaysToOpen || 0) === 0)
+  log(`📋 盲盒总数: ${boxes.length}, 可领取: ${readyBox ? readyBox.awardDays + '天' : '无'}`)
+  if (readyBox) log(`  完整数据: ${JSON.stringify(readyBox)}`)
+
+  // 测试 1: 尝试不同的 open 端点
+  const openUrls = [
+    'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/open',
+    'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/blind-box/open',
+    'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v3/blind-box/open',
+  ]
+  log('\n--- 测试 /open 端点 ---')
+  for (const url of openUrls) {
+    const resp = await httpPost(url + `?t=${t}`, { body: {}, headers })
+    const tag = resp.data?.status === 404 ? '❌404' : (resp.data?.code === 0 ? '✅' : '⚠️')
+    log(`${tag} ${url.replace('https://cn-cbu-gateway.ninebot.com', '')} → ${JSON.stringify(resp.data).slice(0, 200)}`)
+  }
+
+  // 如果有可领取盲盒，尝试不同的 /receive 参数组合
+  if (readyBox) {
+    log('\n--- 测试 /receive 端点 (多种 body) ---')
+    const receiveUrl = `${API_ENDPOINTS.receiveBlindBox}?t=${t}`
+    const bodies = [
+      { rewardId: String(readyBox.awardDays) },
+      { rewardId: readyBox.awardDays },
+      { awardDays: readyBox.awardDays },
+      { boxId: readyBox.awardDays },
+      { id: readyBox.awardDays },
+      { awardDays: readyBox.awardDays, rewardStatus: readyBox.rewardStatus },
+      { type: readyBox.type, awardDays: readyBox.awardDays },
+      {},
+    ]
+    for (const body of bodies) {
+      const resp = await httpPost(receiveUrl, { body, headers })
+      const code = resp.data?.code ?? resp.data?.status ?? '?'
+      const msg = resp.data?.msg || resp.data?.message || resp.data?.error || ''
+      const tag = code === 0 ? '✅' : '❌'
+      log(`${tag} body=${JSON.stringify(body)} → code=${code} msg=${msg}`)
+    }
+
+    // 测试 3: 尝试用 open 端点的不同路径变体
+    log('\n--- 测试其他可能的端点 ---')
+    const otherEndpoints = [
+      { url: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/receiveBlindBox', body: { awardDays: readyBox.awardDays } },
+      { url: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/openBox', body: { awardDays: readyBox.awardDays } },
+      { url: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/unbox', body: { awardDays: readyBox.awardDays } },
+    ]
+    for (const ep of otherEndpoints) {
+      const resp = await httpPost(ep.url + `?t=${t}`, { body: ep.body, headers })
+      const tag = resp.data?.status === 404 ? '❌404' : (resp.data?.code === 0 ? '✅' : '⚠️')
+      log(`${tag} ${ep.url.replace('https://cn-cbu-gateway.ninebot.com', '')} → ${JSON.stringify(resp.data).slice(0, 200)}`)
+    }
+  }
+
+  log('\n===== 诊断完成 =====')
+  return lines.join('\n')
 }
