@@ -16,7 +16,7 @@
   "entry" : "index.tsx",
   "remoteResource" : {
     "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
     "hash" : "a2b771353de1654d29bb91c1b0a3d6b2"
   },
   "localizedNames" : {
@@ -47,7 +47,7 @@
   ],
   "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
   "version" : "1.2.3",
-  "name" : "九号APP签到",
+  "name" : "九号系统签到",
   "color" : "rgba(0, 50, 222, 1.00)",
   "icon" : "scooter"
 }
