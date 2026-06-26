@@ -26,7 +26,7 @@ import {
   Rectangle
 } from "scripting"
 
-import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, openBlindBox, receiveBlindBox, type NinebotWidgetData } from "./api"
+import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, openBlindBox, receiveBlindBox, diagnoseBlindBoxApi, type NinebotWidgetData } from "./api"
 import { BlindBoxCeremony, GuideGesture, CeremonyTitle, BB } from "./utils/BlindBoxVisuals"
 
 declare const Storage: any
@@ -449,22 +449,24 @@ function BlindBoxView({ onBack }: { onBack: () => void }) {
     if (opening || !data) return
     setOpening(true)
     try {
-      // 从 Storage 获取 rewardId（由 getNinebotInfo 从日历数据中提取并存储）
-      const rewardId = (Storage.get('ninebot.blindBoxRewardId') as string) || ''
-      if (!rewardId) {
-        Dialog.alert({ title: '⚠️ 无法领取', message: '未找到 rewardId，请刷新数据后重试' })
-        setOpening(false)
-        return
-      }
-      console.log(`🔑 使用 rewardId: ${rewardId}`)
-
       const result = { total: readyBoxes.length, openSuccess: 0, receiveSuccess: 0, failed: 0, rewards: [] as any[], errors: [] as string[] }
+
       for (const box of readyBoxes) {
-        console.log(`📦 调用 /receive, rewardId=${rewardId}`)
+        // 直接使用 blindBoxIds[0] 作为 rewardId 调用 /receive（/open 端点已下线）
+        const rewardId = box.blindBoxIds?.[0] || ''
+        console.log(`📦 领取盲盒 (${box.awardDays}天): blindBoxId=${rewardId}`)
+
+        if (!rewardId) {
+          result.failed++
+          result.errors.push(`盲盒 (${box.awardDays}天): 无 blindBoxId`)
+          console.log(`❌ 盲盒 (${box.awardDays}天) blindBoxIds 为空`, JSON.stringify(box))
+          continue
+        }
+
+        result.openSuccess++
         const recvResult = await receiveBlindBox(auth, deviceId, rewardId)
         if (recvResult.success) {
           result.receiveSuccess++
-          result.openSuccess++
           result.rewards.push({ awardDays: box.awardDays || 0, rewardId, reward: recvResult.reward })
           console.log(`✅ 盲盒领取成功! reward=${JSON.stringify(recvResult.reward)}`)
         } else {
@@ -486,6 +488,8 @@ function BlindBoxView({ onBack }: { onBack: () => void }) {
         `成功领取 ${result.receiveSuccess} 个盲盒`,
         ...rewardLines,
         result.failed > 0 ? `失败 ${result.failed} 个` : "",
+        // 展示具体错误原因，方便排查
+        ...result.errors.map((e: string) => `• ${e}`),
       ].filter(Boolean).join("\n")
       Dialog.alert({ title: result.receiveSuccess > 0 ? "🎁 开启完成" : "⚠️ 开启异常", message: summary })
 
@@ -534,6 +538,19 @@ function BlindBoxView({ onBack }: { onBack: () => void }) {
               font={14}
               foregroundStyle={loading ? "tertiaryLabel" : "systemBlue"}
             />
+          </HStack>
+        </Button>
+        <Button action={async () => {
+          try {
+            Dialog.alert({ title: "诊断中…", message: "正在探测 API 端点，请稍候（约10秒）" })
+            const report = await diagnoseBlindBoxApi(auth, deviceId)
+            Dialog.alert({ title: "🔍 API 诊断报告", message: report })
+          } catch (e: any) {
+            Dialog.alert({ title: "诊断失败", message: e?.message || String(e) })
+          }
+        }}>
+          <HStack padding={{ horizontal: 10, vertical: 6 }}>
+            <Image systemName="stethoscope" font={14} foregroundStyle="systemOrange" />
           </HStack>
         </Button>
       </HStack>
