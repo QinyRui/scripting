@@ -1,53 +1,53 @@
 {
+  "localizedDescriptions" : {
+    "es" : "",
+    "ru" : "",
+    "zh" : "",
+    "de" : "",
+    "fr" : "",
+    "pt" : "",
+    "en" : "",
+    "it" : "",
+    "ja" : ""
+  },
   "intentInputTypes" : [
 
   ],
-  "description" : "",
-  "localizedNames" : {
-    "es" : "",
-    "ja" : "",
-    "fr" : "",
-    "en" : "",
-    "it" : "",
-    "ru" : "",
-    "de" : "",
-    "pt" : "",
-    "zh" : ""
-  },
-  "contributors" : [
-    {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "email" : "602839678@qq.com",
-      "name" : "QinyRui"
-    }
-  ],
-  "version" : "1.2.2",
-  "name" : "九号系统签到",
-  "runInApp" : true,
-  "permissions" : null,
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
-  "localizedDescriptions" : {
-    "de" : "",
-    "ja" : "",
-    "en" : "",
-    "it" : "",
-    "zh" : "",
-    "es" : "",
-    "fr" : "",
-    "pt" : "",
-    "ru" : ""
-  },
-  "icon" : "scooter",
-  "color" : "rgba(0, 50, 222, 1.00)",
   "entry" : "index.tsx",
+  "remoteResource" : {
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "a2b771353de1654d29bb91c1b0a3d6b2"
+  },
+  "localizedNames" : {
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "fr" : "",
+    "ja" : "",
+    "de" : "",
+    "zh" : "",
+    "pt" : "",
+    "it" : ""
+  },
+  "permissions" : null,
   "author" : {
     "email" : "602839678@qq.com",
     "name" : "QinyRui",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
   },
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
-    "hash" : "f277e61cad915f2be2761e1a1b56654a",
-    "autoUpdateInterval" : 300
-  }
+  "description" : "修复：盲盒接口已更新新接口，正常返回",
+  "runInApp" : true,
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "email" : "602839678@qq.com"
+    }
+  ],
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
+  "version" : "1.2.3",
+  "name" : "九号APP签到",
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "icon" : "scooter"
 }
