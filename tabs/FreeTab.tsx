@@ -17,7 +17,9 @@ import { T } from '../theme'
 import { PageHeader, SearchBar, ChipFilter, LoadingView, EmptyView } from '../components'
 import { FREE_FILTERS } from '../data'
 
-declare function openURL(url: string): Promise<boolean>
+declare namespace Safari {
+  function openURL(url: string): Promise<boolean>
+}
 
 // API 基础配置
 const BASE = 'https://sliverkiss-psi.vercel.app'
@@ -177,7 +179,7 @@ export function FreeTab() {
                   {row.map(item => (
                     <VStack
                       key={item.app.id}
-                      onTapGesture={() => openURL(item.app.url)}
+                      onTapGesture={() => { Safari.openURL(item.app.url) }}
                       frame={{ maxWidth: 'infinity' }}
                       alignment="center"
                       padding={{ horizontal: 12, vertical: 16 }}
