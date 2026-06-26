@@ -23,7 +23,8 @@ import {
   ScrollView,
   ProgressView,
   Notification,
-  Rectangle
+  Rectangle,
+  Widget
 } from "scripting"
 
 import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, openBlindBox, receiveBlindBox, diagnoseBlindBoxApi, type NinebotWidgetData } from "./api"
@@ -37,11 +38,8 @@ declare const UIImage: any
 
 
 // ==================== 应用 Logo ====================
-// 使用当前项目 photos 目录下的真实品牌 logo（紫底抽象"7"形）
 const LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/ninebot-logo-new.jpg"
 const logoImage = UIImage.fromFile(LOGO_PATH)
-
-// 顶部品牌区固定尺寸（与原本 emoji 圆形视觉权重对齐）
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
@@ -1081,6 +1079,22 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                 subtitle="点击安装与使用" 
                 action={installLoonPlugin} 
                 tint="systemPurple" 
+              />
+            </HStack>
+            <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
+              <HomeQuickButton 
+                icon="rectangle.compress.vertical" 
+                title="中号预览" 
+                subtitle="Medium" 
+                action={() => { Widget.preview({ family: "systemMedium" }) }}
+                tint="systemBlue" 
+              />
+              <HomeQuickButton 
+                icon="rectangle.expand.vertical" 
+                title="大号预览" 
+                subtitle="Large" 
+                action={() => { Widget.preview({ family: "systemLarge" }) }}
+                tint="systemOrange" 
               />
             </HStack>
           </VStack>
