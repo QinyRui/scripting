@@ -10,6 +10,7 @@ import {
   useState,
   useObservable,
   useEffect,
+  fetch,
 } from 'scripting'
 import { T, Account, ApiResponse, regionFlag, emailDomain, relTime, loadCache, saveCache, fetchAccounts } from '../theme'
 import { PageHeader, SearchBar, ChipFilter, LoadingView, EmptyView } from '../components'
@@ -195,9 +196,56 @@ function AccountCardItem(props: { acc: Account; onCopied: () => void }) {
   const { acc, onCopied } = props
   const domain = emailDomain(acc.email)
   const flag = regionFlag(acc.region)
+  const [realPassword, setRealPassword] = useState<string>('')
+
+  // 组件加载时自动获取真实密码
+  useEffect(() => {
+    async function autoReveal() {
+      try {
+        const res = await fetch(`https://sliverkiss-psi.vercel.app/api/accounts/reveal?id=${acc.id}`, {
+          headers: {
+            'Origin': 'https://sliverkiss-psi.vercel.app',
+            'Referer': 'https://sliverkiss-psi.vercel.app/accounts',
+          },
+        })
+        const data = await res.json()
+        if (data.password) {
+          setRealPassword(data.password)
+        }
+      } catch {}
+    }
+    autoReveal()
+  }, [])
+
+  async function revealPassword(): Promise<string> {
+    try {
+      const res = await fetch(`https://sliverkiss-psi.vercel.app/api/accounts/reveal?id=${acc.id}`, {
+        headers: {
+          'Origin': 'https://sliverkiss-psi.vercel.app',
+          'Referer': 'https://sliverkiss-psi.vercel.app/accounts',
+        },
+      })
+      const data = await res.json()
+      if (data.password) {
+        setRealPassword(data.password)
+        return data.password
+      }
+    } catch (e) {
+      console.log('reveal failed:', e)
+    }
+    return ''
+  }
 
   async function copy(field: 'email' | 'password') {
-    await Pasteboard.setString(field === 'email' ? acc.email : acc.password)
+    if (field === 'password') {
+      let pwd = realPassword
+      if (!pwd) {
+        pwd = await revealPassword()
+      }
+      await Pasteboard.setString(pwd || acc.password)
+    } else {
+      await Pasteboard.setString(acc.email)
+    }
     onCopied()
   }
 
@@ -307,7 +355,7 @@ function AccountCardItem(props: { acc: Account; onCopied: () => void }) {
             foregroundColor={T.text}
             font="callout"
           >
-            {acc.password}
+            {realPassword || acc.password}
           </Text>
         </VStack>
         <Spacer />
