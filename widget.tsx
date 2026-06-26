@@ -274,7 +274,7 @@ function MediumWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any,
       widgetURL={Script.createRunSingleURLScheme(Script.name)}
     >
       <HStack alignment="center" spacing={6}>
-        <Text styledText={{ content: '虚拟IP定位', foregroundColor: '#1F7A3A', font: 13, bold: true }} lineLimit={1} />
+        <Text styledText={{ content: 'VPN连接状态', foregroundColor: '#1F7A3A', font: 13, bold: true }} lineLimit={1} />
         <Spacer />
       </HStack>
 
@@ -304,7 +304,7 @@ function LargeWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any, 
     >
       <HStack alignment="center">
         <VStack alignment="leading" spacing={2}>
-          <Text styledText={{ content: '虚拟IP定位', foregroundColor: '#166534', font: 18, bold: true }} />
+          <Text styledText={{ content: 'VPN连接状态', foregroundColor: '#166534', font: 18, bold: true }} />
         </VStack>
       </HStack>
 
