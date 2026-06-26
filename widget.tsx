@@ -714,29 +714,49 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
         if (signResult.success) {
           baseData = await getNinebotInfo(auth, devId)
           try {
-            // 构建盲盒等待描述
-            let blindBoxInfo = ""
-            if (baseData.minLeftDaysToOpen !== null && baseData.minLeftDaysToOpen !== undefined && baseData.minLeftDaysToOpen > 0) {
-              blindBoxInfo = ` | 🎁 下个盲盒 ${baseData.minLeftDaysToOpen} 天后`
-            } else if (baseData.notOpenedBlindBoxCount > 0) {
-              blindBoxInfo = ` | 🎁 有 ${baseData.notOpenedBlindBoxCount} 个盲盒可领`
-            }
+            // 计算升级所需经验
+            const levelThresholds = [0,100,300,600,1000,1500,2100,2800,3600,4500,5500,6600,7800,9100,10500,12000,13600,15300,17100,19000,21000]
+            const nextLvExp = levelThresholds[baseData.level] || (levelThresholds[levelThresholds.length - 1] + (baseData.level - levelThresholds.length + 2) * 2000)
+            const expToNext = Math.max(0, nextLvExp - baseData.experience)
+
+            // 盲盒统计
+            const readyCount = (baseData.notOpenedBoxesDetail || []).filter((b: any) => b.leftDaysToOpen === 0).length
+            const waitingCount = (baseData.notOpenedBoxesDetail || []).filter((b: any) => b.leftDaysToOpen > 0).length
+            const totalOpened = baseData.openedBlindBoxCount || 0
+
+            // 构建详细统计通知
+            const signBody = [
+              `✨ 今日签到：已完成`,
+              `📦 盲盒开箱：${readyCount > 0 ? `${readyCount}个可开` : '无可开盲盒'}`, 
+              `📊 账户状态`,
+              `- 等级：LV.${baseData.level}`,
+              `- 当前经验：${baseData.experience}`,
+              `- 升级还需：${expToNext}经验`,
+              `- 持有N币：${baseData.nCoin}`,
+              `- 补签卡：${baseData.signCardsNum}张`,
+              `- 连续签到：${baseData.consecutiveDays}天`,
+              `📦 盲盒进度`,
+              `- 待开盲盒：${baseData.notOpenedBlindBoxCount}个（可开：${readyCount}个）`,
+              `- 已开盲盒：${totalOpened}个`,
+            ].join('\n')
 
             await Notification.schedule({
-              title: "✅ 签到成功",
-              subtitle: "九号电动车",
-              body: `🎉 已连续签到 ${baseData.consecutiveDays} 天\n+${baseData.experience} 经验 | 等级 ${baseData.level}${blindBoxInfo}`,
+              title: "九号签到助手",
+              subtitle: "任务完成 ✅",
+              body: signBody,
               iconImageData: { systemImage: "checkmark.seal.fill", color: "#34C759" },
               threadIdentifier: "ninebot-sign",
-              customUI: true,
               userInfo: {
                 type: "sign",
                 consecutiveDays: baseData.consecutiveDays,
                 experience: baseData.experience,
                 level: baseData.level,
                 nCoin: baseData.nCoin,
+                signCardsNum: baseData.signCardsNum,
                 minLeftDaysToOpen: baseData.minLeftDaysToOpen,
                 notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
+                openedBlindBoxCount: totalOpened,
+                notOpenedBoxesDetail: baseData.notOpenedBoxesDetail,
               }
             })
           } catch (e) { console.log("通知发送失败:", e) }
