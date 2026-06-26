@@ -12,7 +12,7 @@ const STORAGE_KEY_BOX_READY = "ninebot.lastNotifiedReadyBoxIds"
 const STORAGE_KEY_BOX_SCHEDULED = "ninebot.scheduledBoxIds"
 
 // ==================== 当前脚本名（用于 tapAction.runScript）====================
-const CURRENT_SCRIPT_NAME = "九号APP签到"
+const CURRENT_SCRIPT_NAME = "九号系统签到"
 
 interface ExtendedNinebotData extends NinebotWidgetData {
   waitingBoxDesc: string
@@ -112,7 +112,7 @@ const ScanBeam = ({ width, color = Theme.colors.green }: { width: number, color?
 // ========================
 
 /** 中心图标路径 */
-const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/LOUGO.png"
+const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号系统签到/photos/LOUGO.png"
 
 /** 签到核心仪表盘 — 彩色渐变环（基于时间旋转）+ 光晕 + 九号logo */
 const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }) => {
