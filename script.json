@@ -1,13 +1,15 @@
 {
+  "description" : "6-29: 新增内容\n设置页新增「自动补签」开关",
+  "runInApp" : true,
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "name" : "九号APP签到",
   "icon" : "scooter",
   "author" : {
     "name" : "QinyRui",
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
   },
-  "entry" : "index.tsx",
-  "version" : "1.2.3",
-  "color" : "rgba(0, 50, 222, 1.00)",
+  "version" : "1.2.5",
   "permissions" : [
     "calendar",
     "reminders",
@@ -20,45 +22,43 @@
     "clipboard",
     "fileSystem"
   ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "runInApp" : true,
-  "localizedNames" : {
-    "de" : "",
-    "it" : "",
-    "ru" : "",
-    "pt" : "",
-    "es" : "",
-    "en" : "",
-    "fr" : "",
-    "ja" : "",
-    "zh" : ""
-  },
-  "localizedDescriptions" : {
-    "ja" : "",
-    "fr" : "",
-    "ru" : "",
-    "en" : "",
-    "it" : "",
-    "de" : "",
-    "zh" : "",
-    "pt" : "",
-    "es" : ""
-  },
+  "entry" : "index.tsx",
+  "color" : "rgba(0, 50, 222, 1.00)",
   "intentInputTypes" : [
 
   ],
-  "name" : "九号APP签到",
+  "localizedNames" : {
+    "ru" : "",
+    "en" : "",
+    "es" : "",
+    "ja" : "",
+    "it" : "",
+    "fr" : "",
+    "pt" : "",
+    "zh" : "",
+    "de" : ""
+  },
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "autoUpdateInterval" : 300,
+    "hash" : "848323fb0acad1e07e59555200f27b01"
+  },
+  "localizedDescriptions" : {
+    "pt" : "",
+    "ja" : "",
+    "en" : "",
+    "zh" : "",
+    "it" : "",
+    "fr" : "",
+    "ru" : "",
+    "de" : "",
+    "es" : ""
+  },
   "contributors" : [
     {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "name" : "QinyRui",
       "email" : "602839678@qq.com",
-      "name" : "QinyRui"
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
     }
-  ],
-  "description" : "修复：盲盒接口已更新新接口，正常返回",
-  "remoteResource" : {
-    "hash" : "0e86a83838f97c71c3dd1991eea2d107",
-    "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
-  }
+  ]
 }
