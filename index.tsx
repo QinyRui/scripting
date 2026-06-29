@@ -1290,25 +1290,25 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
             </VStack>
           </HStack>
 
-          {onOpenBlindBox && (
-            <HStack
-              padding={16}
-              spacing={12}
-              alignment="center"
+          {onOpenBlindBox ? (
+            <VStack
+              padding={{ horizontal: 16, vertical: 12 }}
+              spacing={4}
+              alignment="leading"
               onTapGesture={onOpenBlindBox}
-              frame={{ maxWidth: "infinity" }}
             >
-              <ZStack frame={{ width: 32, height: 32 }}>
-                <Circle fill="systemOrange" opacity={0.15} />
-                <Image systemName="gift.circle.fill" foregroundStyle="systemOrange" font={18} />
-              </ZStack>
-              <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+              <HStack spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="gift.circle.fill" foregroundStyle="systemOrange" font={18} /></ZStack>
                 <Text fontWeight="semibold" foregroundStyle="label">盲盒管理</Text>
+                <Spacer />
+                <Image systemName="chevron.right" font={14} foregroundStyle="tertiaryLabel" fontWeight="semibold" />
+              </HStack>
+              <HStack spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }} />
                 <Text font="caption" foregroundStyle="secondaryLabel">查看待开盲盒、一键领取</Text>
-              </VStack>
-              <Image systemName="chevron.right" font={14} foregroundStyle="tertiaryLabel" fontWeight="semibold" />
-            </HStack>
-          )}
+              </HStack>
+            </VStack>
+          ) : null}
         </Section>
 
       </List>
