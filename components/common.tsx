@@ -137,15 +137,27 @@ function CompactCountdownRow({ icon, text, accent, widgetType }: { icon: string;
   )
 }
 
-// ─── 倒计时区块（三行：节气 / 阳历节日 / 农历节日） ───
+// ─── 从倒计时文本中提取天数 ───
+function extractDays(text: string): number {
+  const m = text.match(/还有(\d+)天/)
+  return m ? parseInt(m[1], 10) : 0
+}
+
+// ─── 倒计时区块（按天数从少到多排列） ───
 function BottomCountdownBlock({ primary, secondary, tertiary, widgetType }: { primary: string; secondary: string; tertiary: string; widgetType: "medium" | "large" }) {
-  if (!primary && !secondary && !tertiary) return null
+  const items = [
+    { text: primary, icon: "sun.max.fill", accent: "#ffd166" },
+    { text: secondary, icon: "heart.fill", accent: "#ff8fab" },
+    { text: tertiary, icon: "moon.stars.fill", accent: "#ff7a5a" },
+  ].filter(item => Boolean(item.text))
+  if (items.length === 0) return null
+  items.sort((a, b) => extractDays(a.text) - extractDays(b.text))
   return (
     <VStack alignment="leading" spacing={1} padding={{ top: widgetType === "medium" ? 1 : 2 }}>
       <DashedDivider widgetType={widgetType} />
-      {primary ? <CompactCountdownRow icon="sun.max.fill" text={primary} accent="#ffd166" widgetType={widgetType} /> : null}
-      {secondary ? <CompactCountdownRow icon="heart.fill" text={secondary} accent="#ff8fab" widgetType={widgetType} /> : null}
-      {tertiary ? <CompactCountdownRow icon="moon.stars.fill" text={tertiary} accent="#ff7a5a" widgetType={widgetType} /> : null}
+      {items.map((item, idx) => (
+        <CompactCountdownRow key={idx} icon={item.icon} text={item.text} accent={item.accent} widgetType={widgetType} />
+      ))}
     </VStack>
   )
 }
