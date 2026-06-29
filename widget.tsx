@@ -1,4 +1,4 @@
-import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
+import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, RoundedRectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
 import { getNinebotInfo, doSign, autoOpenBlindBoxes, type NinebotWidgetData } from './api'
 import { getStorage, setStorage } from './utils/storage'
 
@@ -186,9 +186,9 @@ const NinebotTitle = ({ fontSize }: { fontSize: number }) => (
 )
 
 /** 科技卡片 */
-const TechCard = ({ children, padding, glowColor }: { children: any, padding?: number, glowColor?: Color }) => (
+const TechCard = ({ children, padding, glowColor, radius }: { children: any, padding?: number, glowColor?: Color, radius?: number }) => (
   <ZStack frame={{ maxWidth: "infinity" }}>
-    <Rectangle fill={Theme.colors.card} stroke={{ shapeStyle: Theme.colors.cardStroke, strokeStyle: { lineWidth: 0.5 } }} />
+    <RoundedRectangle fill={Theme.colors.card} cornerRadius={radius ?? S(6)} stroke={{ shapeStyle: Theme.colors.cardStroke, strokeStyle: { lineWidth: 0.5 } }} />
     {glowColor && (
       <>
         <Circle fill={glowColor} frame={{ width: 2, height: 2 }} offset={{ x: -1, y: -1 }} opacity={0.5} />
@@ -288,6 +288,24 @@ const SmallWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
         {/* ninebot 品牌标题 */}
         <NinebotTitle fontSize={fs(12)} />
+
+        {/* 底部签到状态 */}
+        <HStack alignment="center" spacing={S(3)}>
+          <HStack spacing={3} alignment="center" padding={{ horizontal: S(5), vertical: S(2) }}
+            background={{ style: info.isSigned ? Theme.colors.green : Theme.colors.orange, shape: { type: "rect", cornerRadius: S(3) } }}>
+            <Image systemName={info.isSigned ? "checkmark.circle.fill" : "clock.fill"} font={fs(6)}
+              foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }} />
+            <Text font={fs(6)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>
+              {info.isSigned ? "已签到" : "待签到"}
+            </Text>
+          </HStack>
+          {info.consecutiveDays > 0 ? (
+            <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.7 }}>
+              {info.isSigned ? "✅" : "❌"}{info.consecutiveDays}天
+            </Text>
+          ) : null}
+        </HStack>
+
         <Spacer />
       </VStack>
     </ZStack>
@@ -325,8 +343,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           {/* 签到信息行：天数 + 更新时间 */}
           <TechCard padding={S(4)} glowColor={Theme.colors.green}>
             <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
-              <Image systemName="flame.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
-              <Text font={fs(6)} foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "已签到" : "待签到"}</Text>
+              <Text font={fs(6)} foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "✅已签到" : "❌待签到"}</Text>
               <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续签到</Text>
               <Text font={fs(22)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
               <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天</Text>
@@ -420,8 +437,7 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
         {/* ═══ 第一行：顶部状态栏 ═══ */}
         <TechCard padding={S(4)} glowColor={Theme.colors.green}>
           <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
-            <Image systemName="flame.fill" font={fs(8)} foregroundStyle={{ color: Theme.colors.orange, opacity: 0.9 }} />
-            <Text font={fs(7)} fontWeight="semibold" foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "已签到" : "待签到"}</Text>
+            <Text font={fs(7)} fontWeight="semibold" foregroundStyle={{ color: info.isSigned ? "#FF6B9D" : "#FF3B30", opacity: 1 }}>{info.isSigned ? "✅已签到" : "❌待签到"}</Text>
             <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.7 }}>{" · "}</Text>
             <Text font={fs(6)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续签到</Text>
             <Text font={fs(18)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.consecutiveDays}</Text>
@@ -435,6 +451,7 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
         </TechCard>
 
         {/* ═══ 第二行：Logo 仪表盘 + 四项统计 ═══ */}
+        <TechCard padding={S(4)} glowColor={Theme.colors.cyan}>
         <HStack spacing={S(6)} alignment="center" frame={{ maxWidth: "infinity" }}>
           {/* 左侧：仪表盘 */}
           <ZStack alignment="center">
@@ -453,6 +470,7 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
             </HStack>
           </VStack>
         </HStack>
+        </TechCard>
 
         {/* ═══ 第三行：盲盒区域 ═══ */}
         <TechCard padding={S(4)} glowColor={Theme.colors.purple}>
@@ -707,7 +725,7 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
     if (settings.autoSign) {
       const now = new Date()
       const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-      const targetTimeStr = settings.autoSignTime || "00:30"
+      const targetTimeStr = settings.autoSignTime || "08:30"
 
       if (currentTimeStr >= targetTimeStr && !baseData.isSigned) {
         const signResult = await doSign(auth, devId)
@@ -727,7 +745,7 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
             // 构建详细统计通知
             const signBody = [
               `✨ 今日签到：已完成`,
-              `📦 盲盒开箱：${readyCount > 0 ? `${readyCount}个可开` : '无可开盲盒'}`, 
+              `📦 盲盒开箱：${readyCount > 0 ? `${readyCount}个可开` : '暂无可开盲盒'}`, 
               `📊 账户状态`,
               `- 等级：LV.${baseData.level}`,
               `- 当前经验：${baseData.experience}`,
@@ -741,8 +759,8 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
             ].join('\n')
 
             await Notification.schedule({
-              title: "九号签到助手",
-              subtitle: "任务完成 ✅",
+              title: "已签到",
+              subtitle: "九号电动车",
               body: signBody,
               iconImageData: { systemImage: "checkmark.seal.fill", color: "#34C759" },
               threadIdentifier: "ninebot-sign",
