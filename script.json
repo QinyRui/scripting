@@ -1,53 +1,64 @@
 {
-  "localizedDescriptions" : {
-    "es" : "",
-    "ru" : "",
-    "zh" : "",
+  "icon" : "scooter",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  },
+  "entry" : "index.tsx",
+  "version" : "1.2.3",
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "permissions" : [
+    "calendar",
+    "reminders",
+    "alarms",
+    "contacts",
+    "location",
+    "homeKit",
+    "photos",
+    "health",
+    "clipboard",
+    "fileSystem"
+  ],
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "runInApp" : true,
+  "localizedNames" : {
     "de" : "",
-    "fr" : "",
+    "it" : "",
+    "ru" : "",
     "pt" : "",
+    "es" : "",
+    "en" : "",
+    "fr" : "",
+    "ja" : "",
+    "zh" : ""
+  },
+  "localizedDescriptions" : {
+    "ja" : "",
+    "fr" : "",
+    "ru" : "",
     "en" : "",
     "it" : "",
-    "ja" : ""
+    "de" : "",
+    "zh" : "",
+    "pt" : "",
+    "es" : ""
   },
   "intentInputTypes" : [
 
   ],
-  "entry" : "index.tsx",
-  "remoteResource" : {
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
-    "hash" : "a2b771353de1654d29bb91c1b0a3d6b2"
-  },
-  "localizedNames" : {
-    "en" : "",
-    "es" : "",
-    "ru" : "",
-    "fr" : "",
-    "ja" : "",
-    "de" : "",
-    "zh" : "",
-    "pt" : "",
-    "it" : ""
-  },
-  "permissions" : null,
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  },
-  "description" : "修复：盲盒接口已更新新接口，正常返回",
-  "runInApp" : true,
+  "name" : "九号APP签到",
   "contributors" : [
     {
-      "name" : "QinyRui",
       "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "email" : "602839678@qq.com"
+      "email" : "602839678@qq.com",
+      "name" : "QinyRui"
     }
   ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
-  "version" : "1.2.3",
-  "name" : "九号系统签到",
-  "color" : "rgba(0, 50, 222, 1.00)",
-  "icon" : "scooter"
+  "description" : "修复：盲盒接口已更新新接口，正常返回",
+  "remoteResource" : {
+    "hash" : "0e86a83838f97c71c3dd1991eea2d107",
+    "autoUpdateInterval" : 300,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
+  }
 }
