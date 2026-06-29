@@ -1,15 +1,49 @@
 {
-  "description" : "6-29: 新增内容\n设置页新增「自动补签」开关",
-  "runInApp" : true,
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "name" : "九号APP签到",
-  "icon" : "scooter",
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  },
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "intentInputTypes" : [
+
+  ],
+  "contributors" : [
+    {
+      "name" : "QinyRui",
+      "email" : "602839678@qq.com",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
   "version" : "1.2.5",
+  "localizedDescriptions" : {
+    "it" : "",
+    "pt" : "",
+    "en" : "",
+    "fr" : "",
+    "es" : "",
+    "ja" : "",
+    "ru" : "",
+    "zh" : "",
+    "de" : ""
+  },
+  "runInApp" : true,
+  "name" : "九号APP签到",
+  "remoteResource" : {
+    "autoUpdateInterval" : 300,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "a786893ffefc7184691a19e7720b8c5a"
+  },
+  "entry" : "index.tsx",
+  "icon" : "scooter",
+  "localizedNames" : {
+    "en" : "",
+    "es" : "",
+    "pt" : "",
+    "de" : "",
+    "ja" : "",
+    "zh" : "",
+    "ru" : "",
+    "it" : "",
+    "fr" : ""
+  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "description" : "6-29: 新增内容\n设置页新增「自动补签」开关",
   "permissions" : [
     "calendar",
     "reminders",
@@ -22,43 +56,9 @@
     "clipboard",
     "fileSystem"
   ],
-  "entry" : "index.tsx",
-  "color" : "rgba(0, 50, 222, 1.00)",
-  "intentInputTypes" : [
-
-  ],
-  "localizedNames" : {
-    "ru" : "",
-    "en" : "",
-    "es" : "",
-    "ja" : "",
-    "it" : "",
-    "fr" : "",
-    "pt" : "",
-    "zh" : "",
-    "de" : ""
-  },
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "autoUpdateInterval" : 300,
-    "hash" : "848323fb0acad1e07e59555200f27b01"
-  },
-  "localizedDescriptions" : {
-    "pt" : "",
-    "ja" : "",
-    "en" : "",
-    "zh" : "",
-    "it" : "",
-    "fr" : "",
-    "ru" : "",
-    "de" : "",
-    "es" : ""
-  },
-  "contributors" : [
-    {
-      "name" : "QinyRui",
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-    }
-  ]
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  }
 }
