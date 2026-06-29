@@ -895,10 +895,10 @@ function FileEntryRow(props: {
 // --- 板块渐变过渡背景色配置 ---
 
 const SECTION_GRADIENTS: [string, string][] = [
-  ["rgba(13,148,136,0.06)", "rgba(13,140,160,0.06)"],       // 设置：青→青蓝
-  ["rgba(13,140,160,0.06)", "rgba(13,110,180,0.06)"],       // 文件队列：青蓝→蓝
-  ["rgba(50,173,230,0.12)", "rgba(50,173,230,0.06)"],
-  ["rgba(50,80,200,0.06)", "rgba(90,60,200,0.06)"],         // 上传历史：靛蓝→紫蓝
+  ["rgba(13,148,136,0.08)", "rgba(13,140,160,0.04)"],       // 设置：青→青蓝
+  ["rgba(13,140,160,0.08)", "rgba(13,110,180,0.04)"],       // 文件队列：青蓝→蓝
+  ["rgba(50,173,230,0.10)", "rgba(50,173,230,0.04)"],
+  ["rgba(50,80,200,0.06)", "rgba(90,60,200,0.04)"],         // 上传历史：靛蓝→紫蓝
 ];
 
 function SectionGradientBg({
@@ -913,13 +913,15 @@ function SectionGradientBg({
     <VStack
       spacing={0}
       frame={{ maxWidth: "infinity" }}
-      padding={{ top: 6, bottom: 6, leading: 0, trailing: 0 }}
-      // @ts-ignore - gradient overload resolution issue
+      padding={{ top: 8, bottom: 8, leading: 12, trailing: 12 }}
+      // @ts-ignore
       background={gradient("linear", {
         colors: colors,
         startPoint: "top",
         endPoint: "bottom",
       }) as any}
+      // @ts-ignore
+      mask={<RoundedRectangle cornerRadius={12} fill="black" />}
     >
       {children}
     </VStack>
@@ -945,7 +947,14 @@ function HeroCard({
     <VStack
       padding={16}
       spacing={12}
-      background="#0D9488"
+      // @ts-ignore
+      background={gradient("linear", {
+        colors: ["rgba(13,148,136,0.25)", "rgba(13,140,160,0.15)"],
+        startPoint: "top",
+        endPoint: "bottom",
+      }) as any}
+      // @ts-ignore
+      mask={<RoundedRectangle cornerRadius={12} fill="black" />}
     >
       <HStack spacing={8} alignment="center">
         {githubIconPath ? (
@@ -957,29 +966,29 @@ function HeroCard({
           <Image
             systemName="chevron.left.forwardslash.chevron.right"
             font="title3"
-            foregroundStyle="white"
+            foregroundStyle="systemTeal"
           />
         )}
-        <Text font="headline" foregroundStyle="white">
+        <Text font="headline" foregroundStyle="label">
           {repoName}
         </Text>
       </HStack>
 
       <HStack spacing={16}>
         <VStack alignment="leading" spacing={2}>
-          <Text font="caption" foregroundStyle="white" opacity={0.6}>
+          <Text font="caption" foregroundStyle="secondaryLabel">
             分支
           </Text>
-          <Text font="subheadline" foregroundStyle="white">
+          <Text font="subheadline" foregroundStyle="label">
             {branch || "main"}
           </Text>
         </VStack>
         <Spacer />
         <VStack alignment="trailing" spacing={2}>
-          <Text font="caption" foregroundStyle="white" opacity={0.6}>
+          <Text font="caption" foregroundStyle="secondaryLabel">
             状态
           </Text>
-          <Text font="subheadline" foregroundStyle="white">
+          <Text font="subheadline" foregroundStyle="label">
             {configReady ? "就绪" : "待配置"}
           </Text>
         </VStack>
@@ -987,19 +996,19 @@ function HeroCard({
 
       <HStack spacing={16}>
         <VStack alignment="leading" spacing={2}>
-          <Text font="caption" foregroundStyle="white" opacity={0.6}>
+          <Text font="caption" foregroundStyle="secondaryLabel">
             文件
           </Text>
-          <Text font="subheadline" foregroundStyle="white">
+          <Text font="subheadline" foregroundStyle="label">
             {selectedCountText}
           </Text>
         </VStack>
         <Spacer />
         <VStack alignment="trailing" spacing={2}>
-          <Text font="caption" foregroundStyle="white" opacity={0.6}>
+          <Text font="caption" foregroundStyle="secondaryLabel">
             路径
           </Text>
-          <Text font="subheadline" foregroundStyle="white" lineLimit={1}>
+          <Text font="subheadline" foregroundStyle="label" lineLimit={1}>
             {repoName}
           </Text>
         </VStack>
