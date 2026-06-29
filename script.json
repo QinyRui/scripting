@@ -1,32 +1,25 @@
 {
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
   "localizedDescriptions" : {
-    "it" : "",
-    "fr" : "",
     "de" : "",
-    "es" : "",
+    "it" : "",
+    "ru" : "",
     "ja" : "",
+    "es" : "",
     "pt" : "",
-    "en" : "",
     "zh" : "",
-    "ru" : ""
+    "fr" : "",
+    "en" : ""
   },
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
+  },
+  "color" : "rgba(143, 168, 149,1)",
   "intentInputTypes" : [
 
   ],
-  "description" : "更新：1. 新增农历节日倒计时数据",
-  "name" : "彩云天气",
-  "localizedNames" : {
-    "it" : "",
-    "ru" : "",
-    "de" : "",
-    "fr" : "",
-    "pt" : "",
-    "zh" : "",
-    "en" : "",
-    "ja" : "",
-    "es" : ""
-  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/CY.PNG",
   "permissions" : [
     "calendar",
     "reminders",
@@ -39,26 +32,33 @@
     "clipboard",
     "fileSystem"
   ],
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
   "remoteResource" : {
+    "hash" : "a04a995b7d8cefd7c59acb1c2434b3bf",
     "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "125df1399f3bffe778ff1f42acb24493"
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
   },
+  "version" : "6.3.5",
   "contributors" : [
     {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+      "email" : "602839678@qq.com",
       "name" : "QinyRui",
-      "email" : "602839678@qq.com"
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
     }
   ],
-  "version" : "6.3.5",
-  "runInApp" : true,
+  "name" : "彩云天气",
+  "description" : "更新：1. 新增农历节日倒计时数据",
   "icon" : "cloud.sun.rain.fill",
   "entry" : "index.tsx",
-  "color" : "rgba(143, 168, 149,1)"
+  "localizedNames" : {
+    "en" : "",
+    "zh" : "",
+    "ru" : "",
+    "ja" : "",
+    "es" : "",
+    "it" : "",
+    "de" : "",
+    "pt" : "",
+    "fr" : ""
+  },
+  "runInApp" : true
 }
