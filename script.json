@@ -1,48 +1,60 @@
 {
-  "runInApp" : false,
   "contributors" : [
 
   ],
-  "version" : "1.0.1",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/main\/photos\/AF7F1085-9B6A-4D78-8D45-47B34D7C0086.png",
+  "permissions" : [
+    "calendar",
+    "reminders",
+    "alarms",
+    "contacts",
+    "location",
+    "homeKit",
+    "photos",
+    "health",
+    "clipboard",
+    "fileSystem"
+  ],
+  "localizedDescriptions" : {
+    "en" : "",
+    "pt" : "",
+    "it" : "",
+    "ja" : "",
+    "fr" : "",
+    "es" : "",
+    "de" : "",
+    "zh" : "",
+    "ru" : ""
+  },
   "icon" : "square.and.arrow.up",
+  "localizedNames" : {
+    "it" : "",
+    "de" : "",
+    "zh" : "",
+    "es" : "",
+    "ru" : "",
+    "fr" : "",
+    "pt" : "",
+    "ja" : "",
+    "en" : ""
+  },
+  "version" : "1.0.1",
   "intentInputTypes" : [
     "FileURLs"
   ],
-  "description" : "更新优化",
-  "entry" : "index.tsx",
-  "remoteResource" : {
-    "autoUpdateInterval" : 300,
-    "hash" : "9981dcde5426942cddd3a49ba4ddda2a",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/Github工具箱"
-  },
-  "localizedDescriptions" : {
-    "pt" : "",
-    "es" : "",
-    "fr" : "",
-    "it" : "",
-    "ru" : "",
-    "en" : "",
-    "de" : "",
-    "zh" : "",
-    "ja" : ""
-  },
-  "localizedNames" : {
-    "pt" : "",
-    "it" : "",
-    "ru" : "",
-    "fr" : "",
-    "ja" : "",
-    "en" : "",
-    "es" : "",
-    "zh" : "",
-    "de" : ""
-  },
-  "color" : "rgba(28, 140, 255,1)",
-  "name" : "Github 多功能上传",
   "author" : {
     "name" : "QinyRui",
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "runInApp" : false,
+  "color" : "rgba(28, 140, 255,1)",
+  "name" : "Github 多功能上传",
+  "description" : "更新优化",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/main\/photos\/AF7F1085-9B6A-4D78-8D45-47B34D7C0086.png",
+  "entry" : "index.tsx",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/Github工具箱",
+    "autoUpdateInterval" : 300,
+    "hash" : "0d316da49fbc09f4ac80b68e807c7078"
   }
 }
