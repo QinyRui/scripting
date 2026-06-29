@@ -77,6 +77,7 @@ export interface NinebotSettings {
   autoSign: boolean
   autoSignTime: string
   autoOpenBlindBox: boolean
+  autoUseSignCard: boolean
   titleDayColor: Color
   titleNightColor: Color
   descDayColor: Color
@@ -94,6 +95,7 @@ const defaultSettings: NinebotSettings = {
   autoSign: false,
   autoSignTime: "00:30",
   autoOpenBlindBox: false,
+  autoUseSignCard: false,
   titleDayColor: "#333333" as unknown as Color,
   titleNightColor: "#FFFFFF" as unknown as Color,
   descDayColor: "#666666" as unknown as Color,
@@ -779,6 +781,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [autoSign, setAutoSign] = useState(initial.autoSign ?? false)
   const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
+  const [autoUseSignCard, setAutoUseSignCard] = useState(initial.autoUseSignCard ?? false)
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
@@ -800,6 +803,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       autoSign: !!autoSign,
       autoSignTime: (autoSignTime || "00:30").trim(),
       autoOpenBlindBox: !!autoOpenBlindBox,
+      autoUseSignCard: !!autoUseSignCard,
       titleDayColor: initial.titleDayColor,
       titleNightColor: initial.titleNightColor,
       descDayColor: initial.descDayColor,
@@ -1288,6 +1292,21 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                 onChanged={setAutoOpenBlindBox}
               />
             </VStack>
+          </HStack>
+
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="calendar.badge.plus" foregroundStyle="systemTeal" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+              <Text fontWeight="semibold">自动补签</Text>
+              <Text font="caption" foregroundStyle="secondaryLabel">
+                {autoUseSignCard ? '有补签卡时自动补签缺失天数' : '开启后自动使用补签卡'}
+              </Text>
+            </VStack>
+            <Toggle
+              title=""
+              value={autoUseSignCard}
+              onChanged={setAutoUseSignCard}
+            />
           </HStack>
 
           {onOpenBlindBox ? (
