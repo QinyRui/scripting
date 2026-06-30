@@ -28,6 +28,7 @@ import { FreeTab } from './tabs/FreeTab'
 import { IapTab } from './tabs/IapTab'
 import { IconTab } from './tabs/IconTab'
 import { ProxyTab } from './tabs/ProxyTab'
+import { ImageToolsTab } from './tabs/ImageToolsTab'
 
 // ============================================
 // 关于页面 Tab
@@ -206,6 +207,15 @@ function App() {
         <VStack
           tag={0}
           tabItem={
+            <Label title="图片" systemImage="wand.and.stars" />
+          }
+        >
+          <ImageToolsTab />
+        </VStack>
+
+        <VStack
+          tag={1}
+          tabItem={
             <Label title="账号" systemImage="person.2" />
           }
         >
@@ -213,7 +223,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={1}
+          tag={2}
           tabItem={
             <Label title="比价" systemImage="scalemass" />
           }
@@ -222,7 +232,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={2}
+          tag={3}
           tabItem={
             <Label title="内购" systemImage="hammer" />
           }
@@ -231,7 +241,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={3}
+          tag={4}
           tabItem={
             <Label title="切换" systemImage="globe.americas" />
           }
@@ -240,7 +250,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={4}
+          tag={5}
           tabItem={
             <Label title="限免" systemImage="gift" />
           }
@@ -249,7 +259,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={5}
+          tag={6}
           tabItem={
             <Label title="图标" systemImage="photo" />
           }
@@ -258,7 +268,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={6}
+          tag={7}
           tabItem={
             <Label title="代理" systemImage="gearshape" />
           }
@@ -267,7 +277,7 @@ function App() {
         </VStack>
 
         <VStack
-          tag={7}
+          tag={8}
           tabItem={
             <Label title="关于" systemImage="info.circle" />
           }
