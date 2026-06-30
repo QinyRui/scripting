@@ -79,10 +79,7 @@ export function AccountsTab() {
   const lastUpdate = data?.lastUpdate || ''
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       <PageHeader
         title="账号共享"
         subtitle="共享账号 · 实时更新 · 多地区支持"
@@ -97,18 +94,10 @@ export function AccountsTab() {
           spacing={4}
           padding={{ leading: 20, bottom: 6 }}
         >
-          <Text
-            font="caption"
-            // @ts-ignore
-            foregroundColor={T.green}
-          >
+          <Text font="caption" foregroundColor={T.green}>
             ●
           </Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text3}
-            font="caption"
-          >
+          <Text foregroundColor={T.text3} font="caption">
             {`最近更新 ${relTime(lastUpdate)}${isCached ? '（本地缓存）' : ''}`}
           </Text>
         </HStack>
@@ -133,11 +122,7 @@ export function AccountsTab() {
               alignment="center"
               padding={{ leading: 20, trailing: 20, bottom: 6 }}
             >
-              <Text
-                // @ts-ignore
-                foregroundColor={T.text3}
-                font="footnote"
-              >
+              <Text foregroundColor={T.text3} font="footnote">
                 {`共 ${filtered.length} 个账号 · ${region === '全部' ? '全部地区' : region}`}
               </Text>
               <Spacer />
@@ -146,12 +131,7 @@ export function AccountsTab() {
                 opacity={refreshing ? 0.4 : 1}
               >
                 <HStack alignment="center" spacing={4}>
-                  <Text
-                    // @ts-ignore
-                    foregroundColor={T.blue2}
-                    font="footnote"
-                    bold
-                  >
+                  <Text foregroundColor={T.blue2} font="footnote" bold>
                     {refreshing ? '⟳ 刷新中' : '↻ 刷新'}
                   </Text>
                 </HStack>
@@ -173,17 +153,11 @@ export function AccountsTab() {
         <VStack
           alignment="center"
           padding={{ top: 8, bottom: 8, leading: 18, trailing: 18 }}
-          // @ts-ignore
           background={T.green}
-          // @ts-ignore
           cornerRadius={20}
+          clipShape="capsule"
         >
-          <Text
-            // @ts-ignore
-            foregroundColor="#fff"
-            font="footnote"
-            bold
-          >
+          <Text foregroundColor="#fff" font="footnote" bold>
             {toast}
           </Text>
         </VStack>
@@ -253,47 +227,28 @@ function AccountCardItem(props: { acc: Account; onCopied: () => void }) {
     <VStack
       padding={16}
       margin={{ leading: 16, trailing: 16, bottom: 10 }}
-      // @ts-ignore
-      background={T.surface}
-      // @ts-ignore
-      cornerRadius={14}
       spacing={10}
     >
       <HStack alignment="center">
         <HStack
           alignment="center"
           spacing={4}
-          padding={{ horizontal: 8, vertical: 4 }}
-          // @ts-ignore
-          background="rgba(59,130,246,0.15)"
-          // @ts-ignore
-          cornerRadius={6}
+          padding={{ horizontal: 10, vertical: 5 }}
+          background={T.blueGlass}
+          cornerRadius={20}
+          clipShape="capsule"
         >
           <Text font="footnote">{flag}</Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.blue2}
-            font="footnote"
-            bold
-          >
+          <Text foregroundColor={T.blue2} font="footnote" bold>
             {acc.regionName}
           </Text>
         </HStack>
         <Spacer />
         <HStack alignment="center" spacing={4}>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.green}
-            font="caption"
-          >
+          <Text foregroundColor={T.green} font="caption">
             ●
           </Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.green2}
-            font="caption"
-            bold
-          >
+          <Text foregroundColor={T.green2} font="caption" bold>
             活跃
           </Text>
         </HStack>
@@ -301,106 +256,57 @@ function AccountCardItem(props: { acc: Account; onCopied: () => void }) {
 
       <HStack alignment="center" spacing={12}>
         <VStack alignment="leading" spacing={3} frame={{ minWidth: 200 }}>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text3}
-            font="caption"
-          >
+          <Text foregroundColor={T.text3} font="caption">
             邮箱
           </Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text}
-            font="callout"
-          >
+          <Text foregroundColor={T.text} font="callout">
             {acc.email}
           </Text>
         </VStack>
         <Spacer />
         <VStack
           onTapGesture={() => copy('email')}
-          padding={{ horizontal: 10, vertical: 6 }}
-          // @ts-ignore
-          background="rgba(59,130,246,0.2)"
-          // @ts-ignore
-          cornerRadius={8}
+          padding={{ horizontal: 12, vertical: 7 }}
+          background={T.blueGlass}
+          cornerRadius={20}
+          clipShape="capsule"
         >
           <HStack alignment="center" spacing={4}>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.blue2}
-              font="caption"
-            >📋</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.blue2}
-              font="caption"
-              bold
-            >复制</Text>
+            <Text foregroundColor={T.blue2} font="caption">📋</Text>
+            <Text foregroundColor={T.blue2} font="caption" bold>复制</Text>
           </HStack>
         </VStack>
       </HStack>
 
       <HStack alignment="center" spacing={12}>
         <VStack alignment="leading" spacing={3} frame={{ minWidth: 200 }}>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text3}
-            font="caption"
-          >
+          <Text foregroundColor={T.text3} font="caption">
             密码
           </Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text}
-            font="callout"
-          >
+          <Text foregroundColor={T.text} font="callout">
             {realPassword || acc.password}
           </Text>
         </VStack>
         <Spacer />
         <VStack
           onTapGesture={() => copy('password')}
-          padding={{ horizontal: 10, vertical: 6 }}
-          // @ts-ignore
-          background="rgba(168,85,247,0.2)"
-          // @ts-ignore
-          cornerRadius={8}
+          padding={{ horizontal: 12, vertical: 7 }}
+          background={T.purpleGlass}
+          cornerRadius={20}
+          clipShape="capsule"
         >
           <HStack alignment="center" spacing={4}>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.purple}
-              font="caption"
-            >🔑</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.purple}
-              font="caption"
-              bold
-            >复制</Text>
+            <Text foregroundColor={T.purple} font="caption">🔑</Text>
+            <Text foregroundColor={T.purple} font="caption" bold>复制</Text>
           </HStack>
         </VStack>
       </HStack>
 
       <HStack alignment="center">
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text4}
-          font="caption"
-        >{`✉️ ${domain}`}</Text>
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text4}
-          font="caption"
-          padding={{ leading: 8 }}
-        >{`#${acc.id}`}</Text>
+        <Text foregroundColor={T.text4} font="caption">{`✉️ ${domain}`}</Text>
+        <Text foregroundColor={T.text4} font="caption" padding={{ leading: 8 }}>{`#${acc.id}`}</Text>
         <Spacer />
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text4}
-          font="caption"
-        >{`检测于 ${relTime(acc.lastCheck)}`}</Text>
+        <Text foregroundColor={T.text4} font="caption">{`检测于 ${relTime(acc.lastCheck)}`}</Text>
       </HStack>
     </VStack>
   )
@@ -410,30 +316,21 @@ function NoticeBlock() {
   return (
     <VStack
       padding={14}
-      // @ts-ignore
       margin={{ leading: 16, trailing: 16, top: 8, bottom: 24 }}
-      // @ts-ignore
-      background="rgba(245,158,11,0.12)"
-      // @ts-ignore
-      cornerRadius={12}
+      background={T.orangeGlass}
+      cornerRadius={20}
+      stroke={T.glassBorder}
+      strokeWidth={0.5}
+      clipShape="capsule"
       spacing={6}
     >
       <HStack alignment="center" spacing={6}>
         <Text font="body">⚠️</Text>
-        <Text
-          // @ts-ignore
-          foregroundColor={T.orange}
-          font="subheadline"
-          bold
-        >
+        <Text foregroundColor={T.orange} font="subheadline" bold>
           使用须知与安全提醒
         </Text>
       </HStack>
-      <Text
-        // @ts-ignore
-        foregroundColor={T.text2}
-        font="caption"
-      >
+      <Text foregroundColor={T.text2} font="caption">
         {'仅限在 App Store 中登录下载应用\n禁止在 iCloud、iMessage、FaceTime 中登录\n禁止更改密码或进行任何购买操作'}
       </Text>
     </VStack>
