@@ -223,10 +223,7 @@ export function SwitchTab() {
   const enabledCount = regions.filter(r => r.enabled).length
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       <PageHeader
         title="商店切换"
         subtitle="一键切换 AppStore 地区"
@@ -242,11 +239,7 @@ export function SwitchTab() {
         padding={{ leading: 20, trailing: 20, top: 8, bottom: 6 }}
         spacing={8}
       >
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text3}
-          font="footnote"
-        >
+        <Text foregroundColor={T.text3} font="footnote">
           {q
             ? `找到 ${filtered.length} 个地区`
             : `共 ${regions.length} 个地区 · 已启用 ${enabledCount}`}
@@ -279,11 +272,7 @@ export function SwitchTab() {
               spacing={6}
             >
               <Text font="title2">🌍</Text>
-              <Text
-                // @ts-ignore
-                foregroundColor={T.text3}
-                font="caption"
-              >
+              <Text foregroundColor={T.text3} font="caption">
                 {`已展示 ${filtered.length} / ${regions.length} 个地区`}
               </Text>
             </VStack>
@@ -293,20 +282,8 @@ export function SwitchTab() {
 
       {/* Toast */}
       {toast ? (
-        <VStack
-          alignment="center"
-          padding={{ top: 10, bottom: 10, leading: 20, trailing: 20 }}
-          // @ts-ignore
-          background={T.green}
-          // @ts-ignore
-          cornerRadius={22}
-        >
-          <Text
-            // @ts-ignore
-            foregroundColor="#fff"
-            font="footnote"
-            bold
-          >{toast}</Text>
+        <VStack alignment="center" padding={{ top: 10, bottom: 10, leading: 20, trailing: 20 }} background={T.green} cornerRadius={22} clipShape="capsule">
+          <Text foregroundColor="#fff" font="footnote" bold>{toast}</Text>
         </VStack>
       ) : null}
     </VStack>
@@ -325,12 +302,13 @@ function RegionRow(props: {
   return (
     <VStack
       onTapGesture={onSwitch}
-      padding={{ horizontal: 16, vertical: 11 }}
-      margin={{ leading: 16, trailing: 16, bottom: 1 }}
-      // @ts-ignore
-      background={T.surface}
-      // @ts-ignore
-      cornerRadius={10}
+      padding={{ horizontal: 16, vertical: 12 }}
+      margin={{ leading: 16, trailing: 16, bottom: 4 }}
+      background={T.glass}
+      cornerRadius={18}
+      stroke={T.glassBorder}
+      strokeWidth={0.5}
+      clipShape="capsule"
     >
       <HStack alignment="center" spacing={12}>
         {/* 国旗 */}
@@ -339,17 +317,8 @@ function RegionRow(props: {
         {/* 国家信息 */}
         <VStack alignment="leading" spacing={1}>
           <HStack alignment="center" spacing={6}>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.text}
-              font="callout"
-              bold
-            >{item.region}</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.text3}
-              font="caption"
-            >{name}</Text>
+            <Text foregroundColor={T.text} font="callout" bold>{item.region}</Text>
+            <Text foregroundColor={T.text3} font="caption">{name}</Text>
           </HStack>
         </VStack>
 
@@ -357,26 +326,18 @@ function RegionRow(props: {
 
         {/* 切换按钮 */}
         <VStack
-          padding={{ horizontal: 10, vertical: 5 }}
-          // @ts-ignore
-          background="rgba(34,197,94,0.18)"
-          // @ts-ignore
-          cornerRadius={7}
+          padding={{ horizontal: 12, vertical: 6 }}
+          background={T.greenGlass}
+          cornerRadius={20}
+          stroke={T.glassBorder}
+          strokeWidth={0.5}
+          clipShape="capsule"
         >
-          <Text
-            // @ts-ignore
-            foregroundColor={T.green}
-            font="caption"
-            bold
-          >切换 →</Text>
+          <Text foregroundColor={T.green} font="caption" bold>切换 →</Text>
         </VStack>
 
         {/* Chevron */}
-        <Image
-          systemName="chevron.forward"
-          // @ts-ignore
-          foregroundColor={T.text4}
-        />
+        <Image systemName="chevron.forward" foregroundColor={T.text4} />
       </HStack>
     </VStack>
   )
