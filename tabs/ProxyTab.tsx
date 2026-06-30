@@ -143,10 +143,7 @@ export function ProxyTab() {
   const currentCount = currentSource?.count || (sourceName === '全部' ? data?.total : 0)
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       <PageHeader
         title="代理脚本"
         subtitle="一键复制脚本链接 · 解锁应用功能"
@@ -172,11 +169,7 @@ export function ProxyTab() {
         alignment="center"
         padding={{ leading: 20, trailing: 20, bottom: 4 }}
       >
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text3}
-          font="footnote"
-        >
+        <Text foregroundColor={T.text3} font="footnote">
           {sourceName === '全部'
             ? `共 ${data?.total || 0} 个脚本`
             : `${currentLabel} · ${currentCount} 个脚本`}
@@ -186,12 +179,7 @@ export function ProxyTab() {
           onTapGesture={() => { setRefreshing(true); loadPage(currentPage) }}
           opacity={refreshing ? 0.4 : 1}
         >
-          <Text
-            // @ts-ignore
-            foregroundColor={T.yellow}
-            font="footnote"
-            bold
-          >
+          <Text foregroundColor={T.yellow} font="footnote" bold>
             {refreshing ? '⟳ 刷新中' : '↻ 刷新'}
           </Text>
         </VStack>
@@ -220,17 +208,13 @@ export function ProxyTab() {
                 <VStack
                   onTapGesture={() => { if (currentPage > 1) { setLoading(true); loadPage(currentPage - 1) } }}
                   padding={{ horizontal: 14, vertical: 10 }}
-                  // @ts-ignore
-                  background={currentPage > 1 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)'}
-                  // @ts-ignore
-                  cornerRadius={10}
+                  background={currentPage > 1 ? T.glass : 'rgba(255,255,255,0.03)'}
+                  cornerRadius={20}
+                  stroke={currentPage > 1 ? T.border : 'transparent'}
+                  strokeWidth={0.5}
+                  clipShape="capsule"
                 >
-                  <Text
-                    // @ts-ignore
-                    foregroundColor={currentPage > 1 ? T.text : T.text4}
-                    font="body"
-                    bold
-                  >
+                  <Text foregroundColor={currentPage > 1 ? T.text : T.text4} font="body" bold>
                     {'<'}
                   </Text>
                 </VStack>
@@ -252,29 +236,20 @@ export function ProxyTab() {
                     return (
                       <VStack key={p} alignment="center" spacing={0}>
                         {showEllipsis ? (
-                          <Text
-                            // @ts-ignore
-                            foregroundColor={T.text4}
-                            font="footnote"
-                            padding={{ horizontal: 2 }}
-                          >
+                          <Text foregroundColor={T.text4} font="footnote" padding={{ horizontal: 2 }}>
                             ...
                           </Text>
                         ) : null}
                         <VStack
                           onTapGesture={() => { if (p !== currentPage) { setLoading(true); loadPage(p) } }}
                           padding={{ horizontal: 14, vertical: 10 }}
-                          // @ts-ignore
-                          background={p === currentPage ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'}
-                          // @ts-ignore
-                          cornerRadius={10}
+                          background={p === currentPage ? T.blue : T.glass}
+                          cornerRadius={20}
+                          stroke={p === currentPage ? 'transparent' : T.border}
+                          strokeWidth={0.5}
+                          clipShape="capsule"
                         >
-                          <Text
-                            // @ts-ignore
-                            foregroundColor={p === currentPage ? '#fff' : T.text2}
-                            font="body"
-                            bold={p === currentPage}
-                          >
+                          <Text foregroundColor={p === currentPage ? '#fff' : T.text2} font="body" bold={p === currentPage}>
                             {p}
                           </Text>
                         </VStack>
@@ -286,26 +261,18 @@ export function ProxyTab() {
                 <VStack
                   onTapGesture={() => { if (currentPage < (data?.totalPages || 1)) { setLoading(true); loadPage(currentPage + 1) } }}
                   padding={{ horizontal: 14, vertical: 10 }}
-                  // @ts-ignore
-                  background={currentPage < (data?.totalPages || 1) ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)'}
-                  // @ts-ignore
-                  cornerRadius={10}
+                  background={currentPage < (data?.totalPages || 1) ? T.glass : 'rgba(255,255,255,0.03)'}
+                  cornerRadius={20}
+                  stroke={currentPage < (data?.totalPages || 1) ? T.border : 'transparent'}
+                  strokeWidth={0.5}
+                  clipShape="capsule"
                 >
-                  <Text
-                    // @ts-ignore
-                    foregroundColor={currentPage < (data?.totalPages || 1) ? T.text : T.text4}
-                    font="body"
-                    bold
-                  >
+                  <Text foregroundColor={currentPage < (data?.totalPages || 1) ? T.text : T.text4} font="body" bold>
                     {'>'}
                   </Text>
                 </VStack>
               </HStack>
-              <Text
-                // @ts-ignore
-                foregroundColor={T.text4}
-                font="caption"
-              >
+              <Text foregroundColor={T.text4} font="caption">
                 {`第 ${currentPage} / ${data?.totalPages || 1} 页`}
               </Text>
             </VStack>
@@ -314,20 +281,8 @@ export function ProxyTab() {
       </ScrollView>
 
       {toast ? (
-        <VStack
-          alignment="center"
-          padding={{ top: 8, bottom: 8, leading: 18, trailing: 18 }}
-          // @ts-ignore
-          background={T.green}
-          // @ts-ignore
-          cornerRadius={20}
-        >
-          <Text
-            // @ts-ignore
-            foregroundColor="#fff"
-            font="footnote"
-            bold
-          >
+        <VStack alignment="center" padding={{ top: 8, bottom: 8, leading: 18, trailing: 18 }} background={T.green} cornerRadius={20} clipShape="capsule">
+          <Text foregroundColor="#fff" font="footnote" bold>
             {toast}
           </Text>
         </VStack>
@@ -346,10 +301,6 @@ function ProxyScriptCard(props: {
     <VStack
       padding={14}
       margin={{ leading: 16, trailing: 16, bottom: 10 }}
-      // @ts-ignore
-      background={T.surface}
-      // @ts-ignore
-      cornerRadius={14}
       spacing={10}
     >
       {/* 顶部：图标 + 名称 + 来源标签 */}
@@ -357,12 +308,9 @@ function ProxyScriptCard(props: {
         <VStack
           frame={{ width: 48, height: 48 }}
           alignment="center"
-          // @ts-ignore
           background="rgba(255,255,255,0.08)"
-          // @ts-ignore
-          cornerRadius={10}
-          // @ts-ignore
-          clipShape={{ type: 'rect', rounded: 10 }}
+          cornerRadius={14}
+          clipShape="capsule"
         >
           {s.icon_url ? (
             <Image
@@ -370,7 +318,6 @@ function ProxyScriptCard(props: {
               resizable
               scaleToFit
               frame={{ width: 44, height: 44 }}
-              // @ts-ignore
               cornerRadius={8}
             />
           ) : (
@@ -378,73 +325,42 @@ function ProxyScriptCard(props: {
           )}
         </VStack>
         <VStack alignment="leading" spacing={3} frame={{ minWidth: 200 }}>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text}
-            font="callout"
-            bold
-          >
+          <Text foregroundColor={T.text} font="callout" bold>
             {s.name}
           </Text>
           <HStack alignment="center" spacing={4}>
             <VStack
-              padding={{ horizontal: 6, vertical: 2 }}
-              // @ts-ignore
-              background="rgba(234,179,8,0.2)"
-              // @ts-ignore
-              cornerRadius={4}
+              padding={{ horizontal: 8, vertical: 3 }}
+              background={T.yellowGlass}
+              cornerRadius={20}
+              stroke={T.glassBorder}
+              strokeWidth={0.5}
+              clipShape="capsule"
             >
-              <Text
-                // @ts-ignore
-                foregroundColor={T.yellow}
-                font="caption"
-                bold
-              >
+              <Text foregroundColor={T.yellow} font="caption" bold>
                 {s.source_label}
               </Text>
             </VStack>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.text4}
-              font="caption"
-              padding={{ leading: 4 }}
-            >
+            <Text foregroundColor={T.text4} font="caption" padding={{ leading: 4 }}>
               {s.author}
             </Text>
           </HStack>
         </VStack>
         <Spacer />
         <HStack alignment="center" spacing={4}>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.green}
-            font="caption"
-          >●</Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.green2}
-            font="caption"
-            bold
-          >{s.script_type}</Text>
+          <Text foregroundColor={T.green} font="caption">●</Text>
+          <Text foregroundColor={T.green2} font="caption" bold>{s.script_type}</Text>
         </HStack>
       </HStack>
 
       {/* 中间：Bundle ID + App 名 */}
       <VStack alignment="leading" spacing={3}>
         {s.bundle_id ? (
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text3}
-            font="caption"
-          >
+          <Text foregroundColor={T.text3} font="caption">
             {`📦 ${s.bundle_id}`}
           </Text>
         ) : null}
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text4}
-          font="caption"
-        >
+        <Text foregroundColor={T.text4} font="caption">
           {`📅 更新于 ${s.update_date}`}
         </Text>
       </VStack>
@@ -453,46 +369,30 @@ function ProxyScriptCard(props: {
       <HStack alignment="center" spacing={8}>
         <VStack
           onTapGesture={onCopyScript}
-          padding={{ horizontal: 12, vertical: 7 }}
-          // @ts-ignore
-          background="rgba(234,179,8,0.2)"
-          // @ts-ignore
-          cornerRadius={8}
+          padding={{ horizontal: 14, vertical: 8 }}
+          background={T.yellowGlass}
+          cornerRadius={20}
+          stroke={T.glassBorder}
+          strokeWidth={0.5}
+          clipShape="capsule"
         >
           <HStack alignment="center" spacing={4}>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.yellow}
-              font="caption"
-            >📋</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.yellow}
-              font="caption"
-              bold
-            >脚本链接</Text>
+            <Text foregroundColor={T.yellow} font="caption">📋</Text>
+            <Text foregroundColor={T.yellow} font="caption" bold>脚本链接</Text>
           </HStack>
         </VStack>
         <VStack
           onTapGesture={onCopyApp}
-          padding={{ horizontal: 12, vertical: 7 }}
-          // @ts-ignore
-          background="rgba(59,130,246,0.2)"
-          // @ts-ignore
-          cornerRadius={8}
+          padding={{ horizontal: 14, vertical: 8 }}
+          background={T.blueGlass}
+          cornerRadius={20}
+          stroke={T.glassBorder}
+          strokeWidth={0.5}
+          clipShape="capsule"
         >
           <HStack alignment="center" spacing={4}>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.blue2}
-              font="caption"
-            >🍎</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.blue2}
-              font="caption"
-              bold
-            >App Store</Text>
+            <Text foregroundColor={T.blue2} font="caption">🍎</Text>
+            <Text foregroundColor={T.blue2} font="caption" bold>App Store</Text>
           </HStack>
         </VStack>
       </HStack>
