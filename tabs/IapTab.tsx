@@ -8,13 +8,15 @@ import {
   ScrollView,
   Spacer,
   Image,
+  TextField,
+  Picker,
   useState,
   useObservable,
   fetch,
 } from 'scripting'
 import { T } from '../theme'
-import { PageHeader, SearchBar, LoadingView, EmptyView } from '../components'
-import { IAP_REGIONS, IAP_SEARCH_TYPES, IAP_PRESETS } from '../data'
+import { PageHeader, LoadingView, EmptyView } from '../components'
+import { IAP_REGIONS, IAP_SEARCH_TYPES } from '../data'
 
 // API 基础配置
 const BASE = 'https://sliverkiss-psi.vercel.app'
@@ -28,7 +30,14 @@ const HEADERS_JSON = {
 const REGION_CODE: Record<string, string> = {
   '美国': 'us', '中国': 'cn', '香港': 'hk', '台湾': 'tw',
   '日本': 'jp', '英国': 'gb', '韩国': 'kr', '德国': 'de',
-  '法国': 'fr', '加拿大': 'ca',
+  '法国': 'fr', '加拿大': 'ca', '澳大利亚': 'au', '印度': 'in',
+}
+
+// 国家国旗映射
+const FLAG_MAP: Record<string, string> = {
+  '美国': '🇺🇸', '中国': '🇨🇳', '香港': '🇭🇰', '台湾': '🇹🇼',
+  '日本': '🇯🇵', '英国': '🇬🇧', '韩国': '🇰🇷', '德国': '🇩🇪',
+  '法国': '🇫🇷', '加拿大': '🇨🇦', '澳大利亚': '🇦🇺', '印度': '🇮🇳',
 }
 
 // 类型定义
@@ -36,7 +45,7 @@ interface SearchResult {
   trackId: number
   trackName: string
   bundleId: string
-  artworkUrl100: string
+  artworkUrl512: string
   description: string
   averageUserRating: number
   userRatingCount: number
@@ -80,6 +89,7 @@ export function IapTab() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [iapDetail, setIapDetail] = useState<IAPDetail | null>(null)
   const [error, setError] = useState<string>('')
+  const [showRegionPicker, setShowRegionPicker] = useState<boolean>(false)
 
   // 搜索应用
   async function doSearch() {
@@ -200,8 +210,8 @@ export function IapTab() {
     return (
       <VStack padding={{ top: 4, bottom: 16 }} spacing={0}>
         <HStack padding={{ leading: 20, trailing: 20, bottom: 8 }}>
+          {/* @ts-ignore */}
           <Text
-            // @ts-ignore
             foregroundColor={T.text3}
             font="caption"
             bold
@@ -215,49 +225,43 @@ export function IapTab() {
             onTapGesture={() => selectApp(app)}
             padding={{ horizontal: 16, vertical: 12 }}
             margin={{ leading: 16, trailing: 16, bottom: 8 }}
-            // @ts-ignore
-            background={T.surface}
-            // @ts-ignore
-            cornerRadius={12}
           >
             <HStack alignment="center" spacing={12}>
-              {app.artworkUrl100 ? (
+              {app.artworkUrl512 ? (
                 <Image
-                  imageUrl={smallIcon(app.artworkUrl100)}
-                  frame={{ width: 28, height: 28 }}
-                  // @ts-ignore
-                  cornerRadius={6}
+                  imageUrl={smallIcon(app.artworkUrl512)}
+                  frame={{ width: 53, height: 53 }}
+                  cornerRadius={12}
                 />
               ) : (
                 <VStack
-                  frame={{ width: 28, height: 28 }}
+                  frame={{ width: 53, height: 53 }}
                   alignment="center"
-                  // @ts-ignore
                   background={T.surface2}
-                  // @ts-ignore
-                  cornerRadius={6}
+                  cornerRadius={12}
+                  clipShape="capsule"
                 >
-                  <Text font="footnote">📱</Text>
+                  <Text font="title3">📱</Text>
                 </VStack>
               )}
               <VStack alignment="leading" spacing={3} frame={{ maxWidth: 200 }}>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text}
                   font="callout"
                   bold
                 >
                   {app.trackName}
                 </Text>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text4}
                   font="caption2"
                 >
                   {app.bundleId}
                 </Text>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text3}
                   font="caption"
                 >
@@ -266,8 +270,8 @@ export function IapTab() {
               </VStack>
               <Spacer />
               <VStack alignment="trailing" spacing={3}>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.purple}
                   font="footnote"
                   bold
@@ -276,7 +280,6 @@ export function IapTab() {
                 </Text>
                 {app.averageUserRating ? (
                   <Text
-                    // @ts-ignore
                     foregroundColor={T.text4}
                     font="caption2"
                   >
@@ -302,34 +305,30 @@ export function IapTab() {
     return (
       <VStack spacing={0} padding={{ bottom: 16 }}>
         {/* 应用信息 */}
+        {/* @ts-ignore */}
         <VStack
           padding={{ horizontal: 16, vertical: 14 }}
           margin={{ leading: 16, trailing: 16, top: 8, bottom: 8 }}
-          // @ts-ignore
-          background={T.surface}
-          // @ts-ignore
-          cornerRadius={14}
         >
           <HStack alignment="center" spacing={12}>
             {app.iconUrl ? (
               <Image
                 imageUrl={smallIcon(app.iconUrl)}
                 frame={{ width: 32, height: 32 }}
-                // @ts-ignore
                 cornerRadius={7}
               />
             ) : null}
             <VStack alignment="leading" spacing={3}>
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text}
                 font="title3"
                 bold
               >
                 {app.name}
               </Text>
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text4}
                 font="caption2"
               >
@@ -337,15 +336,15 @@ export function IapTab() {
               </Text>
               {rating ? (
                 <HStack alignment="center" spacing={8}>
+                  {/* @ts-ignore */}
                   <Text
-                    // @ts-ignore
                     foregroundColor={T.text3}
                     font="caption"
                   >
                     ⭐ {rating.value.toFixed(1)}
                   </Text>
+                  {/* @ts-ignore */}
                   <Text
-                    // @ts-ignore
                     foregroundColor={T.text4}
                     font="caption2"
                   >
@@ -355,16 +354,18 @@ export function IapTab() {
               ) : null}
             </VStack>
             <Spacer />
+            {/* @ts-ignore */}
             <VStack
               onTapGesture={() => { setIapDetail(null); setSearchResults([]) }}
-              padding={{ horizontal: 10, vertical: 6 }}
-              // @ts-ignore
-              background={T.surface2}
-              // @ts-ignore
-              cornerRadius={8}
+              padding={{ horizontal: 12, vertical: 7 }}
+              background={T.glass}
+              cornerRadius={20}
+              stroke={T.glassBorder}
+              strokeWidth={0.5}
+              clipShape="capsule"
             >
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text2}
                 font="caption"
               >
@@ -378,8 +379,8 @@ export function IapTab() {
         <HStack
           padding={{ leading: 20, trailing: 20, top: 8, bottom: 8 }}
         >
+          {/* @ts-ignore */}
           <Text
-            // @ts-ignore
             foregroundColor={T.text3}
             font="caption"
             bold
@@ -396,25 +397,21 @@ export function IapTab() {
               key={idx}
               padding={{ horizontal: 16, vertical: 12 }}
               margin={{ leading: 16, trailing: 16, bottom: 6 }}
-              // @ts-ignore
-              background={T.surface}
-              // @ts-ignore
-              cornerRadius={10}
             >
               <HStack alignment="center" spacing={10}>
+                {/* @ts-ignore */}
                 <VStack
                   frame={{ width: 32, height: 32 }}
                   alignment="center"
-                  // @ts-ignore
                   background="rgba(168,85,247,0.15)"
-                  // @ts-ignore
                   cornerRadius={8}
+                  clipShape="capsule"
                 >
                   <Text font="callout">💎</Text>
                 </VStack>
                 <VStack alignment="leading" spacing={3} frame={{ maxWidth: 200 }}>
+                  {/* @ts-ignore */}
                   <Text
-                    // @ts-ignore
                     foregroundColor={T.text}
                     font="callout"
                     bold
@@ -423,7 +420,6 @@ export function IapTab() {
                   </Text>
                   {iap.productId ? (
                     <Text
-                      // @ts-ignore
                       foregroundColor={T.text4}
                       font="caption2"
                     >
@@ -432,7 +428,6 @@ export function IapTab() {
                   ) : null}
                   {iap.type ? (
                     <Text
-                      // @ts-ignore
                       foregroundColor={T.text3}
                       font="caption2"
                     >
@@ -444,7 +439,6 @@ export function IapTab() {
                 <VStack alignment="trailing" spacing={2}>
                   {iap.displayPrice ? (
                     <Text
-                      // @ts-ignore
                       foregroundColor={T.purple}
                       font="callout"
                       bold
@@ -454,7 +448,6 @@ export function IapTab() {
                   ) : null}
                   {iap.price ? (
                     <Text
-                      // @ts-ignore
                       foregroundColor={T.text4}
                       font="caption2"
                     >
@@ -471,48 +464,12 @@ export function IapTab() {
   }
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       <PageHeader
         title="内购查询"
         subtitle="查询 App 内购/订阅 productId · 解锁隐藏项目"
         desc="查询任意应用的内购和订阅项目详细信息，包括 productId、价格、类型等。"
       />
-
-      {/* 地区选择 */}
-      <ScrollView axes="horizontal">
-        <HStack
-          padding={{ leading: 16, trailing: 16, vertical: 6 }}
-          spacing={8}
-          alignment="center"
-        >
-          {IAP_REGIONS.map(r => {
-            const active = r === region
-            return (
-              <VStack
-                key={r}
-                onTapGesture={() => setRegion(r)}
-                padding={{ horizontal: 12, vertical: 6 }}
-                // @ts-ignore
-                background={active ? T.purple : T.surface}
-                // @ts-ignore
-                cornerRadius={14}
-              >
-                <Text
-                  // @ts-ignore
-                  foregroundColor={active ? '#fff' : T.text2}
-                  font="footnote"
-                  bold={active}
-                >
-                  {r}
-                </Text>
-              </VStack>
-            )
-          })}
-        </HStack>
-      </ScrollView>
 
       {/* 搜索类型选择 */}
       <HStack
@@ -520,27 +477,20 @@ export function IapTab() {
         spacing={6}
         alignment="center"
       >
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text3}
-          font="caption"
-        >
-          搜索类型:
-        </Text>
         {IAP_SEARCH_TYPES.map(t => {
           const active = t === searchType
           return (
             <VStack
               key={t}
               onTapGesture={() => setSearchType(t)}
-              padding={{ horizontal: 8, vertical: 4 }}
-              // @ts-ignore
-              background={active ? T.purple : T.surface2}
-              // @ts-ignore
-              cornerRadius={6}
+              padding={{ horizontal: 12, vertical: 6 }}
+              background={active ? T.glassActive : T.glass}
+              cornerRadius={20}
+              stroke={active ? T.purple : T.glassBorder}
+              strokeWidth={active ? 1 : 0.5}
+              clipShape="capsule"
             >
               <Text
-                // @ts-ignore
                 foregroundColor={active ? '#fff' : T.text2}
                 font="caption"
                 bold={active}
@@ -552,95 +502,69 @@ export function IapTab() {
         })}
       </HStack>
 
-      {/* 搜索框 */}
-      <SearchBar textObs={searchObs} placeholder={
-        searchType === '应用名称' ? '输入应用名称...'
-        : searchType === 'Bundle ID' ? '如 com.openai.chat'
-        : searchType === 'Track ID' ? '输入数字 ID'
-        : '粘贴 App Store 链接'
-      } />
+      {/* 搜索栏：胶囊背景 */}
+      <HStack
+        alignment="center"
+        spacing={0}
+        padding={{ leading: 10, trailing: 7, vertical: 0 }}
+        margin={{ leading: 16, trailing: 16, top: 4, bottom: 4 }}
+        background={T.glass}
+        cornerRadius={22}
+        clipShape="capsule"
+      >
+        {/* 国家选择：Picker menu 和网站 select 一样 */}
+        <Picker
+          value={region}
+          onChanged={(v) => setRegion(v)}
+          pickerStyle="menu"
+          label={
+            <HStack alignment="center" spacing={2}>
+              <Text font="footnote" bold>{FLAG_MAP[region] || '🌍'} {region}</Text>
+              <Text font="caption2" foregroundColor={T.text3}>▾</Text>
+            </HStack>
+          }
+        >
+          {IAP_REGIONS.map(r => (
+            <Text key={r} tag={r}>{FLAG_MAP[r] || '🌍'} {r}</Text>
+          ))}
+        </Picker>
+        {/* 分隔线 */}
+        <VStack frame={{ width: 1, height: 20 }} background={T.glassBorder} margin={{ leading: 8 }} />
+        {/* 搜索输入 */}
+        <VStack padding={{ leading: 12 }} frame={{ maxWidth: 200 }}>
+          <TextField value={searchObs} title=" " prompt="搜索应用名称..." />
+        </VStack>
+        <Spacer />
+        {/* 搜索按钮：网站同款白底深字 */}
+        <VStack
+          onTapGesture={doSearch}
+          padding={{ horizontal: 14, vertical: 6 }}
+          cornerRadius={8}
+        >
+          <Text font="footnote" bold>搜索</Text>
+        </VStack>
+      </HStack>
 
       {/* 提示 */}
+      {/* @ts-ignore */}
       <VStack
         padding={10}
-        // @ts-ignore
         margin={{ leading: 16, trailing: 16, top: 2, bottom: 4 }}
-        // @ts-ignore
-        background="rgba(168,85,247,0.1)"
-        // @ts-ignore
-        cornerRadius={10}
+        background={T.purpleGlass}
+        cornerRadius={20}
+        stroke={T.glassBorder}
+        strokeWidth={0.5}
+        clipShape="capsule"
       >
+        {/* @ts-ignore */}
         <Text
-          // @ts-ignore
           foregroundColor={T.text2}
           font="caption"
         >
-          💡 {searchType === '应用名称'
-            ? '直接输入应用名称，如 ChatGPT、Notion'
-            : searchType === 'Bundle ID'
-            ? '格式如 com.openai.chat'
-            : searchType === 'Track ID'
-            ? '数字 ID，从 App Store URL 提取'
-            : '粘贴完整 App Store 链接'}
+          输入 Bundle ID / Track ID / App Store 链接查询内购项目，或切换到应用名称搜索
         </Text>
       </VStack>
 
-      {/* 预设应用（仅在未搜索时显示） */}
-      {!iapDetail && searchResults.length === 0 && !loading ? (
-        <ScrollView axes="horizontal">
-          <HStack
-            padding={{ leading: 16, trailing: 16, vertical: 6 }}
-            spacing={8}
-            alignment="center"
-          >
-            {IAP_PRESETS.map(p => (
-              <VStack
-                key={p}
-                onTapGesture={() => { searchObs.setValue(p); doSearchWithQuery(p) }}
-                padding={{ horizontal: 12, vertical: 6 }}
-                // @ts-ignore
-                background={T.surface}
-                // @ts-ignore
-                cornerRadius={14}
-              >
-                <Text
-                  // @ts-ignore
-                  foregroundColor={T.text2}
-                  font="footnote"
-                >
-                  {p}
-                </Text>
-              </VStack>
-            ))}
-          </HStack>
-        </ScrollView>
-      ) : null}
-
-      {/* 搜索按钮 */}
-      {!iapDetail ? (
-        <VStack
-          onTapGesture={doSearch}
-          padding={{ top: 12, bottom: 12 }}
-          margin={{ leading: 16, trailing: 16, top: 4, bottom: 8 }}
-          // @ts-ignore
-          background={T.purple}
-          // @ts-ignore
-          cornerRadius={12}
-          alignment="center"
-        >
-          <HStack alignment="center" spacing={6}>
-            <Text font="callout">🔍</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor="#fff"
-              font="callout"
-              bold
-            >
-              查询内购项目
-            </Text>
-          </HStack>
-        </VStack>
-      ) : null}
 
       {/* 内容区域 */}
       <ScrollView>
