@@ -313,6 +313,7 @@ function MediumWidget(props: { data: ApiResponse | null }) {
                   background={T.surface}
                   // @ts-ignore
                   cornerRadius={2}
+                  clipShape="capsule"
                 >
                   <VStack
                     frame={{ width: `${pct}%` as any, height: 4 }}
@@ -320,6 +321,7 @@ function MediumWidget(props: { data: ApiResponse | null }) {
                     background={T.blue}
                     // @ts-ignore
                     cornerRadius={2}
+                    clipShape="capsule"
                   />
                 </VStack>
               </VStack>
