@@ -1,21 +1,11 @@
 {
-  "remoteResource" : {
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/多功能宝箱",
-    "hash" : "3629648c4b90cb2566a2efa9f859e2b5"
-  },
-  "name" : "多功能宝箱",
-  "localizedDescriptions" : {
-    "fr" : "",
-    "es" : "",
-    "de" : "",
-    "it" : "",
-    "zh" : "",
-    "pt" : "",
-    "ja" : "",
-    "ru" : "",
-    "en" : ""
-  },
+  "version" : "1.0.2",
+  "description" : "①:增加图片编辑AI，②：多项修复，③：后续更新计划换新接口，更全",
+  "contributors" : [
+
+  ],
+  "color" : "rgba(124, 76, 179,1)",
+  "entry" : "index.tsx",
   "permissions" : [
     "calendar",
     "reminders",
@@ -28,33 +18,43 @@
     "clipboard",
     "fileSystem"
   ],
-  "localizedNames" : {
-    "ru" : "",
-    "it" : "",
-    "ja" : "",
-    "es" : "",
-    "fr" : "",
-    "pt" : "",
-    "zh" : "",
-    "de" : "",
-    "en" : ""
+  "icon" : "square.2.layers.3d.fill",
+  "runInApp" : true,
+  "name" : "多功能宝箱",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
   },
-  "entry" : "index.tsx",
   "intentInputTypes" : [
 
   ],
-  "iconImage" : "",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  "localizedNames" : {
+    "ru" : "",
+    "ja" : "",
+    "fr" : "",
+    "it" : "",
+    "pt" : "",
+    "de" : "",
+    "en" : "",
+    "es" : "",
+    "zh" : ""
   },
-  "contributors" : [
-
-  ],
-  "runInApp" : true,
-  "color" : "rgba(124, 76, 179,1)",
-  "description" : "增加图片编辑AI",
-  "icon" : "square.2.layers.3d.fill",
-  "version" : "1.0.1"
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/多功能宝箱",
+    "hash" : "8195e023650f069a61a43e204ee34519",
+    "autoUpdateInterval" : 600
+  },
+  "localizedDescriptions" : {
+    "zh" : "",
+    "es" : "",
+    "fr" : "",
+    "ru" : "",
+    "pt" : "",
+    "it" : "",
+    "en" : "",
+    "de" : "",
+    "ja" : ""
+  },
+  "iconImage" : ""
 }
