@@ -89,10 +89,7 @@ export function IconTab() {
   }
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       <PageHeader
         title="图标查询"
         subtitle="App Store 高清图标 · 一键获取"
@@ -115,18 +112,14 @@ export function IconTab() {
               <VStack
                 key={r}
                 onTapGesture={() => setRegion(r)}
-                padding={{ horizontal: 12, vertical: 6 }}
-                // @ts-ignore
-                background={active ? T.green : T.surface}
-                // @ts-ignore
-                cornerRadius={14}
+                padding={{ horizontal: 16, vertical: 8 }}
+                background={active ? T.glassActive : T.glass}
+                cornerRadius={22}
+                stroke={active ? T.green : T.glassBorder}
+                strokeWidth={active ? 1.5 : 0.5}
+                clipShape="capsule"
               >
-                <Text
-                  // @ts-ignore
-                  foregroundColor={active ? '#fff' : T.text2}
-                  font="footnote"
-                  bold={active}
-                >
+                <Text foregroundColor={active ? '#fff' : T.text2} font="footnote" bold={active}>
                   {r}
                 </Text>
               </VStack>
@@ -143,20 +136,14 @@ export function IconTab() {
         onTapGesture={doSearch}
         padding={{ top: 10, bottom: 10 }}
         margin={{ leading: 16, trailing: 16, top: 4, bottom: 8 }}
-        // @ts-ignore
         background={T.green}
-        // @ts-ignore
-        cornerRadius={12}
+        cornerRadius={22}
         alignment="center"
+        clipShape="capsule"
       >
         <HStack alignment="center" spacing={6}>
           <Text font="callout">🔍</Text>
-          <Text
-            // @ts-ignore
-            foregroundColor="#fff"
-            font="callout"
-            bold
-          >
+          <Text foregroundColor="#fff" font="callout" bold>
             搜索图标
           </Text>
         </HStack>
@@ -165,18 +152,12 @@ export function IconTab() {
       {/* 当前选择 */}
       <VStack
         padding={8}
-        // @ts-ignore
         margin={{ leading: 16, trailing: 16, bottom: 6 }}
-        // @ts-ignore
         background="rgba(34,197,94,0.1)"
-        // @ts-ignore
         cornerRadius={8}
+        clipShape="capsule"
       >
-        <Text
-          // @ts-ignore
-          foregroundColor={T.text3}
-          font="caption"
-        >
+        <Text foregroundColor={T.text3} font="caption">
           {`📍 ${region} · iOS · ${results.length > 0 ? `${results.length} 条结果` : '等待搜索'}`}
         </Text>
       </VStack>
@@ -194,10 +175,6 @@ export function IconTab() {
                 key={app.trackId}
                 padding={{ horizontal: 16, vertical: 12 }}
                 margin={{ leading: 16, trailing: 16, bottom: 8 }}
-                // @ts-ignore
-                background={T.surface}
-                // @ts-ignore
-                cornerRadius={12}
               >
                 <HStack alignment="center" spacing={12}>
                   {/* 图标 - 点击复制 */}
@@ -209,35 +186,19 @@ export function IconTab() {
                       resizable
                       scaleToFit
                       frame={{ width: 56, height: 56 }}
-                      // @ts-ignore
                       cornerRadius={12}
                     />
                   </VStack>
 
                   {/* 应用信息 */}
                   <VStack alignment="leading" spacing={3} frame={{ maxWidth: 180 }}>
-                    <Text
-                      // @ts-ignore
-                      foregroundColor={T.text}
-                      font="callout"
-                      bold
-                      numberOfLines={1}
-                    >
+                    <Text foregroundColor={T.text} font="callout" bold numberOfLines={1}>
                       {app.trackName}
                     </Text>
-                    <Text
-                      // @ts-ignore
-                      foregroundColor={T.text3}
-                      font="caption2"
-                      numberOfLines={1}
-                    >
+                    <Text foregroundColor={T.text3} font="caption2" numberOfLines={1}>
                       {app.bundleId}
                     </Text>
-                    <Text
-                      // @ts-ignore
-                      foregroundColor={T.text4}
-                      font="caption2"
-                    >
+                    <Text foregroundColor={T.text4} font="caption2">
                       {app.artistName}
                     </Text>
                   </VStack>
@@ -248,17 +209,12 @@ export function IconTab() {
                   <VStack
                     onTapGesture={() => copyUrl(app.artworkUrl512)}
                     padding={{ horizontal: 10, vertical: 6 }}
-                    // @ts-ignore
                     background="rgba(34,197,94,0.15)"
-                    // @ts-ignore
                     cornerRadius={8}
+                    clipShape="capsule"
                   >
                     <HStack alignment="center" spacing={4}>
-                      <Text
-                        // @ts-ignore
-                        foregroundColor={T.green2}
-                        font="caption"
-                      >
+                      <Text foregroundColor={T.green2} font="caption">
                         📋 复制
                       </Text>
                     </HStack>
@@ -280,16 +236,11 @@ export function IconTab() {
                         copyUrl(url)
                       }}
                       padding={{ horizontal: 8, vertical: 4 }}
-                      // @ts-ignore
                       background="rgba(255,255,255,0.08)"
-                      // @ts-ignore
                       cornerRadius={6}
+                      clipShape="capsule"
                     >
-                      <Text
-                        // @ts-ignore
-                        foregroundColor={T.text3}
-                        font="caption2"
-                      >
+                      <Text foregroundColor={T.text3} font="caption2">
                         {size}
                       </Text>
                     </VStack>
@@ -305,20 +256,10 @@ export function IconTab() {
             spacing={12}
           >
             <Text font="largeTitle">🖼️</Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.text}
-              font="headline"
-            >
+            <Text foregroundColor={T.text} font="headline">
               输入应用名称搜索图标
             </Text>
-            <Text
-              // @ts-ignore
-              foregroundColor={T.text3}
-              font="caption"
-              padding={{ leading: 40, trailing: 40 }}
-              multilineTextAlignment="center"
-            >
+            <Text foregroundColor={T.text3} font="caption" padding={{ leading: 40, trailing: 40 }} multilineTextAlignment="center">
               {`支持 ${ICON_REGIONS.length} 个国家/地区\n一键复制苹果 CDN 直链`}
             </Text>
           </VStack>
@@ -327,20 +268,8 @@ export function IconTab() {
 
       {/* Toast */}
       {toast ? (
-        <VStack
-          alignment="center"
-          padding={{ top: 8, bottom: 8, leading: 18, trailing: 18 }}
-          // @ts-ignore
-          background={T.green}
-          // @ts-ignore
-          cornerRadius={20}
-        >
-          <Text
-            // @ts-ignore
-            foregroundColor="#fff"
-            font="footnote"
-            bold
-          >
+        <VStack alignment="center" padding={{ top: 8, bottom: 8, leading: 18, trailing: 18 }} background={T.green} cornerRadius={20} clipShape="capsule">
+          <Text foregroundColor="#fff" font="footnote" bold>
             {toast}
           </Text>
         </VStack>
