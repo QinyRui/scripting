@@ -202,6 +202,7 @@ export const IAP_SEARCH_TYPES = ['应用名称', 'Bundle ID', 'Track ID', 'App S
 export const IAP_REGIONS = [
   '美国', '中国', '香港', '台湾', '日本',
   '英国', '韩国', '德国', '法国', '加拿大',
+  '澳大利亚', '印度',
 ]
 
 // 图标查询：可选地区
