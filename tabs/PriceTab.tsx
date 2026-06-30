@@ -186,8 +186,8 @@ export function PriceTab() {
     return (
       <VStack padding={{ top: 4, bottom: 16 }} spacing={0}>
         <HStack padding={{ leading: 20, trailing: 20, bottom: 8 }}>
+          {/* @ts-ignore */}
           <Text
-            // @ts-ignore
             foregroundColor={T.text3}
             font="caption"
             bold
@@ -201,42 +201,36 @@ export function PriceTab() {
             onTapGesture={() => loadDetail(app)}
             padding={{ horizontal: 16, vertical: 12 }}
             margin={{ leading: 16, trailing: 16, bottom: 8 }}
-            // @ts-ignore
-            background={T.surface}
-            // @ts-ignore
-            cornerRadius={12}
           >
             <HStack alignment="center" spacing={12}>
               {app.appImage ? (
                 <Image
                   imageUrl={smallIcon(app.appImage)}
-                  frame={{ width: 28, height: 28 }}
-                  // @ts-ignore
-                  cornerRadius={6}
+                  frame={{ width: 53, height: 53 }}
+                  cornerRadius={12}
                 />
               ) : (
                 <VStack
-                  frame={{ width: 28, height: 28 }}
+                  frame={{ width: 53, height: 53 }}
                   alignment="center"
-                  // @ts-ignore
                   background={T.surface2}
-                  // @ts-ignore
-                  cornerRadius={6}
+                  cornerRadius={12}
+                  clipShape="capsule"
                 >
-                  <Text font="footnote">📱</Text>
+                  <Text font="title3">📱</Text>
                 </VStack>
               )}
               <VStack alignment="leading" spacing={3} frame={{ maxWidth: 220 }}>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text}
                   font="callout"
                   bold
                 >
                   {app.appName}
                 </Text>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text3}
                   font="caption"
                 >
@@ -244,8 +238,8 @@ export function PriceTab() {
                 </Text>
               </VStack>
               <Spacer />
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.orange}
                 font="footnote"
                 bold
@@ -271,31 +265,27 @@ export function PriceTab() {
         <VStack
           padding={{ horizontal: 16, vertical: 14 }}
           margin={{ leading: 16, trailing: 16, top: 8, bottom: 8 }}
-          // @ts-ignore
-          background={T.surface}
-          // @ts-ignore
-          cornerRadius={14}
         >
           <HStack alignment="center" spacing={12}>
             {app.inAppPurchaseList?.[0]?.price?.area ? null : null}
             <VStack alignment="leading" spacing={3}>
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text}
                 font="title3"
                 bold
               >
                 {app.name}
               </Text>
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text3}
                 font="caption"
               >
                 {app.subtitle}
               </Text>
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text4}
                 font="caption2"
               >
@@ -303,16 +293,18 @@ export function PriceTab() {
               </Text>
             </VStack>
             <Spacer />
+            {/* @ts-ignore */}
             <VStack
               onTapGesture={() => { setSelectedApp(null); setResults([]) }}
-              padding={{ horizontal: 10, vertical: 6 }}
-              // @ts-ignore
-              background={T.surface2}
-              // @ts-ignore
-              cornerRadius={8}
+              padding={{ horizontal: 12, vertical: 7 }}
+              background={T.glass}
+              cornerRadius={20}
+              stroke={T.glassBorder}
+              strokeWidth={0.5}
+              clipShape="capsule"
             >
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text2}
                 font="caption"
               >
@@ -334,14 +326,15 @@ export function PriceTab() {
               <VStack
                 key={mode}
                 onTapGesture={() => setViewMode(mode)}
-                padding={{ horizontal: 14, vertical: 7 }}
-                // @ts-ignore
-                background={active ? T.orange : T.surface}
-                // @ts-ignore
-                cornerRadius={14}
+                padding={{ horizontal: 16, vertical: 10 }}
+                background={active ? T.glassActive : T.glass}
+                cornerRadius={22}
+                stroke={active ? T.orange : T.glassBorder}
+                strokeWidth={active ? 1.5 : 0.5}
+                clipShape="capsule"
               >
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={active ? '#fff' : T.text2}
                   font="footnote"
                   bold={active}
@@ -367,14 +360,15 @@ export function PriceTab() {
                   <VStack
                     key={name}
                     onTapGesture={() => setSelectedIAP(name)}
-                    padding={{ horizontal: 12, vertical: 6 }}
-                    // @ts-ignore
-                    background={active ? T.blue : T.surface2}
-                    // @ts-ignore
-                    cornerRadius={10}
+                    padding={{ horizontal: 16, vertical: 8 }}
+                    background={active ? T.glassActive : T.glass}
+                    cornerRadius={20}
+                    stroke={active ? T.blue : T.glassBorder}
+                    strokeWidth={active ? 1.5 : 0.5}
+                    clipShape="capsule"
                   >
+                    {/* @ts-ignore */}
                     <Text
-                      // @ts-ignore
                       foregroundColor={active ? '#fff' : T.text2}
                       font="caption"
                       bold={active}
@@ -407,8 +401,8 @@ export function PriceTab() {
         <ScrollView>
           <VStack padding={{ top: 8, bottom: 16 }} spacing={0}>
             <HStack padding={{ leading: 20, trailing: 20, bottom: 8 }}>
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor={T.text3}
                 font="caption"
                 bold
@@ -427,8 +421,8 @@ export function PriceTab() {
       <ScrollView>
         <VStack padding={{ top: 8, bottom: 16 }} spacing={0}>
           <HStack padding={{ leading: 20, trailing: 20, bottom: 8 }}>
+            {/* @ts-ignore */}
             <Text
-              // @ts-ignore
               foregroundColor={T.text3}
               font="caption"
               bold
@@ -453,15 +447,11 @@ export function PriceTab() {
               key={area.area}
               padding={{ horizontal: 16, vertical: 12 }}
               margin={{ leading: 16, trailing: 16, bottom: 8 }}
-              // @ts-ignore
-              background={T.surface}
-              // @ts-ignore
-              cornerRadius={12}
             >
               <HStack alignment="center" spacing={8}>
                 <Text font="callout">{FLAG_MAP[area.area] || '🌍'}</Text>
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text}
                   font="callout"
                   bold
@@ -469,8 +459,8 @@ export function PriceTab() {
                   {area.areaName}
                 </Text>
                 <Spacer />
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.orange}
                   font="callout"
                   bold
@@ -482,16 +472,16 @@ export function PriceTab() {
                 <VStack padding={{ top: 8 }} spacing={4}>
                   {area.inAppPurchaseList.map((iap, idx) => (
                     <HStack key={idx} alignment="center" spacing={8}>
+                      {/* @ts-ignore */}
                       <Text
-                        // @ts-ignore
                         foregroundColor={T.text3}
                         font="caption"
                       >
                         {iap.object}
                       </Text>
                       <Spacer />
+                      {/* @ts-ignore */}
                       <Text
-                        // @ts-ignore
                         foregroundColor={T.text2}
                         font="caption"
                       >
@@ -515,15 +505,12 @@ export function PriceTab() {
         key={area.area}
         padding={{ horizontal: 16, vertical: 12 }}
         margin={{ leading: 16, trailing: 16, bottom: 6 }}
-        // @ts-ignore
-        background={isCheapest ? 'rgba(16,185,129,0.1)' : T.surface}
-        // @ts-ignore
-        cornerRadius={10}
+        background={isCheapest ? T.greenGlass : undefined}
       >
         <HStack alignment="center" spacing={10}>
           <Text font="callout">{FLAG_MAP[area.area] || '🌍'}</Text>
+          {/* @ts-ignore */}
           <Text
-            // @ts-ignore
             foregroundColor={T.text}
             font="callout"
             bold
@@ -532,16 +519,16 @@ export function PriceTab() {
           </Text>
           <Spacer />
           <VStack alignment="trailing" spacing={2}>
+            {/* @ts-ignore */}
             <Text
-              // @ts-ignore
               foregroundColor={isCheapest ? T.green : T.text}
               font="callout"
               bold
             >
               ¥{price.cnyPrice.toFixed(2)}
             </Text>
+            {/* @ts-ignore */}
             <Text
-              // @ts-ignore
               foregroundColor={T.text4}
               font="caption2"
             >
@@ -551,13 +538,12 @@ export function PriceTab() {
           {isCheapest ? (
             <VStack
               padding={{ horizontal: 6, vertical: 2 }}
-              // @ts-ignore
               background={T.green}
-              // @ts-ignore
               cornerRadius={4}
+              clipShape="capsule"
             >
+              {/* @ts-ignore */}
               <Text
-                // @ts-ignore
                 foregroundColor="#fff"
                 font="caption2"
                 bold
@@ -572,10 +558,7 @@ export function PriceTab() {
   }
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       <PageHeader
         title="应用比价"
         subtitle="全球 App Store 价格对比 · 多地区实时比价"
@@ -597,14 +580,15 @@ export function PriceTab() {
               <VStack
                 key={p}
                 onTapGesture={() => { searchObs.setValue(p); doSearch(p) }}
-                padding={{ horizontal: 12, vertical: 6 }}
-                // @ts-ignore
-                background={T.surface}
-                // @ts-ignore
-                cornerRadius={14}
+                padding={{ horizontal: 14, vertical: 7 }}
+                background={T.glass}
+                cornerRadius={20}
+                stroke={T.glassBorder}
+                strokeWidth={0.5}
+                clipShape="capsule"
               >
+                {/* @ts-ignore */}
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text2}
                   font="footnote"
                 >
@@ -622,16 +606,15 @@ export function PriceTab() {
           onTapGesture={() => doSearch()}
           padding={{ top: 10, bottom: 10 }}
           margin={{ leading: 16, trailing: 16, top: 4, bottom: 8 }}
-          // @ts-ignore
           background={T.orange}
-          // @ts-ignore
-          cornerRadius={12}
+          cornerRadius={22}
           alignment="center"
+          clipShape="capsule"
         >
           <HStack alignment="center" spacing={6}>
             <Text font="callout">🔍</Text>
+            {/* @ts-ignore */}
             <Text
-              // @ts-ignore
               foregroundColor="#fff"
               font="callout"
               bold
