@@ -92,29 +92,17 @@ export function FreeTab() {
   const GAP = 12
 
   return (
-    <VStack
-      // @ts-ignore
-      background={T.bg}
-    >
+    <VStack>
       {/* 顶部标题 */}
       <HStack
         alignment="center"
         padding={{ top: 14, bottom: 4, leading: 20, trailing: 20 }}
       >
         <VStack spacing={2}>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text}
-            font="title2"
-            bold
-          >
+          <Text foregroundColor={T.text} font="title2" bold>
             应用限免
           </Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text2}
-            font="footnote"
-          >
+          <Text foregroundColor={T.text2} font="footnote">
             实时追踪 App Store 限时免费应用和内购限免
           </Text>
         </VStack>
@@ -127,18 +115,10 @@ export function FreeTab() {
           spacing={4}
           padding={{ leading: 20, bottom: 6 }}
         >
-          <Text
-            font="caption"
-            // @ts-ignore
-            foregroundColor={T.green}
-          >
+          <Text font="caption" foregroundColor={T.green}>
             ●
           </Text>
-          <Text
-            // @ts-ignore
-            foregroundColor={T.text3}
-            font="caption"
-          >
+          <Text foregroundColor={T.text3} font="caption">
             {`已同步 · ${lastUpdate}`}
           </Text>
         </HStack>
@@ -184,10 +164,6 @@ export function FreeTab() {
                       alignment="center"
                       padding={{ horizontal: 12, vertical: 16 }}
                       spacing={8}
-                      // @ts-ignore
-                      background={T.surface}
-                      // @ts-ignore
-                      cornerRadius={14}
                     >
                       {/* 应用图标 - 网站同款 60x60 */}
                       <Image
@@ -195,19 +171,11 @@ export function FreeTab() {
                         resizable
                         scaleToFit
                         frame={{ width: 60, height: 60 }}
-                        // @ts-ignore
                         cornerRadius={14}
                       />
 
                       {/* 应用名称 - 单行省略 */}
-                      <Text
-                        // @ts-ignore
-                        foregroundColor={T.text}
-                        font="footnote"
-                        bold
-                        numberOfLines={1}
-                        frame={{ maxWidth: 'infinity' }}
-                      >
+                      <Text foregroundColor={T.text} font="footnote" bold numberOfLines={1} frame={{ maxWidth: 'infinity' }}>
                         {item.app.name}
                       </Text>
 
@@ -215,18 +183,12 @@ export function FreeTab() {
                       <HStack
                         alignment="center"
                         spacing={2}
-                        // @ts-ignore
                         background={item.type === '内购限免' ? 'rgba(59,130,246,0.15)' : 'rgba(34,197,94,0.15)'}
-                        // @ts-ignore
                         cornerRadius={20}
                         padding={{ horizontal: 8, vertical: 2 }}
+                        clipShape="capsule"
                       >
-                        <Text
-                          // @ts-ignore
-                          foregroundColor={item.type === '内购限免' ? T.blue2 : T.green2}
-                          font="caption2"
-                          bold
-                        >
+                        <Text foregroundColor={item.type === '内购限免' ? T.blue2 : T.green2} font="caption2" bold>
                           {item.type}
                         </Text>
                       </HStack>
