@@ -36,7 +36,6 @@ import { ImageToolsTab } from './tabs/ImageToolsTab'
 function AboutTab() {
   return (
     <VStack
-      // @ts-ignore
       background={T.bg}
     >
       <ScrollView>
@@ -45,7 +44,6 @@ function AboutTab() {
           {/* 头部 */}
           <VStack alignment="center" spacing={6} padding={{ top: 10 }}>
             <Text
-              // @ts-ignore
               foregroundColor={T.text}
               font="title2"
               bold
@@ -53,7 +51,6 @@ function AboutTab() {
               Sakura 樱花交流会
             </Text>
             <Text
-              // @ts-ignore
               foregroundColor={T.text2}
               font="footnote"
             >
@@ -64,7 +61,6 @@ function AboutTab() {
           {/* 关于作者 */}
           <VStack spacing={8}>
             <Text
-              // @ts-ignore
               foregroundColor={T.text}
               font="headline"
               bold
@@ -72,14 +68,12 @@ function AboutTab() {
               关于作者
             </Text>
             <Text
-              // @ts-ignore
               foregroundColor={T.text2}
               font="subheadline"
             >
               Sliverkiss，一个乐观的虚无主义者。
             </Text>
             <Text
-              // @ts-ignore
               foregroundColor={T.text3}
               font="footnote"
             >
@@ -90,7 +84,6 @@ function AboutTab() {
           {/* 技术栈 */}
           <VStack spacing={8}>
             <Text
-              // @ts-ignore
               foregroundColor={T.text}
               font="headline"
               bold
@@ -106,7 +99,6 @@ function AboutTab() {
             ].map((item, i) => (
               <HStack key={i} alignment="center" spacing={8}>
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text4}
                   font="caption"
                   frame={{ width: 60 }}
@@ -114,7 +106,6 @@ function AboutTab() {
                   {item.label}
                 </Text>
                 <Text
-                  // @ts-ignore
                   foregroundColor={T.text2}
                   font="footnote"
                 >
@@ -127,7 +118,6 @@ function AboutTab() {
           {/* 联系我们 */}
           <VStack spacing={8}>
             <Text
-              // @ts-ignore
               foregroundColor={T.text}
               font="headline"
               bold
@@ -143,16 +133,13 @@ function AboutTab() {
                 key={i}
                 onTapGesture={() => Safari.present(item.url)}
                 padding={{ horizontal: 14, vertical: 12 }}
-                // @ts-ignore
                 background={T.surface}
-                // @ts-ignore
                 cornerRadius={12}
               >
                 <HStack alignment="center" spacing={10}>
                   <Text font="title3">{item.icon}</Text>
                   <VStack spacing={2}>
                     <Text
-                      // @ts-ignore
                       foregroundColor={T.text}
                       font="footnote"
                       bold
@@ -160,7 +147,6 @@ function AboutTab() {
                       {item.label}
                     </Text>
                     <Text
-                      // @ts-ignore
                       foregroundColor={T.text3}
                       font="caption"
                     >
@@ -169,7 +155,6 @@ function AboutTab() {
                   </VStack>
                   <Spacer />
                   <Text
-                    // @ts-ignore
                     foregroundColor={T.text4}
                     font="caption"
                   >
@@ -181,7 +166,6 @@ function AboutTab() {
           </VStack>
 
           <Text
-            // @ts-ignore
             foregroundColor={T.text4}
             font="caption2"
             multilineTextAlignment="center"
@@ -207,19 +191,19 @@ function App() {
         <VStack
           tag={0}
           tabItem={
-            <Label title="图片" systemImage="wand.and.stars" />
+            <Label title="账号" systemImage="person.2" />
           }
         >
-          <ImageToolsTab />
+          <AccountsTab />
         </VStack>
 
         <VStack
           tag={1}
           tabItem={
-            <Label title="账号" systemImage="person.2" />
+            <Label title="图片" systemImage="wand.and.stars" />
           }
         >
-          <AccountsTab />
+          <ImageToolsTab />
         </VStack>
 
         <VStack
