@@ -188,7 +188,6 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
       }
     } catch {}
   }
-  }
 
   // 3. 获取米游币任务状态
   const missionUrl = 'https://bbs-api.miyoushe.com/apihub/wapi/getUserMissionsState'
@@ -392,7 +391,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               notifyLines.push(`🪙 今日米游币 +${micoinToday}`)
             }
             notifyLines.push(`⏱ 任务执行完成 (耗时 ${elapsed}s)`)
-            await Notification.schedule({
+            Notification.schedule({
               title: '🎮 签到成功',
               body: notifyLines.join('\n'),
             })
