@@ -23,7 +23,7 @@ import {
 } from 'scripting'
 import {
   getConfig, saveConfig, isLoggedIn, addLog, getLogs, clearLogs, subscribeLogs,
-  sendNotification, getBBSHeaders, getDS,
+  sendNotification, getBBSHeaders, getDS, getSignHeaders,
 } from '../src/utils'
 import { executeMiCoinTasks } from '../src/micoin'
 import { executeSignTasks } from '../src/sign'
@@ -259,17 +259,34 @@ async function refreshWidgetRoleData() {
     console.log('[WidgetData] states:', JSON.stringify(states))
     console.log('[WidgetData] tasks count:', tasks.length, 'earnedPoints:', earnedPoints, 'maxDailyPoints:', maxDailyPoints)
 
-    // 签到奖励 API（需要角色信息）
-    const homeUrl = `https://api-takumi.mihoyo.com/event/luna/hk4e/home?lang=zh-cn&act_id=e202311201442471`
-    const homeHeaders = getBBSHeaders(homeUrl)
-    const homeRes = await fetch(homeUrl, { method: 'GET', headers: homeHeaders })
-      .then(r => r.json()).catch(() => null)
-    const signDay = signRes?.data?.sign_days || 0
-    const awards = homeRes?.data?.awards || []
-    const todayAward = signDay > 0 && signDay <= awards.length ? awards[signDay - 1] : null
-    const rewardName = todayAward?.name || ''
-    const rewardCount = todayAward?.cnt || todayAward?.count || 0
-    const rewardIcon = todayAward?.icon || ''
+    // 签到奖励（从 Storage 读取，由 sign 模块保存）
+    let rewardName = ''
+    let rewardCount = 0
+    let rewardIcon = ''
+    try {
+      const savedReward = JSON.parse(Storage.get<string>('game_sign_reward') || '{}')
+      rewardName = savedReward.name || ''
+      rewardCount = savedReward.count || 0
+      console.log('[Widget] 今日奖励(Storage):', rewardName, 'x' + rewardCount)
+    } catch {}
+    // 兜底：如果 Storage 没有数据，尝试从 home API 获取
+    if (!rewardName) {
+      try {
+        const homeUrl = 'https://api-takumi.mihoyo.com/event/luna/hk4e/home?lang=zh-cn&act_id=e202311201442471'
+        const homeHeaders = getSignHeaders('hk4e')
+        const homeRes = await fetch(homeUrl, { method: 'GET', headers: homeHeaders })
+          .then(r => r.json()).catch(() => null)
+        const totalSignDay = homeRes?.data?.info?.total_sign_day || 0
+        const awards = homeRes?.data?.awards || []
+        const todayAward = totalSignDay > 0 && totalSignDay <= awards.length ? awards[totalSignDay - 1] : null
+        if (todayAward) {
+          rewardName = todayAward.name || ''
+          rewardCount = todayAward.cnt || todayAward.count || 0
+          rewardIcon = todayAward.icon || ''
+        }
+        console.log('[Widget] 今日奖励(API):', rewardName, 'x' + rewardCount)
+      } catch {}
+    }
 
     const data = {
       nickname: role?.nickname || '未知角色',
