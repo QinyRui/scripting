@@ -1,32 +1,49 @@
 {
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
+  "localizedNames" : {
+    "de" : "",
+    "ru" : "",
+    "it" : "",
+    "ja" : "",
+    "en" : "",
+    "pt" : "",
+    "zh" : "",
+    "fr" : "",
+    "es" : ""
   },
-  "description" : "目前只支持签到，其余任务官方下架了",
-  "entry" : "index.tsx",
+  "version" : "3.0.3",
   "icon" : "gamecontroller.fill",
-  "runInApp" : true,
+  "remoteResource" : {
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/米游社",
+    "hash" : "6503bda35cd59401261f0fb2781cb946"
+  },
+  "entry" : "index.tsx",
   "intentInputTypes" : [
 
   ],
-  "version" : "3.0.2",
+  "description" : "目前只支持签到，其余任务官方下架了",
+  "color" : "rgba(252, 124, 93,1)",
+  "author" : {
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com"
+  },
   "contributors" : [
 
   ],
   "localizedDescriptions" : {
+    "ru" : "",
     "it" : "",
+    "en" : "",
+    "fr" : "",
+    "es" : "",
     "pt" : "",
     "ja" : "",
-    "ru" : "",
-    "es" : "",
-    "zh" : "",
-    "fr" : "",
     "de" : "",
-    "en" : ""
+    "zh" : ""
   },
-  "name" : "米游社",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/%E7%B1%B3%E6%B8%B8%E7%A4%BE\/icon.png",
+  "runInApp" : true,
   "permissions" : [
     "calendar",
     "reminders",
@@ -39,22 +56,5 @@
     "clipboard",
     "fileSystem"
   ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/%E7%B1%B3%E6%B8%B8%E7%A4%BE\/icon.png",
-  "color" : "rgba(252, 124, 93,1)",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/米游社",
-    "hash" : "ce3489d750c42d0b391514b2d625226b",
-    "autoUpdateInterval" : 600
-  },
-  "localizedNames" : {
-    "de" : "",
-    "en" : "",
-    "ja" : "",
-    "it" : "",
-    "zh" : "",
-    "fr" : "",
-    "pt" : "",
-    "es" : "",
-    "ru" : ""
-  }
+  "name" : "米游社"
 }
