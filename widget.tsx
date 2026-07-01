@@ -420,7 +420,9 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
           const MISSION_REWARDS: Record<number, number> = {
             58: 30, 59: 20, 60: 30, 61: 10, 62: 80, 64: 80,
           }
-          const tasks = states.map((s: any) => {
+          const tasks = states
+            .filter((s: any) => s.mission_id !== 62 && s.mission_id !== 64)
+            .map((s: any) => {
             const id = s.mission_id
             const done = s.process === 1 || (s.happened_times || 0) >= (MISSION_TOTALS[id] || 1)
             if (id === 58) {
