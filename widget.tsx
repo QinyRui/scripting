@@ -451,7 +451,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
             }
           }
 
-          // 合并更新 widget_role_data
+          // 合并更新 widget_role_data（保留 main-page 已存储的奖励数据）
           if (role) {
             role.coinBalance = totalPoints
             role.coinToday = alreadyReceived
@@ -486,9 +486,8 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
     // 解析奖励数据
     const rewardName = useRole?.rewardName || ''
     const rewardCount = useRole?.rewardCount || 0
-    // 解析上次执行结果
-    const prevResult = read('mihoyo_last_result')
-    const lastResultLines = prevResult ? prevResult.split('\n').filter((l: string) => l.trim()).slice(0, 2) : []
+    // 解析上次执行结果（不显示）
+    const lastResultLines: string[] = []
 
     let view
 
@@ -536,6 +535,12 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               // @ts-ignore
               foregroundStyle="systemOrange"
             >{'连续签到 ' + useRole.signDays + ' 天'}</Text>
+          ) : null}
+          {useRole && useRole.rewardName ? (
+            <Text font="caption2" fontWeight="bold"
+              // @ts-ignore
+              foregroundStyle="systemPurple"
+            >{'🎁 ' + useRole.rewardName + ' x' + useRole.rewardCount}</Text>
           ) : null}
           {sched.enabled ? (
             <Text font="caption2"
@@ -680,7 +685,24 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               ) : null}
             </HStack>
           ) : null}
-          {/* 最近日志 */}
+          {/* 游戏数据 */}
+          {useRole && useRole.gameStats && useRole.gameStats.length > 0 ? (
+            <HStack spacing={0} alignment="center"
+              // @ts-ignore
+              padding={{ vertical: 4, horizontal: 4 }}
+            >
+              {useRole.gameStats.map((s: any, i: number) => (
+                <VStack key={i} spacing={0}
+                  // @ts-ignore
+                  frame={{ maxWidth: "infinity" }}
+                  alignment="center"
+                >
+                  <Text font="footnote" fontWeight="bold" foregroundStyle="label">{s.value}</Text>
+                  <Text font="caption2" foregroundStyle="tertiaryLabel">{s.name}</Text>
+                </VStack>
+              ))}
+            </HStack>
+          ) : null}
           {lastResultLines.length > 0 ? (
             <VStack spacing={1}
               // @ts-ignore
@@ -753,48 +775,6 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               </VStack>
             ) : null}
           </HStack>
-          {/* 游戏数据 */}
-          {useRole && useRole.gameStats && useRole.gameStats.length > 0 ? (
-            <HStack spacing={0} alignment="center">
-              {useRole.gameStats.map((s: any, i: number) => (
-                <VStack key={i} spacing={1}
-                  // @ts-ignore
-                  frame={{ maxWidth: "infinity" }}
-                  alignment="center"
-                >
-                  <Text font="title3" fontWeight="bold"
-                    // @ts-ignore
-                    foregroundStyle="label"
-                  >{s.value}</Text>
-                  <Text font="caption2"
-                    // @ts-ignore
-                    foregroundStyle="tertiaryLabel"
-                  >{s.name}</Text>
-                </VStack>
-              ))}
-            </HStack>
-          ) : null}
-          {/* 游戏签到状态 */}
-          {signStatuses.length > 0 ? (
-            <HStack spacing={8} alignment="center">
-              {signStatuses.map((s: any) => (
-                <VStack key={s.gameId} spacing={1}
-                  // @ts-ignore
-                  frame={{ maxWidth: 'infinity' }}
-                  alignment="center"
-                >
-                  <Text font="caption2" fontWeight="bold"
-                    // @ts-ignore
-                    foregroundStyle={s.signed ? 'systemGreen' : 'systemOrange'}
-                  >{s.signed ? '✅' : '⏳'}</Text>
-                  <Text font="caption2"
-                    // @ts-ignore
-                    foregroundStyle="tertiaryLabel"
-                  >{s.gameName}</Text>
-                </VStack>
-              ))}
-            </HStack>
-          ) : null}
           {/* 每日任务标题 */}
           <Text font="subheadline" fontWeight="bold"
             // @ts-ignore
@@ -862,6 +842,34 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               ) : (
                 <Text font="caption2" foregroundStyle="systemOrange">待领取</Text>
               )}
+            </HStack>
+          ) : null}
+          {/* 游戏数据（账号信息） */}
+          {useRole && useRole.gameStats && useRole.gameStats.length > 0 ? (
+            <HStack spacing={0} alignment="center"
+              // @ts-ignore
+              padding={{ vertical: 6, horizontal: 10 }}
+              // @ts-ignore
+              background="rgba(255,255,255,0.03)"
+              // @ts-ignore
+              cornerRadius={8}
+            >
+              {useRole.gameStats.map((s: any, i: number) => (
+                <VStack key={i} spacing={1}
+                  // @ts-ignore
+                  frame={{ maxWidth: "infinity" }}
+                  alignment="center"
+                >
+                  <Text font="title3" fontWeight="bold"
+                    // @ts-ignore
+                    foregroundStyle="label"
+                  >{s.value}</Text>
+                  <Text font="caption2"
+                    // @ts-ignore
+                    foregroundStyle="tertiaryLabel"
+                  >{s.name}</Text>
+                </VStack>
+              ))}
             </HStack>
           ) : null}
           {/* 最近日志 */}
