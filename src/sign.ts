@@ -74,13 +74,15 @@ async function executeGameSign(board: Board): Promise<TaskResult> {
     // 3. 如果已签到，直接返回
     if (signInfo.is_sign) {
       const award = await getSignAwards(board, signInfo.total_sign_day)
-      const msg = `${board.name} 已签到: ${account.nickname} 累计 ${signInfo.total_sign_day} 天`
+      Storage.set('game_sign_reward', JSON.stringify({ name: award.name, count: award.count }))
+      const msg = `${board.name} 已签到: ${account.nickname} 累计 ${signInfo.total_sign_day} 天\n今日奖励: ${award.name} x${award.count}`
       addLog('success', msg)
       return { success: true, message: `✅ ${msg}` }
     }
 
     // 4. 获取奖励信息
     const award = await getSignAwards(board, signInfo.total_sign_day)
+    Storage.set('game_sign_reward', JSON.stringify({ name: award.name, count: award.count }))
     await randomSleep()
 
     // 5. 执行签到
