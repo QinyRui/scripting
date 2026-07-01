@@ -533,7 +533,8 @@ export async function getSignAwards(board: Board, totalSignDay: number): Promise
   const headers = getSignHeaders(gameCode)
   const data = await apiGetWithRetry<any>(apiUrl, headers)
 
-  const award = data.awards?.[totalSignDay]
+  // awards 数组是 0-indexed：awards[0] = 第1天奖励，awards[1] = 第2天...
+  const award = data.awards?.[totalSignDay - 1]
   if (!award) {
     throw new Error('无法获取奖励信息')
   }
