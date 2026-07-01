@@ -1,49 +1,13 @@
 {
-  "localizedNames" : {
-    "de" : "",
-    "ru" : "",
-    "it" : "",
-    "ja" : "",
-    "en" : "",
-    "pt" : "",
-    "zh" : "",
-    "fr" : "",
-    "es" : ""
-  },
-  "version" : "3.0.3",
-  "icon" : "gamecontroller.fill",
   "remoteResource" : {
-    "autoUpdateInterval" : 600,
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/米游社",
-    "hash" : "6503bda35cd59401261f0fb2781cb946"
+    "hash" : "3fe21d76d948e0c47dfbdce0882722b2",
+    "autoUpdateInterval" : 600
   },
-  "entry" : "index.tsx",
   "intentInputTypes" : [
 
   ],
-  "description" : "目前只支持签到，其余任务官方下架了",
   "color" : "rgba(252, 124, 93,1)",
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com"
-  },
-  "contributors" : [
-
-  ],
-  "localizedDescriptions" : {
-    "ru" : "",
-    "it" : "",
-    "en" : "",
-    "fr" : "",
-    "es" : "",
-    "pt" : "",
-    "ja" : "",
-    "de" : "",
-    "zh" : ""
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/%E7%B1%B3%E6%B8%B8%E7%A4%BE\/icon.png",
-  "runInApp" : true,
   "permissions" : [
     "calendar",
     "reminders",
@@ -56,5 +20,41 @@
     "clipboard",
     "fileSystem"
   ],
-  "name" : "米游社"
+  "runInApp" : true,
+  "localizedNames" : {
+    "ja" : "",
+    "it" : "",
+    "ru" : "",
+    "zh" : "",
+    "es" : "",
+    "de" : "",
+    "en" : "",
+    "pt" : "",
+    "fr" : ""
+  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/%E7%B1%B3%E6%B8%B8%E7%A4%BE\/icon.png",
+  "contributors" : [
+
+  ],
+  "version" : "3.0.4",
+  "author" : {
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com"
+  },
+  "localizedDescriptions" : {
+    "ru" : "",
+    "en" : "",
+    "zh" : "",
+    "ja" : "",
+    "es" : "",
+    "it" : "",
+    "pt" : "",
+    "de" : "",
+    "fr" : ""
+  },
+  "icon" : "gamecontroller.fill",
+  "entry" : "index.tsx",
+  "name" : "米游社",
+  "description" : "注意：目前只支持签到，其余任务官方下架了\n07-02:修复自动签到问题"
 }
