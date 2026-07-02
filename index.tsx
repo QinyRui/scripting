@@ -78,6 +78,8 @@ export interface NinebotSettings {
   autoSignTime: string
   autoOpenBlindBox: boolean
   autoUseSignCard: boolean
+  vehicleApiKey: string
+  vehicleSn: string
   titleDayColor: Color
   titleNightColor: Color
   descDayColor: Color
@@ -96,6 +98,8 @@ const defaultSettings: NinebotSettings = {
   autoSignTime: "00:30",
   autoOpenBlindBox: false,
   autoUseSignCard: false,
+  vehicleApiKey: "",
+  vehicleSn: "",
   titleDayColor: "#333333" as unknown as Color,
   titleNightColor: "#FFFFFF" as unknown as Color,
   descDayColor: "#666666" as unknown as Color,
@@ -782,6 +786,8 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
   const [autoUseSignCard, setAutoUseSignCard] = useState(initial.autoUseSignCard ?? false)
+  const [vehicleApiKey, setVehicleApiKey] = useState(initial.vehicleApiKey || "")
+  const [vehicleSn, setVehicleSn] = useState(initial.vehicleSn || "")
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
@@ -804,6 +810,8 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       autoSignTime: (autoSignTime || "00:30").trim(),
       autoOpenBlindBox: !!autoOpenBlindBox,
       autoUseSignCard: !!autoUseSignCard,
+      vehicleApiKey: (vehicleApiKey ?? "").trim(),
+      vehicleSn: (vehicleSn ?? "").trim(),
       titleDayColor: initial.titleDayColor,
       titleNightColor: initial.titleNightColor,
       descDayColor: initial.descDayColor,
@@ -1308,6 +1316,27 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
               onChanged={setAutoUseSignCard}
             />
           </HStack>
+
+          {/* 车辆监控配置 */}
+          <HStack padding={{ horizontal: 16, vertical: 8 }} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemBlue" opacity={0.15} /><Image systemName="car.fill" foregroundStyle="systemBlue" font={16} /></ZStack>
+            <Text fontWeight="semibold" foregroundStyle="label">车辆监控</Text>
+          </HStack>
+          <VStack spacing={8} padding={{ horizontal: 16 }}>
+            <Text font="caption" foregroundStyle="secondaryLabel">通过 OpenClaw Skill 查询车辆电量、里程、位置等信息</Text>
+            <TextField
+              title="Device Service Key"
+              value={vehicleApiKey}
+              onChanged={setVehicleApiKey}
+              prompt="输入九号 Device Service Key"
+            />
+            <TextField
+              title="车辆 SN"
+              value={vehicleSn}
+              onChanged={setVehicleSn}
+              prompt="留空则自动选择第一辆"
+            />
+          </VStack>
 
           {onOpenBlindBox ? (
             <VStack
