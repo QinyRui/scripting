@@ -22,9 +22,6 @@ import {
   gradient,
   ScrollView,
   Rectangle,
-  TabView,
-  Tab,
-  useObservable,
 } from "scripting"
 
 // 自定义提示函数
@@ -1039,6 +1036,23 @@ function View() {
   const [uploadLogs, setUploadLogs] = useState<string[]>([])
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
 
+  // 设置页面切换
+  const [showSettings, setShowSettings] = useState(false)
+
+  // 创建文件夹相关状态
+  const [folderPath, setFolderPath] = useState("")
+  const [folderTargetBranch, setFolderTargetBranch] = useState("")
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+
+  // 创建分支相关状态
+  const [newBranchName, setNewBranchName] = useState("")
+  const [sourceBranchName, setSourceBranchName] = useState("")
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false)
+
+  // 删除分支相关状态
+  const [deleteBranchName, setDeleteBranchName] = useState("")
+  const [isDeletingBranch, setIsDeletingBranch] = useState(false)
+
   // 添加上传日志的辅助函数
   const addUploadLog = (log: string) => {
     const timestamp = new Date().toLocaleTimeString("zh-CN", { hour12: false })
@@ -1443,17 +1457,113 @@ function View() {
     setUploadHistory([])
   }
 
+  // ═══════ 设置页辅助函数 ═══════
+  function parseOwnerRepo() {
+    let ownerStr = authorName
+    let repoStr = "scripting"
+    const cleanedUrl = repoUrl.replace(/\s+/g, "").replace(".git", "")
+    if (cleanedUrl.includes("github.com/")) {
+      const parts = cleanedUrl.split("github.com/")[1].split("/")
+      if (parts.length >= 2) {
+        ownerStr = parts[0]
+        repoStr = parts[1]
+      }
+    }
+    return { owner: ownerStr, repo: repoStr }
+  }
+
+  const apiHeaders = () => ({
+    "Authorization": `Bearer ${token}`,
+    "Accept": "application/vnd.github.v3+json",
+    "User-Agent": "Scripting-App",
+  })
+
+  // 创建文件夹
+  const handleCreateFolder = async () => {
+    if (!repoUrl || !token || !authorName) { await showAlert("配置不完整", "请先填写仓库 URL、Token 和仓库所有者"); return }
+    const path = folderPath.trim().replace(/^\/+|\/+$/g, "")
+    if (!path) { await showAlert("路径为空", "请输入要创建的文件夹路径"); return }
+    const targetBranch = folderTargetBranch.trim() || branch || "main"
+    const actualBranch = targetBranch.includes("/") ? targetBranch.split("/")[0] : targetBranch
+    const { owner, repo } = parseOwnerRepo()
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}/.gitkeep`
+    setIsCreatingFolder(true)
+    try {
+      let existingSha: string | null = null
+      try {
+        const checkRes = await fetch(url + `?ref=${actualBranch}`, { headers: apiHeaders() })
+        if (checkRes.ok) { const data = await checkRes.json(); existingSha = data.sha }
+      } catch {}
+      const body: any = { message: `Create folder: ${path}`, content: "", branch: actualBranch }
+      if (existingSha) { body.sha = existingSha; body.message = `Update folder placeholder: ${path}` }
+      const putRes = await fetch(url, { method: "PUT", headers: { ...apiHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      if (!putRes.ok) { const errText = await putRes.text(); throw new Error(`API 错误: ${putRes.status} ${errText}`) }
+      await showAlert("创建成功", `已在 ${actualBranch} 分支创建文件夹：\n${path}/`)
+      setFolderPath("")
+    } catch (error) { await showAlert("创建失败", String(error)) } finally { setIsCreatingFolder(false) }
+  }
+
+  // 创建分支
+  const handleCreateBranch = async () => {
+    if (!repoUrl || !token || !authorName) { await showAlert("配置不完整", "请先填写仓库 URL、Token 和仓库所有者"); return }
+    const branchNam = newBranchName.trim()
+    if (!branchNam) { await showAlert("分支名为空", "请输入新分支的名称"); return }
+    if (/[\s~^:?*\[\\]|\.\.|\.lock$|^-|^\//.test(branchNam) || branchNam.endsWith("/")) { await showAlert("分支名无效", "分支名不能包含特殊字符"); return }
+    const source = (sourceBranchName.trim() || branch || "main")
+    const { owner, repo } = parseOwnerRepo()
+    setIsCreatingBranch(true)
+    try {
+      const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${source}`, { headers: apiHeaders() })
+      if (!refRes.ok) { const errText = await refRes.text(); throw new Error(`获取源分支 "${source}" 失败: ${refRes.status} ${errText}`) }
+      const refData = await refRes.json()
+      const commitSha = refData.object?.sha
+      if (!commitSha) { throw new Error("无法获取源分支的 commit SHA") }
+      const createRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs`, { method: "POST", headers: { ...apiHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ ref: `refs/heads/${branchNam}`, sha: commitSha }) })
+      if (!createRes.ok) { const errText = await createRes.text(); throw new Error(`创建分支失败: ${createRes.status} ${errText}`) }
+      await showAlert("创建成功", `已从 "${source}" 创建新分支：\n${branchNam}`)
+      setNewBranchName("")
+    } catch (error) { await showAlert("创建失败", String(error)) } finally { setIsCreatingBranch(false) }
+  }
+
+  // 删除分支
+  const handleDeleteBranch = async () => {
+    if (!repoUrl || !token || !authorName) { await showAlert("配置不完整", "请先填写仓库 URL、Token 和仓库所有者"); return }
+    const branchToDelete = deleteBranchName.trim()
+    if (!branchToDelete) { await showAlert("分支名为空", "请输入要删除的分支名称"); return }
+    const { owner, repo } = parseOwnerRepo()
+    const url = `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branchToDelete}`
+    setIsDeletingBranch(true)
+    try {
+      const checkRes = await fetch(url, { headers: apiHeaders() })
+      if (!checkRes.ok) { const errText = await checkRes.text(); throw new Error(`分支不存在或获取失败: ${checkRes.status}` + (checkRes.status === 404 ? `\n\n尝试的分支: ${branchToDelete}` : "") + "\n\nAPI 原始错误: " + errText) }
+      // @ts-ignore
+      const confirmResult = await Dialog.confirm({ title: "确认删除分支", message: `⚠️ 警告：此操作不可逆！\n\n确定要删除分支 "${branchToDelete}" 吗？`, confirmLabel: "确认删除", cancelLabel: "取消" })
+      if (!confirmResult) { setIsDeletingBranch(false); return }
+      const deleteRes = await fetch(url, { method: "DELETE", headers: apiHeaders() })
+      if (!deleteRes.ok) { const errText = await deleteRes.text(); throw new Error(`删除失败: ${deleteRes.status} ${errText}`) }
+      await showAlert("删除成功", `已成功删除分支：\n${branchToDelete}`)
+      setDeleteBranchName("")
+    } catch (error) { await showAlert("删除失败", String(error)) } finally { setIsDeletingBranch(false) }
+  }
+
 
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-    <NavigationStack>
-      <List
-        navigationTitle="GitHub 上传"
-        navigationBarTitleDisplayMode="inline"
-        toolbar={{
-          topBarLeading: [<Button title="关闭" systemImage="xmark" action={dismiss} />],
-        }}
-      >
+      {/* ═══════ 主内容：上传 / 设置 切换 ═══════ */}
+      {!showSettings ? (
+        <NavigationStack>
+          <List
+            navigationTitle="GitHub 上传"
+            navigationBarTitleDisplayMode="inline"
+            toolbar={{
+              topBarLeading: [<Button title="关闭" systemImage="xmark" action={dismiss} />],
+              topBarTrailing: [
+                <Button action={() => setShowSettings(true)}>
+                  <Image systemName="gearshape.fill" font="callout" foregroundStyle="systemTeal" />
+                </Button>
+              ],
+            }}
+          >
         {/* ═══════ 头部仪表盘 ═══════ */}
         <Section>
           <HeroCard
@@ -1541,9 +1651,53 @@ function View() {
         </Section>
 
       </List>
-    </NavigationStack>
+        </NavigationStack>
+      ) : (
+        <NavigationStack>
+          <List
+            navigationTitle="设置"
+            navigationBarTitleDisplayMode="inline"
+            toolbar={{
+              topBarLeading: [
+                <Button title="返回" systemImage="chevron.left" action={() => setShowSettings(false)} />
+              ],
+            }}
+          >
+            {/* 凭证配置 */}
+            <Section header={<SectionHeader title="凭证配置" />} footer={<Text attributedString={`[生成 GitHub Classic Token →](https://github.com/settings/tokens/new)`} foregroundStyle="tertiaryLabel" font="caption" />}>
+              <TextField title="访问令牌 Token" value={token} onChanged={setToken} />
+              <TextField title="仓库所有者" value={authorName} onChanged={setAuthorName} />
+              <TextField title="仓库 URL" value={repoUrl} onChanged={setRepoUrl} />
+              <TextField title="默认分支 / 目录路径" value={branch} onChanged={setBranch} />
+              <TextField title="提交邮箱" value={authorEmail} onChanged={setAuthorEmail} />
+            </Section>
+            {/* 提交信息 */}
+            <Section header={<SectionHeader title="提交信息" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">自定义 Git 提交说明，留空则使用默认格式。</Text>}>
+              <TextField title="提交说明文字" value={commitMessage} prompt="提交说明文字" onChanged={setCommitMessage} />
+            </Section>
+            {/* 创建文件夹 */}
+            <Section header={<SectionHeader title="在 GitHub 创建文件夹" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">在指定分支中创建文件夹（自动生成 .gitkeep 占位文件）。</Text>}>
+              <TextField title="文件夹路径" value={folderPath} prompt="例如 images/wallpapers" onChanged={setFolderPath} />
+              <TextField title="目标分支（留空用默认）" value={folderTargetBranch} prompt={branch || "main"} onChanged={setFolderTargetBranch} />
+              <Button title={isCreatingFolder ? "创建中…" : "创建文件夹"} systemImage="folder.badge.plus" disabled={!folderPath.trim() || isCreatingFolder} action={handleCreateFolder} />
+            </Section>
+            {/* 创建分支 */}
+            <Section header={<SectionHeader title="在 GitHub 创建分支" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">基于源分支创建新分支，新分支将包含源分支的最新代码。</Text>}>
+              <TextField title="新分支名称" value={newBranchName} prompt="例如 feature/login" onChanged={setNewBranchName} />
+              <TextField title="源分支（留空用默认）" value={sourceBranchName} prompt={branch || "main"} onChanged={setSourceBranchName} />
+              <Button title={isCreatingBranch ? "创建中…" : "创建分支"} systemImage="arrow.triangle.branch" disabled={!newBranchName.trim() || isCreatingBranch} action={handleCreateBranch} />
+            </Section>
+            {/* 删除分支 */}
+            <Section header={<SectionHeader title="删除分支" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">⚠️ 此操作不可逆，分支将被永久删除。主分支（main/master/develop）受保护无法删除。</Text>}>
+              <TextField title="分支名称" value={deleteBranchName} prompt="例如 photos, feature/xxx" onChanged={setDeleteBranchName} />
+              <Button title={isDeletingBranch ? "删除中…" : "删除分支"} systemImage="trash" tint="systemRed" disabled={!deleteBranchName.trim() || isDeletingBranch} action={handleDeleteBranch} />
+            </Section>
+          </List>
+        </NavigationStack>
+      )}
 
-      {/* ═══════ 悬浮上传按钮 ═══════ */}
+      {/* ═══════ 悬浮上传按钮（仅主页显示）═══════ */}
+      {!showSettings && (
       <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ bottom: 100 }}>
         <Spacer />
         <HStack frame={{ maxWidth: "infinity" }} alignment="center">
@@ -1658,38 +1812,7 @@ function View() {
         <Spacer />
         </HStack>
       </VStack>
-
-      {/* ═══════ 顶部设置按钮 ═══════ */}
-      <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ top: 60 }}>
-        <HStack frame={{ maxWidth: "infinity" }} alignment="center">
-          <Spacer />
-          <Button action={() => {
-            Navigation.present(
-              <SettingsView
-                repoUrl={repoUrl}
-                token={token}
-                branch={branch}
-                authorName={authorName}
-                authorEmail={authorEmail}
-                commitMessage={commitMessage}
-                onRepoUrlChange={setRepoUrl}
-                onTokenChange={setToken}
-                onBranchChange={setBranch}
-                onAuthorNameChange={setAuthorName}
-                onAuthorEmailChange={setAuthorEmail}
-                onCommitMessageChange={setCommitMessage}
-              />
-            )
-          }}>
-            <ZStack alignment="center" frame={{ width: 40, height: 40 }}>
-              <Circle fill={"rgba(13,148,136,0.85)"} frame={{ width: 40, height: 40 }} />
-              <Image systemName="gearshape.fill" font="callout" foregroundStyle="white" />
-            </ZStack>
-          </Button>
-          <Spacer />
-        </HStack>
-        <Spacer />
-      </VStack>
+      )}
 
     </ZStack>
   )
