@@ -1,5 +1,8 @@
 import { httpGet, httpPost } from './utils/request'
 
+// 声明 Scripting 全局 run() 函数
+declare function run(command: string, options?: {timeout?: number}): Promise<{stdout: string, stderr: string, exitCode: number}>
+
 // 定义小组件展示的数据结构
 export interface NinebotWidgetData {
   isSigned: boolean
@@ -574,3 +577,264 @@ export async function diagnoseBlindBoxApi(authorization: string, deviceId: strin
   log('\n===== 诊断完成 =====')
   return lines.join('\n')
 }
+
+// ==================== 车辆监控 (OpenClaw Skill API) ====================
+
+export interface VehicleInfo {
+  deviceName: string
+  sn: string
+  // 基础数据
+  battery: number | null              // 电量百分比 (dumpEnergy)
+  powerStatus: number | null          // 0=关机, 1=开机
+  estimateMileage: number | null      // 预估里程(km)
+  chargingState: number | null        // 0=未充电, 1=充电中
+  remainChargeTime: string | null     // 剩余充电时间
+  locationDesc: string | null         // 位置描述
+  // v1.1.0 扩展字段（充电详情）
+  chargingCurrent: number | null      // 充电电流(A)
+  chargingPower: number | null        // 充电功率(W)
+  cellVoltages: any | null            // 单节电芯电压数据
+  raw: any                            // 原始 API 响应 data
+}
+
+const VEHICLE_BASE = 'https://cn-cbu-gateway.ninebot.com'
+
+function vehicleHeaders(apiKey: string): Record<string, string> {
+  return {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  }
+}
+
+/**
+ * 获取九号车辆设备列表
+ */
+export async function getVehicleDeviceList(apiKey: string): Promise<{sn: string, deviceName: string}[]> {
+  try {
+    const url = `${VEHICLE_BASE}/ai-skill/api/device/info/get-device-list?t=${Date.now()}`
+    const response = await httpGet(url, { headers: vehicleHeaders(apiKey) })
+    if (response.data && response.data.code === 1 && response.data.data) {
+      const devices = response.data.data.map((d: any) => ({
+        sn: d.sn || '',
+        deviceName: d.deviceName || '',
+      }))
+      console.log('✅ 车辆列表获取成功:', devices.length, '辆')
+      return devices
+    }
+    console.warn('⚠️ 车辆列表获取失败:', response.data?.desc || JSON.stringify(response.data))
+    return []
+  } catch (error) {
+    console.error('❌ 获取车辆列表错误:', error)
+    return []
+  }
+}
+
+/**
+ * 查询车辆动态信息（电量、里程、位置、充电状态）
+ */
+export async function getVehicleInfo(apiKey: string, sn: string): Promise<VehicleInfo | null> {
+  try {
+    const url = `${VEHICLE_BASE}/ai-skill/api/device/info/get-device-dynamic-info?t=${Date.now()}`
+    const response = await httpPost(url, {
+      body: { sn },
+      headers: vehicleHeaders(apiKey),
+    })
+    if (response.data && response.data.code === 1 && response.data.data) {
+      const d = response.data.data
+      const info: VehicleInfo = {
+        deviceName: '',
+        sn,
+        battery: d.dumpEnergy ?? null,
+        powerStatus: d.powerStatus ?? null,
+        estimateMileage: d.estimateMileage ?? null,
+        chargingState: d.chargingState ?? null,
+        remainChargeTime: d.remainChargeTime || null,
+        locationDesc: d.locationInfo?.locationDesc || null,
+        // v1.1.0 扩展字段
+        chargingCurrent: d.chargingCurrent ?? d.chargeCurrent ?? null,
+        chargingPower: d.chargingPower ?? d.chargePower ?? d.power ?? null,
+        cellVoltages: d.cellVoltages ?? d.batteryCellInfo ?? null,
+        raw: d,
+      }
+      console.log('✅ 车辆信息获取成功:', info.battery + '%', info.locationDesc)
+      return info
+    }
+    console.warn('⚠️ 车辆信息获取失败:', response.data?.desc || JSON.stringify(response.data))
+    return null
+  } catch (error) {
+    console.error('❌ 获取车辆信息错误:', error)
+    return null
+  }
+}
+
+/**
+ * 一键获取所有车辆信息
+ */
+export async function getAllVehicleInfo(apiKey: string): Promise<VehicleInfo[]> {
+  try {
+    const devices = await getVehicleDeviceList(apiKey)
+    if (devices.length === 0) return []
+    const results: VehicleInfo[] = []
+    for (const dev of devices) {
+      const info = await getVehicleInfo(apiKey, dev.sn)
+      if (info) {
+        info.deviceName = dev.deviceName || `车辆 ${dev.sn.slice(-4)}`
+        results.push(info)
+      }
+      await new Promise<void>((r) => setTimeout(() => r(), 500))
+    }
+    return results
+  } catch (error) {
+    console.error('❌ 获取所有车辆信息错误:', error)
+    return []
+  }
+}
+
+// ==================== 九号原生 API (RSA 加密) ====================
+
+// 全局 run() 无需 import，用于执行 openssl RSA 命令
+
+/**
+ * RSA 加密 (PKCS#1) — 通过 openssl 命令行实现
+ */
+async function rsaEncryptNative(plainText: string, publicKeyPem: string): Promise<string> {
+  const tempDir = '/tmp/ninebot_rsa'
+  const keyFile = `${tempDir}/pub.pem`
+  const plainFile = `${tempDir}/plain.txt`
+  const cipherFile = `${tempDir}/cipher.bin`
+  
+  await run(`mkdir -p ${tempDir}`)
+  await run(`cat > ${keyFile} << 'PEMEOF'\n${publicKeyPem}\nPEMEOF`)
+  await run(`cat > ${plainFile} << 'TEXTEOF'\n${plainText}\nTEXTEOF`)
+  await run(`openssl pkeyutl -encrypt -pubin -inkey ${keyFile} -pkeyopt rsa_padding_mode:pkcs1 -in ${plainFile} -out ${cipherFile} 2>/dev/null || openssl rsautl -encrypt -pkcs -inkey ${keyFile} -in ${plainFile} -out ${cipherFile}`)
+  const result = await run(`base64 < ${cipherFile}`)
+  return result.stdout.trim()
+}
+
+/**
+ * RSA 解密 (PKCS#1) — 通过 openssl 命令行实现
+ */
+async function rsaDecryptNative(cipherBase64: string, privateKeyPem: string): Promise<string> {
+  const tempDir = '/tmp/ninebot_rsa'
+  const keyFile = `${tempDir}/priv.pem`
+  const cipherFile = `${tempDir}/cipher.bin`
+  const plainFile = `${tempDir}/plain.txt`
+  
+  await run(`mkdir -p ${tempDir}`)
+  await run(`cat > ${keyFile} << 'PEMEOF'\n${privateKeyPem}\nPEMEOF`)
+  await run(`echo '${cipherBase64}' | base64 -d > ${cipherFile}`)
+  await run(`openssl rsautl -decrypt -pkcs -inkey ${keyFile} -in ${cipherFile} -out ${plainFile}`)
+  const result = await run(`cat ${plainFile}`)
+  return result.stdout.trim()
+}
+
+/**
+ * 生成随机字符串
+ */
+function randomString(len: number = 16): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < len; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+/**
+ * 九号原生 API — 获取车辆列表 (RSA 加密)
+ */
+export async function getNativeDeviceList(
+  authorization: string,
+  deviceId: string,
+  rsaPublicKey: string
+): Promise<{deviceId: string, deviceName: string}[]> {
+  try {
+    const encrypted = await rsaEncryptNative('{}', rsaPublicKey)
+    const payload = {
+      v: 101,
+      s: encrypted,
+      r: randomString(),
+    }
+    
+    const response = await httpPost('https://api.ninebot.com/v1/device/list', {
+      body: payload,
+      headers: {
+        'Authorization': authorization,
+        'deviceId': deviceId,
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.data && response.data.s) {
+      const decrypted = await rsaDecryptNative(response.data.s, rsaPublicKey)
+      const data = JSON.parse(decrypted)
+      if (data && data.devices) {
+        console.log('✅ 原生API车辆列表获取成功:', data.devices.length, '辆')
+        return data.devices
+      }
+    }
+    console.warn('⚠️ 原生API车辆列表获取失败')
+    return []
+  } catch (error) {
+    console.error('❌ 原生API获取车辆列表错误:', error)
+    return []
+  }
+}
+
+/**
+ * 九号原生 API — 获取车辆状态 (RSA 加密)
+ */
+export async function getNativeDeviceStatus(
+  authorization: string,
+  deviceId: string,
+  rsaPublicKey: string,
+  rsaPrivateKey: string,
+  targetDeviceId: string
+): Promise<VehicleInfo | null> {
+  try {
+    const encrypted = await rsaEncryptNative(JSON.stringify({ deviceId: targetDeviceId }), rsaPublicKey)
+    const payload = {
+      v: 101,
+      s: encrypted,
+      r: randomString(),
+    }
+    
+    const response = await httpPost('https://api.ninebot.com/v1/device/status', {
+      body: payload,
+      headers: {
+        'Authorization': authorization,
+        'deviceId': deviceId,
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.data && response.data.s) {
+      const decrypted = await rsaDecryptNative(response.data.s, rsaPrivateKey)
+      const data = JSON.parse(decrypted)
+      if (data) {
+        const info: VehicleInfo = {
+          deviceName: data.deviceName || '',
+          sn: targetDeviceId,
+          battery: data.batteryPercent ?? data.dumpEnergy ?? null,
+          powerStatus: data.powerStatus ?? null,
+          estimateMileage: data.estimatedRange ?? data.estimateMileage ?? null,
+          chargingState: data.chargingState ?? null,
+          remainChargeTime: data.remainChargeTime ?? null,
+          locationDesc: data.locationDesc ?? data.locationInfo?.locationDesc ?? null,
+          chargingCurrent: data.chargingCurrent ?? null,
+          chargingPower: data.chargingPower ?? null,
+          cellVoltages: data.cellVoltages ?? null,
+          raw: data,
+        }
+        console.log('✅ 原生API车辆信息获取成功:', info.battery + '%')
+        return info
+      }
+    }
+    console.warn('⚠️ 原生API车辆信息获取失败')
+    return null
+  } catch (error) {
+    console.error('❌ 原生API获取车辆信息错误:', error)
+    return null
+  }
+}
+
