@@ -20,6 +20,11 @@ import {
   ProgressView,
   useColorScheme,
   gradient,
+  ScrollView,
+  Rectangle,
+  TabView,
+  Tab,
+  useObservable,
 } from "scripting"
 
 // 自定义提示函数
@@ -1028,6 +1033,17 @@ function View() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [keepTopLevelFolderName, setKeepTopLevelFolderName] = useState(true)
   const [githubIconPath, setGithubIconPath] = useState("")
+
+  // 上传弹窗相关状态
+  const [showUploadPopup, setShowUploadPopup] = useState(false)
+  const [uploadLogs, setUploadLogs] = useState<string[]>([])
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
+
+  // 添加上传日志的辅助函数
+  const addUploadLog = (log: string) => {
+    const timestamp = new Date().toLocaleTimeString("zh-CN", { hour12: false })
+    setUploadLogs(prev => [...prev, `${timestamp} ${log}`])
+  }
   
   // 初始化：下载 GitHub 图标到本地缓存
   useState(() => {
@@ -1227,6 +1243,13 @@ function View() {
       return
     }
 
+    // 显示上传弹窗
+    setShowUploadPopup(true)
+    setUploadLogs([])
+    setUploadStatus("uploading")
+    addUploadLog("===== 开始执行任务 =====")
+    addUploadLog(`准备上传 ${selectedEntries.length} 个文件到 GitHub`)
+
     setIsUploading(true)
     setUploadProgress(0)
 
@@ -1236,7 +1259,7 @@ function View() {
       await FileManager.createDirectory(workDir, true)
 
       // 使用 REST API 上传文件
-      console.log("开始向 GitHub API 上传...");
+      addUploadLog("正在连接 GitHub API...")
 
       let uploadCount = 0;
 
@@ -1252,6 +1275,9 @@ function View() {
           repoStr = parts[1];
         }
       }
+
+      addUploadLog(`目标仓库: ${ownerStr}/${repoStr}`)
+      addUploadLog("")
 
       const uploadedFiles: UploadRecord[] = []
 
@@ -1272,23 +1298,22 @@ function View() {
         }
         const normalizedUploadPath = uploadPath.replace(/^\/+|\/+$/g, "")
         
-        console.log(`上传 [${filename}] → 分支: ${actualBranch}, 目录: ${normalizedUploadPath || '(根)'}`);
+        addUploadLog(`上传文件: ${relativePath}`)
+        addUploadLog(`  → 分支: ${actualBranch}, 目录: ${normalizedUploadPath || '(根)'}`)
 
         const fileData = await FileManager.readAsData(filePath)
         
         if (!fileData) {
-           console.log(`无法读取文件: ${filename}`);
+           addUploadLog(`  ✗ 无法读取文件: ${filename}`)
            continue;
         }
-        
-        console.log(`开始上传: ${filename}`);
         
         if (!token) {
            throw new Error("使用 API 上传时必须提供 Token。");
         }
 
         try {
-          console.log(`正在请求 REST API...`);
+          addUploadLog("  → 正在转换文件内容...")
           
           // @ts-ignore
           const base64Content = typeof fileData.toBase64String === "function" 
@@ -1309,6 +1334,7 @@ function View() {
           // 尝试获取现有文件的 sha (如果已存在)
           let currentSha = null;
           try {
+            addUploadLog("  → 检查文件是否存在...")
             const getRes = await fetch(url + `?ref=${actualBranch}`, {
               headers: {
                 "Authorization": `Bearer ${token}`,
@@ -1319,9 +1345,10 @@ function View() {
             if (getRes.ok) {
               const getData = await getRes.json();
               currentSha = getData.sha;
+              addUploadLog("  → 文件已存在，将进行更新")
             }
           } catch (e) {
-            console.log("未找到现有文件，视为新建");
+            addUploadLog("  → 文件不存在，将创建新文件")
           }
 
           const commitMsg = commitMessage.trim()
@@ -1334,6 +1361,7 @@ function View() {
             ...(currentSha ? { sha: currentSha } : {})
           };
 
+          addUploadLog("  → 正在上传到 GitHub...")
           const putRes = await fetch(url, {
             method: "PUT",
             headers: {
@@ -1352,9 +1380,10 @@ function View() {
           
           uploadCount++;
           setUploadProgress(uploadCount / selectedEntries.length);
-          console.log(`文件 ${filename} 上传/更新成功 → ${ownerStr}/${repoStr}@${actualBranch}${normalizedUploadPath ? '/' + normalizedUploadPath : ''}/${relativePath}`);
+          addUploadLog(`  ✓ 上传成功 [${uploadCount}/${selectedEntries.length}]`)
+          addUploadLog("")
         } catch (apiError) {
-           console.error(`更新文件 ${filename} 失败: `, apiError);
+           addUploadLog(`  ✗ 上传失败: ${apiError}`)
            throw new Error(`无法更新文件 ${filename}: ${apiError}`);
         }
 
@@ -1381,10 +1410,14 @@ function View() {
         ? `，分布在 ${branchCount} 个不同分支/路径` 
         : ""
 
-      await showAlert("上传成功", `成功调用 REST API 上传 ${uploadCount} 个文件到 GitHub${branchInfo}`)
+      addUploadLog("===== 任务完成 =====")
+      addUploadLog(`成功上传 ${uploadCount} 个文件${branchInfo}`)
+      setUploadStatus("success")
     } catch (error) {
       console.error("上传流程崩溃:", error);
-      await showAlert("上传失败", String(error))
+      addUploadLog("===== 任务失败 =====")
+      addUploadLog(`错误: ${error}`)
+      setUploadStatus("error")
     } finally {
       setIsUploading(false)
     }
@@ -1507,102 +1540,127 @@ function View() {
           </SectionGradientBg>
         </Section>
 
-        {/* ═══════ 上传操作 ═══════ */}
-        <Section
-          header={<SectionHeader title="上传操作" />}
-        >
-          <SectionGradientBg index={2}>
-            {/* 动态上传进度按钮 */}
-            {isUploading ? (
+      </List>
+    </NavigationStack>
+
+      {/* ═══════ 悬浮上传按钮 ═══════ */}
+      <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ bottom: 100 }}>
+        <Spacer />
+        <HStack frame={{ maxWidth: "infinity" }} alignment="center">
+          <Spacer />
+          <Button
+            action={() => handleUpload()}
+            disabled={selectedEntries.length === 0}
+            buttonStyle="plain"
+            clipShape="circle"
+            popover={{
+            isPresented: showUploadPopup,
+            onChanged: (v: boolean) => {
+              setShowUploadPopup(v)
+              if (!v) {
+                setUploadLogs([])
+                setUploadStatus("idle")
+              }
+            },
+            presentationCompactAdaptation: 'popover',
+            arrowEdge: 'bottom' as any,
+            content: (
               <VStack
+                // @ts-ignore
+                background="rgba(35,35,35,0.95)"
+                // @ts-ignore
+                mask={<RoundedRectangle cornerRadius={20} fill="black" />}
+                // @ts-ignore
+                padding={{ vertical: 16, horizontal: 14 }}
                 spacing={8}
-                alignment="center"
-                padding={{ top: 14, bottom: 14, leading: 16, trailing: 16 }}
-                frame={{ maxWidth: "infinity" }}
-                background={{
-                  style: gradient("linear", {
-                    colors: ["rgba(52,199,89,0.15)", "rgba(48,179,76,0.06)"],
-                    startPoint: "top",
-                    endPoint: "bottom",
-                  }) as any,
-                  shape: { type: "rect", cornerRadius: 16 },
-                }}
+                frame={{ width: 280 }}
               >
-                <HStack spacing={10} alignment="center">
-                  <ZStack alignment="center" frame={{ width: 36, height: 36 }}>
-                    <Image
-                      systemName="arrow.triangle.2.circlepath"
-                      font="title2"
-                      foregroundStyle="systemGreen"
+                {/* 顶部状态图标和标题 */}
+                <HStack spacing={10} alignment="center" frame={{ maxWidth: "infinity" }}>
+                  <Image
+                    systemName={uploadStatus === "uploading" ? "hourglass" : uploadStatus === "success" ? "checkmark.circle.fill" : uploadStatus === "error" ? "xmark.circle.fill" : "hourglass"}
+                    font="title3"
+                    foregroundStyle={uploadStatus === "success" ? "systemGreen" : uploadStatus === "error" ? "systemRed" : "systemBlue"}
+                  />
+                  <Text font="headline" foregroundStyle="white">
+                    {uploadStatus === "uploading" ? "执行中..." : uploadStatus === "success" ? "任务完成" : uploadStatus === "error" ? "任务失败" : "准备中..."}
+                  </Text>
+                </HStack>
+
+                {/* 进度条 */}
+                {uploadStatus === "uploading" ? (
+                  <VStack spacing={6} frame={{ maxWidth: "infinity" }}>
+                    <ProgressView
+                      value={uploadProgress}
+                      total={1}
+                      progressViewStyle="linear"
+                      frame={{ maxWidth: "infinity" }}
                     />
-                  </ZStack>
-                  <VStack alignment="leading" spacing={2}>
-                    <Text font="headline" foregroundStyle="systemGreen">
-                      上传中…
-                    </Text>
-                    <Text font="caption" foregroundStyle="secondaryLabel">
+                    <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
                       {Math.round(uploadProgress * 100)}% 完成
                     </Text>
                   </VStack>
-                  <Spacer />
-                  <Text font="title2" fontWeight="semibold" foregroundStyle="systemGreen">
-                    {Math.round(uploadProgress * 100)}%
-                  </Text>
-                </HStack>
-                <ProgressView
-                  value={uploadProgress}
-                  total={1}
-                  progressViewStyle="linear"
-                  frame={{ maxWidth: "infinity" }}
-                />
-              </VStack>
-            ) : (
-              <GridButton
-                icon="square.and.arrow.up"
-                title="推送到 GitHub"
-                color="#32ADE6"
-                disabled={selectedEntries.length === 0}
-                onPress={handleUpload}
-              />
-            )}
-          </SectionGradientBg>
-        </Section>
+                ) : null}
 
-        {/* ═══════ 上传历史 ═══════ */}
-        <Section
-          header={<SectionHeader title="上传历史" />}
-        >
-          <SectionGradientBg index={3}>
-            {uploadHistory.length === 0 ? (
-              <VStack alignment="leading" spacing={2}>
-                <Text foregroundStyle="tertiaryLabel" font="subheadline">暂无记录</Text>
-                <Text foregroundStyle="tertiaryLabel" font="caption">推送成功后记录将显示在此</Text>
-              </VStack>
-            ) : (
-              uploadHistory.map((record, index) => (
-                <HStack key={index} spacing={6}>
-                  <Image systemName="checkmark.circle.fill" font="caption" foregroundStyle="systemGreen" />
-                  <VStack alignment="leading" spacing={1}>
-                    <Text font="subheadline">{record.filename}</Text>
-                    <Text font="caption2" foregroundStyle="tertiaryLabel">{record.timestamp}</Text>
+                {/* 日志列表 */}
+                <ScrollView frame={{ height: 200 }}>
+                  <VStack
+                    spacing={4}
+                    frame={{ maxWidth: "infinity" }}
+                    padding={{ top: 8, bottom: 8, leading: 12, trailing: 12 }}
+                    background="rgba(0,0,0,0.4)"
+                    // @ts-ignore
+                    mask={<RoundedRectangle cornerRadius={8} fill="black" />}
+                  >
+                    {uploadLogs.length === 0 ? (
+                      <Text font="caption" foregroundStyle="tertiaryLabel">等待开始...</Text>
+                    ) : (
+                      uploadLogs.map((log: string, index: number) => (
+                        <Text key={index} font="caption" foregroundStyle="white" selectionDisabled={false}>
+                          {log}
+                        </Text>
+                      ))
+                    )}
+                    <Rectangle key="bottom" foregroundStyle="clear" frame={{ maxWidth: "infinity", height: 1 }} />
                   </VStack>
-                </HStack>
-              ))
-            )}
-            {uploadHistory.length > 0 ? (
-              <Button
-                title="清空记录"
-                systemImage="trash"
-                action={handleClearHistory}
-              />
-            ) : null}
-          </SectionGradientBg>
-        </Section>
-      </List>
-    </NavigationStack>
-      {/* ═══════ 九号签到风格：底部悬浮设置按钮 ═══════ */}
-      <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={20}>
+                </ScrollView>
+
+                {/* 底部状态 */}
+                <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
+                  {uploadStatus === "uploading"
+                    ? `上传中... ${Math.round(uploadProgress * 100)}%`
+                    : uploadStatus === "success"
+                      ? `✓ 成功上传 ${uploadHistory.length} 个文件`
+                      : uploadStatus === "error"
+                        ? "✗ 上传失败，请查看日志"
+                        : ""
+                  }
+                </Text>
+
+                {/* 关闭按钮 */}
+                {uploadStatus !== "uploading" ? (
+                  <Button action={() => setShowUploadPopup(false)}>
+                    <Text fontWeight="bold" foregroundStyle="systemGreen">确定</Text>
+                  </Button>
+                ) : null}
+              </VStack>
+            )
+          }}
+        >
+          <ZStack alignment="center" frame={{ width: 56, height: 56 }}>
+            <Circle fill="rgba(13,148,136,0.85)" frame={{ width: 56, height: 56 }} />
+            <VStack spacing={0} alignment="center">
+              <Image systemName="arrow.up" font="headline" foregroundStyle="white" />
+              <Text font="caption2" foregroundStyle="white">上传</Text>
+            </VStack>
+          </ZStack>
+        </Button>
         <Spacer />
+        </HStack>
+      </VStack>
+
+      {/* ═══════ 顶部设置按钮 ═══════ */}
+      <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ top: 60 }}>
         <HStack frame={{ maxWidth: "infinity" }} alignment="center">
           <Spacer />
           <Button action={() => {
@@ -1623,14 +1681,16 @@ function View() {
               />
             )
           }}>
-            <ZStack alignment="center" frame={{ width: 48, height: 48 }}>
-              <Circle fill={"rgba(13,148,136,0.9)"} frame={{ width: 48, height: 48 }} />
-              <Image systemName="gearshape.fill" font={20} foregroundStyle="white" />
+            <ZStack alignment="center" frame={{ width: 40, height: 40 }}>
+              <Circle fill={"rgba(13,148,136,0.85)"} frame={{ width: 40, height: 40 }} />
+              <Image systemName="gearshape.fill" font="callout" foregroundStyle="white" />
             </ZStack>
           </Button>
           <Spacer />
         </HStack>
+        <Spacer />
       </VStack>
+
     </ZStack>
   )
 }
