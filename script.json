@@ -1,8 +1,21 @@
 {
+  "permissions" : null,
   "color" : "rgba(0, 50, 222, 1.00)",
   "intentInputTypes" : [
 
   ],
+  "runInApp" : true,
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
+  },
+  "remoteResource" : {
+    "hash" : "e87132c85603411cc25ae9d81e0dfa33",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH"
+  },
+  "name" : "九号系统签到",
   "contributors" : [
     {
       "name" : "QinyRui",
@@ -11,54 +24,30 @@
     }
   ],
   "version" : "1.2.5",
-  "localizedDescriptions" : {
+  "description" : "6-29: 新增内容\n设置页新增「自动补签」开关",
+  "entry" : "index.tsx",
+  "localizedNames" : {
+    "es" : "",
     "it" : "",
+    "de" : "",
     "pt" : "",
+    "fr" : "",
+    "zh" : "",
+    "ru" : "",
+    "ja" : "",
+    "en" : ""
+  },
+  "icon" : "scooter",
+  "localizedDescriptions" : {
     "en" : "",
     "fr" : "",
-    "es" : "",
-    "ja" : "",
     "ru" : "",
-    "zh" : "",
-    "de" : ""
-  },
-  "runInApp" : true,
-  "name" : "九号APP签到",
-  "remoteResource" : {
-    "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "hash" : "a786893ffefc7184691a19e7720b8c5a"
-  },
-  "entry" : "index.tsx",
-  "icon" : "scooter",
-  "localizedNames" : {
-    "en" : "",
+    "ja" : "",
+    "de" : "",
     "es" : "",
     "pt" : "",
-    "de" : "",
-    "ja" : "",
-    "zh" : "",
-    "ru" : "",
     "it" : "",
-    "fr" : ""
+    "zh" : ""
   },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "description" : "6-29: 新增内容\n设置页新增「自动补签」开关",
-  "permissions" : [
-    "calendar",
-    "reminders",
-    "alarms",
-    "contacts",
-    "location",
-    "homeKit",
-    "photos",
-    "health",
-    "clipboard",
-    "fileSystem"
-  ],
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  }
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png"
 }
