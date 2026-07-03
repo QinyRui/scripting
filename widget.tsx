@@ -216,8 +216,9 @@ async function main() {
     var weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0]
     filteredRecords = data.records.filter(function(r: PlatformRecord) { return r.date >= weekAgo })
   } else {
-    // 本月：使用全部当月记录（API 返回的就是当月）
-    filteredRecords = data.records
+    // 本月：只保留当月记录，自动过滤旧月数据
+    var currentMonth = today.slice(0, 7)
+    filteredRecords = data.records.filter(function(r: PlatformRecord) { return r.date.slice(0, 7) === currentMonth })
   }
 
   // 找出该范围内请求次数最多的模型（用于顶栏副标题）
