@@ -1,60 +1,8 @@
 {
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/米游社",
-    "hash" : "3fe21d76d948e0c47dfbdce0882722b2",
-    "autoUpdateInterval" : 600
-  },
-  "intentInputTypes" : [
-
-  ],
-  "color" : "rgba(252, 124, 93,1)",
-  "permissions" : [
-    "calendar",
-    "reminders",
-    "alarms",
-    "contacts",
-    "location",
-    "homeKit",
-    "photos",
-    "health",
-    "clipboard",
-    "fileSystem"
-  ],
-  "runInApp" : true,
-  "localizedNames" : {
-    "ja" : "",
-    "it" : "",
-    "ru" : "",
-    "zh" : "",
-    "es" : "",
-    "de" : "",
-    "en" : "",
-    "pt" : "",
-    "fr" : ""
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/%E7%B1%B3%E6%B8%B8%E7%A4%BE\/icon.png",
-  "contributors" : [
-
-  ],
-  "version" : "3.0.4",
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com"
-  },
-  "localizedDescriptions" : {
-    "ru" : "",
-    "en" : "",
-    "zh" : "",
-    "ja" : "",
-    "es" : "",
-    "it" : "",
-    "pt" : "",
-    "de" : "",
-    "fr" : ""
-  },
-  "icon" : "gamecontroller.fill",
-  "entry" : "index.tsx",
-  "name" : "米游社",
-  "description" : "注意：目前只支持签到，其余任务官方下架了\n07-02:修复自动签到问题"
+  "entry": "index.tsx",
+  "name": "米游社",
+  "version": "3.0.4",
+  "icon": "gamecontroller.fill",
+  "color": "rgba(252, 124, 93,1)",
+  "runInApp": true
 }
