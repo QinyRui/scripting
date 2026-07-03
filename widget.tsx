@@ -384,7 +384,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
   try {
     const transparent = Widget.isTransparentBackground
     const family = Widget.family
-    const bgColor = transparent ? 'clear' : '#1C1C1E'
+    const bgColor = transparent ? 'clear' : 'clear'
 
     const role = readJSON('widget_role_data')
     const loggedIn = Storage.contains('mihoyo_cookie')
@@ -566,7 +566,19 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
             <Text font="caption" fontWeight="bold"
               // @ts-ignore
               foregroundStyle="systemOrange"
-            >{'连续签到 ' + useRole.signDays + ' 天'}</Text>
+            >{'游戏签到 ' + useRole.signDays + ' 天'}</Text>
+          ) : null}
+          {useRole && useRole.continuousDays > 0 ? (
+            <Text font="caption2" fontWeight="bold"
+              // @ts-ignore
+              foregroundStyle="systemOrange"
+            >{'连续打卡 ' + useRole.continuousDays + ' 天'}</Text>
+          ) : null}
+          {useRole && useRole.continuousDays > 0 ? (
+            <Text font="caption2"
+              // @ts-ignore
+              foregroundStyle="tertiaryLabel"
+            >{useRole.continuousDays >= 5 ? '已满档 +50' : useRole.continuousDays >= 3 ? '连续满3天 +40' : '普通 +30'}</Text>
           ) : null}
           {useRole && useRole.rewardName ? (
             <Text font="caption2" fontWeight="bold"
@@ -622,12 +634,12 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
                   foregroundStyle="#FFCC00"
                 >{String(useRole?.coinBalance || 0)}</Text>
               </HStack>
-              {/* 连续签到 */}
+              {/* 游戏签到 */}
               {useRole && useRole.signDays > 0 ? (
                 <Text font="caption2" fontWeight="bold"
                   // @ts-ignore
                   foregroundStyle="systemOrange"
-                >{'连续签到' + useRole.signDays + '天'}</Text>
+                >{'游戏签到' + useRole.signDays + '天'}</Text>
               ) : null}
             </VStack>
             {/* ===== 右侧栏：账号 + 任务列表 ===== */}
@@ -670,8 +682,15 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
                           foregroundStyle={t.done ? 'systemGreen' : 'systemBlue'}
                         >{t.isCheckIn ? (t.current > 0 ? '连续 ' + t.current + ' 天' : '未打卡') : (t.current + '/' + t.total)}</Text>
                       </HStack>
-                      {/* 进度条（打卡任务不显示进度条） */}
-                      {t.isCheckIn ? null : (
+                      {/* 进度条（打卡任务显示档位） */}
+                      {t.isCheckIn ? (
+                        t.current > 0 ? (
+                          <Text font="caption2"
+                            // @ts-ignore
+                            foregroundStyle="tertiaryLabel"
+                          >{t.current >= 5 ? '已满档 +50' : t.current >= 3 ? '连续满3天 +40' : '普通 +30'}</Text>
+                        ) : null
+                      ) : (
                       <HStack spacing={0} frame={{ height: 3 }}>
                         <VStack frame={{ width: Math.round(BAR_TOTAL * Math.min(t.current / t.total, 1)), height: 3 }}
                           // @ts-ignore
@@ -792,7 +811,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               <Text font="caption"
                 // @ts-ignore
                 foregroundStyle="secondaryLabel"
-              >{(useRole ? (useRole.serverName + ' · Lv.' + useRole.level) : (loggedIn ? '已就绪' : '请先登录')) + (useRole && useRole.signDays > 0 ? ('  ·  连续签到' + useRole.signDays + '天') : '')}</Text>
+              >{(useRole ? (useRole.serverName + ' · Lv.' + useRole.level) : (loggedIn ? '已就绪' : '请先登录')) + (useRole && useRole.signDays > 0 ? ('  ·  游戏签到' + useRole.signDays + '天') : '') + (useRole && useRole.continuousDays > 0 ? ('  ·  连续打卡' + useRole.continuousDays + '天 ' + (useRole.continuousDays >= 5 ? '+50' : useRole.continuousDays >= 3 ? '+40' : '+30')) : '')}</Text>
             </VStack>
             {useRole ? (
               <VStack alignment="trailing" spacing={1}>
@@ -882,7 +901,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               // @ts-ignore
               padding={{ vertical: 6, horizontal: 10 }}
               // @ts-ignore
-              background="rgba(255,255,255,0.03)"
+              background="systemGray5"
               // @ts-ignore
               cornerRadius={8}
             >
@@ -910,7 +929,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
               // @ts-ignore
               padding={{ vertical: 6, horizontal: 10 }}
               // @ts-ignore
-              background="rgba(255,255,255,0.05)"
+              background="systemGray5"
               // @ts-ignore
               cornerRadius={8}
             >
