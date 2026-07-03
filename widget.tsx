@@ -1,7 +1,7 @@
 import { VStack, HStack, Text, Spacer, Widget, fetch, Canvas } from "scripting"
 
 // ============================================================
-// Tokei 時計 — 桌面组件 v12
+// 桌面组件 v12
 // 左右分栏：左=圆环仪表盘，右=标题+图例
 // 仿图5模板，深色主题
 // ============================================================
@@ -260,19 +260,414 @@ async function main() {
   }
   var topModelLabel = topModel ? (MODEL_NAMES[topModel] || topModel) : ""
 
+  // 日均数据（大号组件柱状图用）
+  var dayMap: { [key: string]: number } = {}
+  filteredRecords.forEach(function(r: PlatformRecord) {
+    dayMap[r.date] = (dayMap[r.date] || 0) + r.totalTokens
+  })
+  var dayKeys = Object.keys(dayMap).sort()
+  var maxDayTokens = 0
+  dayKeys.forEach(function(k) { if (dayMap[k] > maxDayTokens) maxDayTokens = dayMap[k] })
+
+  // 模型排行数据
+  var modelStats: { model: string; tokens: number; requests: number }[] = []
+  var modelAgg: { [key: string]: { tokens: number; requests: number } } = {}
+  filteredRecords.forEach(function(r: PlatformRecord) {
+    if (!modelAgg[r.model]) modelAgg[r.model] = { tokens: 0, requests: 0 }
+    modelAgg[r.model].tokens += r.totalTokens
+    modelAgg[r.model].requests += r.requests
+  })
+  for (var mk in modelAgg) {
+    modelStats.push({ model: mk, tokens: modelAgg[mk].tokens, requests: modelAgg[mk].requests })
+  }
+  modelStats.sort(function(a, b) { return b.tokens - a.tokens })
+  var totalModelTokens = modelStats.reduce(function(s, m) { return s + m.tokens }, 0)
+
   // ============================================================
-  // 渲染 — 左右分栏
+  // 渲染 — 根据 Widget.family 区分大号/中号
   // ============================================================
-  Widget.present(
-    <HStack
-      // @ts-ignore
-      background={C.bg}
-      // @ts-ignore
-      cornerRadius={isTransparent ? 0 : 22}
-      // @ts-ignore
-      padding={0}
-      spacing={0}
-    >
+  var isLarge = Widget.family === "systemLarge"
+
+  if (isLarge) {
+    // ====== 大号组件：竖向布局 ======
+    Widget.present(
+      <VStack
+        // @ts-ignore
+        background="clear"
+        // @ts-ignore
+        padding={0}
+        spacing={0}
+      >
+        {/* 内容区域，带内边距 */}
+        <VStack
+          // @ts-ignore
+          padding={{ top: 12, bottom: 8, leading: 12, trailing: 12 }}
+          spacing={0}
+        >
+        {/* ====== 顶部栏：标题 + 模型 + 更新时间 ====== */}
+        <HStack spacing={0}>
+          <Text
+            // @ts-ignore
+            fontSize={15}
+            font="headline"
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >{titleText}</Text>
+          <Spacer />
+          <VStack spacing={1} alignment="trailing">
+            {topModelLabel ? (
+              <Text
+                // @ts-ignore
+                fontSize={10}
+                // @ts-ignore
+                foregroundStyle={C.muted}
+                // @ts-ignore
+                lineLimit={1}
+              >{topModelLabel}</Text>
+            ) : null}
+            <Text
+              // @ts-ignore
+              fontSize={9}
+              // @ts-ignore
+              foregroundStyle={C.dim}
+            >{syncTime}</Text>
+          </VStack>
+        </HStack>
+
+        {/* 额度使用量 */}
+        <HStack spacing={6}>
+          <Text
+            // @ts-ignore
+            fontSize={12}
+            font="headline"
+            // @ts-ignore
+            foregroundStyle={C.cyan}
+          >{fmtQ(data.creditsUsed)}</Text>
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >/ {fmtQ(data.creditsTotal)}</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >{creditPct}%</Text>
+        </HStack>
+        {/* 额度进度条 */}
+        <VStack
+          // @ts-ignore
+          frame={{ width: "100%", height: 4 }}
+          // @ts-ignore
+          background={C.ringBg}
+          // @ts-ignore
+          cornerRadius={2}
+          // @ts-ignore
+          padding={{ top: 3, bottom: 3 }}
+        >
+          <VStack
+            // @ts-ignore
+            frame={{ width: creditPct + "%", height: "100%" }}
+            // @ts-ignore
+            background={C.cyan}
+            // @ts-ignore
+            cornerRadius={2}
+          />
+        </VStack>
+
+        {/* ====== 柱状图区域 ====== */}
+        <Canvas
+          // @ts-ignore
+          frame={{ width: "100%", height: 110 }}
+          // @ts-ignore
+          opaque={false}
+          draw={function(ctx: any, size: any) {
+            ctx.clearRect(0, 0, size.width, size.height)
+            if (dayKeys.length === 0) return
+            var pad = 16
+            var chartW = size.width - pad * 2
+            var chartH = size.height - 22
+            var barW = Math.min(24, (chartW - (dayKeys.length - 1) * 4) / dayKeys.length)
+            var gap = dayKeys.length > 1 ? (chartW - barW * dayKeys.length) / (dayKeys.length - 1) : 0
+            // Y轴参考线
+            ctx.strokeStyle = C.dim
+            ctx.lineWidth = 0.5
+            for (var li = 0; li <= 3; li++) {
+              var ly = pad + chartH * (1 - li / 3)
+              ctx.beginPath()
+              ctx.moveTo(pad, ly)
+              ctx.lineTo(size.width - pad, ly)
+              ctx.stroke()
+              // 标签
+              ctx.fillStyle = C.dim
+              ctx.font = "8px system"
+              ctx.textAlign = "left"
+              ctx.textBaseline = "middle"
+              var labelVal = Math.round((maxDayTokens / 3) * li)
+              ctx.fillText(fmt(labelVal), 0, ly)
+            }
+            // 画柱子
+            dayKeys.forEach(function(date, i) {
+              var val = dayMap[date]
+              var barH = maxDayTokens > 0 ? (val / maxDayTokens) * chartH : 0
+              var x = pad + i * (barW + gap)
+              var y = pad + chartH - barH
+              // 渐变填充
+              var grad = ctx.createLinearGradient(x, y, x, pad + chartH)
+              grad.addColorStop(0, C.cyan)
+              grad.addColorStop(1, "rgba(0,229,255,0.3)")
+              ctx.fillStyle = grad
+              // 圆角顶部
+              var cr = Math.min(3, barW / 2)
+              ctx.beginPath()
+              ctx.moveTo(x, pad + chartH)
+              ctx.lineTo(x, y + cr)
+              ctx.quadraticCurveTo(x, y, x + cr, y)
+              ctx.lineTo(x + barW - cr, y)
+              ctx.quadraticCurveTo(x + barW, y, x + barW, y + cr)
+              ctx.lineTo(x + barW, pad + chartH)
+              ctx.closePath()
+              ctx.fill()
+              // 日期标签
+              ctx.fillStyle = C.dim
+              ctx.font = "8px system"
+              ctx.textAlign = "center"
+              ctx.textBaseline = "top"
+              var shortDate = date.slice(5)  // MM-DD
+              ctx.fillText(shortDate, x + barW / 2, pad + chartH + 4)
+            })
+          }}
+        />
+
+        {/* ====== Token 构成 ====== */}
+        <HStack spacing={0}>
+          <Text
+            // @ts-ignore
+            fontSize={12}
+            font="headline"
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >Token 构成</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={10}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >{fmt(totalInput + todayOut)} 总计</Text>
+        </HStack>
+
+        {/* 请求次数 */}
+        <HStack spacing={6}>
+          <VStack
+            // @ts-ignore
+            frame={{ width: 8, height: 8 }}
+            // @ts-ignore
+            background={C.cyan}
+            // @ts-ignore
+            cornerRadius={2}
+          />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >请求次数</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >{fmt(todayRequests)}</Text>
+        </HStack>
+
+        {/* 缓存命中输入 */}
+        <HStack spacing={6}>
+          <VStack
+            // @ts-ignore
+            frame={{ width: 8, height: 8 }}
+            // @ts-ignore
+            background={C.blue}
+            // @ts-ignore
+            cornerRadius={2}
+          />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >缓存命中输入</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >{fmt(todayHit)}</Text>
+        </HStack>
+
+        {/* 未命中缓存输入 */}
+        <HStack spacing={6}>
+          <VStack
+            // @ts-ignore
+            frame={{ width: 8, height: 8 }}
+            // @ts-ignore
+            background={C.purple}
+            // @ts-ignore
+            cornerRadius={2}
+          />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >未命中缓存输入</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >{fmt(todayMiss)}</Text>
+        </HStack>
+
+        {/* 输出 Token */}
+        <HStack spacing={6}>
+          <VStack
+            // @ts-ignore
+            frame={{ width: 8, height: 8 }}
+            // @ts-ignore
+            background={C.green}
+            // @ts-ignore
+            cornerRadius={2}
+          />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >输出 Token</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={11}
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >{fmt(todayOut)}</Text>
+        </HStack>
+
+        {/* 分隔线 */}
+        <VStack
+          // @ts-ignore
+          frame={{ width: "100%", height: 1 }}
+          // @ts-ignore
+          background={C.sep}
+          // @ts-ignore
+          padding={{ top: 6, bottom: 6 }}
+        />
+
+        {/* ====== 模型用量排行 ====== */}
+        <HStack spacing={0}>
+          <Text
+            // @ts-ignore
+            fontSize={12}
+            font="headline"
+            // @ts-ignore
+            foregroundStyle={C.text}
+          >模型用量排行</Text>
+          <Spacer />
+          <Text
+            // @ts-ignore
+            fontSize={10}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+          >{modelStats.length} 个模型</Text>
+        </HStack>
+
+        {modelStats.length > 0 ? modelStats.map(function(ms: any) {
+          var pct = totalModelTokens > 0 ? Math.round((ms.tokens / totalModelTokens) * 100) : 0
+          var shortVer = MODEL_NAMES[ms.model] ? MODEL_NAMES[ms.model].replace("MiMo ", "") : ms.model
+          return (
+            <VStack spacing={2} key={ms.model}>
+              <HStack spacing={6}>
+                <VStack
+                  // @ts-ignore
+                  background={C.green}
+                  // @ts-ignore
+                  cornerRadius={3}
+                  // @ts-ignore
+                  padding={{ top: 1, bottom: 1, leading: 4, trailing: 4 }}
+                  alignment="center"
+                >
+                  <Text
+                    // @ts-ignore
+                    fontSize={8}
+                    // @ts-ignore
+                    foregroundStyle="#000"
+                    font="caption2"
+                  >{shortVer}</Text>
+                </VStack>
+                <Text
+                  // @ts-ignore
+                  fontSize={11}
+                  font="headline"
+                  // @ts-ignore
+                  foregroundStyle={C.text}
+                >{MODEL_NAMES[ms.model] || ms.model}</Text>
+                <Spacer />
+                <Text
+                  // @ts-ignore
+                  fontSize={11}
+                  // @ts-ignore
+                  foregroundStyle={C.green}
+                >{pct}%</Text>
+              </HStack>
+              {/* 进度条 */}
+              <VStack
+                // @ts-ignore
+                frame={{ width: "100%", height: 3 }}
+                // @ts-ignore
+                background={C.ringBg}
+                // @ts-ignore
+                cornerRadius={1.5}
+              >
+                <VStack
+                  // @ts-ignore
+                  frame={{ width: pct + "%", height: "100%" }}
+                  // @ts-ignore
+                  background={C.green}
+                  // @ts-ignore
+                  cornerRadius={1.5}
+                />
+              </VStack>
+            </VStack>
+          )
+        }) : (
+          <Text
+            // @ts-ignore
+            fontSize={10}
+            // @ts-ignore
+            foregroundStyle={C.dim}
+          >暂无数据</Text>
+        )}
+        </VStack>
+      </VStack>,
+      { policy: "after", date: new Date(Date.now() + 15 * 60 * 1000) }
+    )
+  } else {
+    // ====== 中号组件：左右分栏 ======
+    Widget.present(
+      <HStack
+        // @ts-ignore
+        background="clear"
+        // @ts-ignore
+        padding={0}
+        spacing={0}
+      >
       {/* ====== 左栏：圆环 + 品牌 ====== */}
       <VStack
         // @ts-ignore
@@ -362,23 +757,25 @@ async function main() {
             lineLimit={1}
           >{titleText}</Text>
           <Spacer />
-          <VStack
+          <Text
             // @ts-ignore
-            background={C.card}
+            fontSize={7}
             // @ts-ignore
-            cornerRadius={6}
-            // @ts-ignore
-            padding={{ top: 2, bottom: 2, leading: 6, trailing: 6 }}
-            alignment="center"
-          >
-            <Text
-              // @ts-ignore
-              fontSize={7}
-              // @ts-ignore
-              foregroundStyle={C.muted}
-            >{syncTime}</Text>
-          </VStack>
+            foregroundStyle={C.dim}
+          >{syncTime}</Text>
         </HStack>
+
+        {/* 模型名称 */}
+        {topModelLabel ? (
+          <Text
+            // @ts-ignore
+            fontSize={8}
+            // @ts-ignore
+            foregroundStyle={C.muted}
+            // @ts-ignore
+            lineLimit={1}
+          >{topModelLabel}</Text>
+        ) : null}
 
         {/* 间隔 */}
         <VStack
@@ -523,7 +920,8 @@ async function main() {
       </VStack>
     </HStack>,
     { policy: "after", date: new Date(Date.now() + 15 * 60 * 1000) }
-  )
+    )
+  }
 }
 
 main()
