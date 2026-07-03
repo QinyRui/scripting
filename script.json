@@ -1,49 +1,49 @@
 {
-  "contributors" : [
-
-  ],
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/小米api\/photos\/E603984F-B9CC-4BF9-A845-5FF10CD89545.jpeg",
-  "localizedDescriptions" : {
-    "it" : "",
-    "fr" : "",
-    "en" : "",
-    "ru" : "",
-    "pt" : "",
-    "es" : "",
-    "zh" : "",
-    "de" : "",
-    "ja" : ""
-  },
-  "color" : "rgba(0, 0, 0, 1.00)",
-  "remoteResource" : {
-    "autoUpdateInterval" : 300,
-    "hash" : "042e9ed5c16f5adebddca6f31f8fe29a",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/小米api"
-  },
-  "name" : "Xiaomi MIMO",
-  "icon" : "chart.pie.fill",
-  "localizedNames" : {
-    "de" : "",
-    "pt" : "",
-    "it" : "",
-    "es" : "",
-    "ja" : "",
-    "en" : "",
-    "zh" : "",
-    "ru" : "",
-    "fr" : ""
-  },
+  "runInApp" : true,
   "permissions" : null,
-  "version" : "1.0.1",
-  "entry" : "index.tsx",
+  "localizedDescriptions" : {
+    "zh" : "",
+    "es" : "",
+    "pt" : "",
+    "ja" : "",
+    "fr" : "",
+    "ru" : "",
+    "de" : "",
+    "en" : "",
+    "it" : ""
+  },
   "intentInputTypes" : [
 
   ],
+  "localizedNames" : {
+    "es" : "",
+    "en" : "",
+    "zh" : "",
+    "ru" : "",
+    "it" : "",
+    "pt" : "",
+    "de" : "",
+    "fr" : "",
+    "ja" : ""
+  },
+  "name" : "Xiaomi MIMO",
+  "entry" : "index.tsx",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
+  },
+  "contributors" : [
+
+  ],
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/小米api",
+    "autoUpdateInterval" : 300,
+    "hash" : "1fbfc8409d7059e4eabc1255e845bae8"
+  },
+  "color" : "rgba(0, 0, 0, 1.00)",
   "description" : "优化脚本21:23",
-  "runInApp" : true
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/小米api\/photos\/E603984F-B9CC-4BF9-A845-5FF10CD89545.jpeg",
+  "version" : "1.0.1",
+  "icon" : "chart.pie.fill"
 }
