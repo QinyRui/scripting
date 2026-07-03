@@ -215,6 +215,9 @@ export const SIGN_HEADERS: Partial<Record<GameId, Record<string, string>>> = {
 // 米游币任务配置
 // ============================================================
 
+// Scripting 平台内部引用，需导出空数组
+export const CHANNEL_EXP_TASKS: any[] = []
+
 /**
  * 米游币任务定义
  * 58=讨论区签到, 59=浏览帖子, 60=点赞帖子, 61=分享帖子
