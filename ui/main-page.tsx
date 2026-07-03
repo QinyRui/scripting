@@ -133,7 +133,7 @@ async function refreshWidgetRoleData() {
     const recordUrl = `https://api-takumi-record.mihoyo.com/game_record/app/card/wapi/getGameRecordCard?uid=${mihoyoUid}`
     const recordHeaders = getBBSHeaders(recordUrl)
 
-    const [rolesRes, missionRes, recordRes] = await Promise.all([
+    const [rolesRes, missionRes, recordRes, userInfoRes] = await Promise.all([
       fetch(roleUrl, { method: 'GET', headers: roleHeaders })
         .then(r => r.json()).catch(() => null),
       (async () => {
@@ -144,6 +144,9 @@ async function refreshWidgetRoleData() {
       })(),
       fetch(recordUrl, { method: 'GET', headers: recordHeaders })
         .then(r => r.json()).catch(() => null),
+      // 获取BBS用户头像
+      mihoyoUid ? fetch(`https://bbs-api.miyoushe.com/user/api/getUserFullInfo?uid=${mihoyoUid}`)
+        .then(r => r.json()).catch(() => null) : Promise.resolve(null),
     ])
 
     const role = rolesRes?.data?.list?.find((r: any) => r.is_chosen) || rolesRes?.data?.list?.[0]
@@ -181,18 +184,31 @@ async function refreshWidgetRoleData() {
       58: 1, 59: 3, 60: 5, 61: 1, 62: 1, 64: 1,
     }
 
-    // 从 states 构造任务列表
+    // 从 missions + states 构造任务列表
+    // missions 提供任务定义和打卡连续天数；states 提供一次性任务完成状态
+    const allMissions = [...(missionData?.missions || []), ...(missionData?.more_missions || [])]
+    const statesMap: Record<number, any> = {}
+    for (const s of (missionData?.states || [])) {
+      statesMap[s.mission_id] = s
+    }
     const signDays = signRes?.data?.sign_days || 0
-    const tasks = states.map((s: any) => {
-      const id = s.mission_id
-      const done = s.process === 1 || (s.happened_times || 0) >= (MISSION_TOTALS[id] || 1)
+    const tasks = allMissions.map((m: any) => {
+      const id = m.id
+      const times = m.continuous_cycle_times || 0
+      const limit = m.limit || 1
+      const state = statesMap[id]
+      // 打卡任务：用 is_auto_send_award 判断今日是否已领奖
+      // 一次性任务：用 states 的 is_get_award 判断是否已完成
+      const done = id === 58
+        ? (m.is_auto_send_award || false)
+        : (state?.is_get_award || false)
       if (id === 58) {
         return {
           id,
           name: MISSION_NAMES[id] || '打卡',
-          current: done ? 1 : 0,
+          current: times > 0 ? 1 : 0,
           total: 1,
-          reward: MISSION_REWARDS[id] || 0,
+          reward: m.points || MISSION_REWARDS[id] || 0,
           done,
           icon: MISSION_ICONS[id] || '📅',
           isCheckIn: true,
@@ -200,55 +216,46 @@ async function refreshWidgetRoleData() {
       }
       return {
         id,
-        name: MISSION_NAMES[id] || `任务${id}`,
-        current: s.happened_times || 0,
-        total: MISSION_TOTALS[id] || 1,
-        reward: MISSION_REWARDS[id] || 0,
+        name: MISSION_NAMES[id] || m.name || `任务${id}`,
+        current: times,
+        total: limit,
+        reward: m.points || MISSION_REWARDS[id] || 0,
         done,
         icon: MISSION_ICONS[id] || '📋',
       }
     })
-
-    // 连续打卡天数：从积分记录 API 计算
-    // getUserMissionsState 没有 continuous_cycle_times
-    let continuousDays = 0
-    try {
-      const pointUrl = 'https://bbs-api.miyoushe.com/common/homutreasure/v1/web/user/record?app_id=1&point_sn=myb&action=1&size=20'
-      const pointDs = getDS('', 'app_id=1&point_sn=myb&action=1&size=20')
-      const pointRes = await fetch(pointUrl, { method: 'GET', headers: { ...getBBSHeaders(pointUrl), 'DS': pointDs } })
-        .then(r => r.json()).catch((e: any) => { console.log('[Main] 积分记录API失败:', e.message); return null })
-      console.log('[Main] 积分记录retcode:', pointRes?.retcode, 'list长度:', pointRes?.data?.list?.length)
-      const pointList = pointRes?.data?.list || []
-      const checkInRecords = pointList.filter((r: any) => r.title === '打卡' && r.num > 0)
-      console.log('[Main] 打卡记录数:', checkInRecords.length)
-      if (checkInRecords.length > 0) {
-        let streak = 0
-        const now = new Date()
-        let expectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        for (const record of checkInRecords) {
-          const recordDate = new Date(parseInt(record.order_time) * 1000)
-          const recordDay = new Date(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate())
-          const diffDays = Math.round((expectedDate.getTime() - recordDay.getTime()) / 86400000)
-          if (diffDays === 0 || diffDays === 1) {
-            streak++
-            expectedDate = new Date(recordDay.getTime() - 86400000)
-          } else {
-            break
-          }
-        }
-        continuousDays = streak
-        console.log('[Main] 计算连续天数:', streak)
-      }
-    } catch (e: any) { console.log('[Main] 连续天数异常:', e.message) }
-    // 兜底：从 Storage 读取
-    if (continuousDays <= 0) {
-      continuousDays = Number(Storage.get<string>('mihoyo_checkin_streak') || '0')
+    // 确保打卡任务(id=58)始终存在于任务列表
+    if (!tasks.find((t: any) => t.id === 58)) {
+      tasks.push({
+        id: 58,
+        name: '打卡',
+        current: 0,
+        total: 1,
+        reward: 30,
+        done: false,
+        icon: '📅',
+        isCheckIn: true,
+      })
     }
-    if (continuousDays > 0) {
+
+    // 连续打卡天数：直接从 missions 的 continuous_cycle_times 获取
+    let continuousDays = 0
+    const checkInMission = allMissions.find((m: any) => m.id === 58)
+    if (checkInMission) {
+      continuousDays = checkInMission.continuous_cycle_times || 0
       const checkInTask = tasks.find((t: any) => t.id === 58)
       if (checkInTask) {
         checkInTask.current = continuousDays
+        // is_auto_send_award=true 表示今天已打卡领奖
+        if (checkInMission.is_auto_send_award) {
+          checkInTask.done = true
+        }
       }
+      console.log('[Main] 连续打卡天数(missions):', continuousDays, '已领奖:', checkInMission.is_auto_send_award)
+    }
+    // 兜底：从 Storage 读取
+    if (continuousDays <= 0) {
+      continuousDays = Number(Storage.get<string>('mihoyo_checkin_streak') || '0')
     }
 
     // 每日上限直接从 API 获取
@@ -259,34 +266,26 @@ async function refreshWidgetRoleData() {
     console.log('[WidgetData] states:', JSON.stringify(states))
     console.log('[WidgetData] tasks count:', tasks.length, 'earnedPoints:', earnedPoints, 'maxDailyPoints:', maxDailyPoints)
 
-    // 签到奖励（从 Storage 读取，由 sign 模块保存）
+    // 签到奖励：从 award 历史 API 获取今天的实际领取记录
     let rewardName = ''
     let rewardCount = 0
     let rewardIcon = ''
     try {
-      const savedReward = JSON.parse(Storage.get<string>('game_sign_reward') || '{}')
-      rewardName = savedReward.name || ''
-      rewardCount = savedReward.count || 0
-      console.log('[Widget] 今日奖励(Storage):', rewardName, 'x' + rewardCount)
-    } catch {}
-    // 兜底：如果 Storage 没有数据，尝试从 home API 获取
-    if (!rewardName) {
-      try {
-        const homeUrl = 'https://api-takumi.mihoyo.com/event/luna/hk4e/home?lang=zh-cn&act_id=e202311201442471'
-        const homeHeaders = getSignHeaders('hk4e')
-        const homeRes = await fetch(homeUrl, { method: 'GET', headers: homeHeaders })
-          .then(r => r.json()).catch(() => null)
-        const totalSignDay = homeRes?.data?.info?.total_sign_day || 0
-        const awards = homeRes?.data?.awards || []
-        const todayAward = totalSignDay > 0 && totalSignDay <= awards.length ? awards[totalSignDay - 1] : null
-        if (todayAward) {
-          rewardName = todayAward.name || ''
-          rewardCount = todayAward.cnt || todayAward.count || 0
-          rewardIcon = todayAward.icon || ''
-        }
-        console.log('[Widget] 今日奖励(API):', rewardName, 'x' + rewardCount)
-      } catch {}
-    }
+      const awardUrl = `https://api-takumi.mihoyo.com/event/luna/hk4e/award?current_page=1&lang=zh-cn&page_size=7&region=${gameRegion || 'cn_gf01'}&uid=${gameUid || ''}&act_id=e202311201442471`
+      const awardRes = await fetch(awardUrl, { method: 'GET', headers: getSignHeaders('hk4e') })
+        .then(r => r.json()).catch(() => null)
+      const awardList = awardRes?.data?.list || []
+      // 取今天的第一条记录（API返回本地时间，用本地日期匹配）
+      const now = new Date()
+      const todayStr = String(now.getFullYear()) + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+      const todayAward = awardList.find((a: any) => (a.created_at || '').startsWith(todayStr))
+      if (todayAward) {
+        rewardName = todayAward.name || ''
+        rewardCount = todayAward.cnt || 0
+        rewardIcon = todayAward.img || ''
+      }
+      console.log('[Widget] 今日奖励(award API):', rewardName, 'x' + rewardCount)
+    } catch (e: any) { console.log('[Widget] 奖励获取失败:', e.message) }
 
     const data = {
       nickname: role?.nickname || '未知角色',
@@ -306,6 +305,7 @@ async function refreshWidgetRoleData() {
       rewardName,
       rewardCount,
       rewardIcon,
+      avatarUrl: userInfoRes?.data?.user_info?.avatar_url || '',
       fetchTime: Date.now(),
     }
 
@@ -528,7 +528,7 @@ export function MainPage() {
                 fill="rgba(255,255,255,0.08)"
               />
               <Image
-                imageUrl={MIHOYO_ICON_URL}
+                imageUrl={roleData?.avatarUrl || MIHOYO_ICON_URL}
                 resizable={true}
                 // @ts-ignore
                 mask={<Circle fill="black" />}
