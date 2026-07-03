@@ -24,7 +24,7 @@ import {
 } from "scripting"
 
 // ============================================================
-// Tokei 時計 — AI 用量监控仪表板（MiMo 实时数据版）
+// AI 用量监控仪表板（MiMo 实时数据版）
 // 通过 WebViewController 登录获取 Cookie，再用 Cookie 调用平台 API
 // ============================================================
 
@@ -48,11 +48,12 @@ declare class WebViewController {
   dispose(): void
 }
 
-// --- 颜色主题 ---
-const COLORS = {
-  bg: "#0B0D17",
-  cardBg: "#141625",
-  cardBgAlt: "#1A1D30",
+// 系统语义颜色，自动跟随系统明暗模式
+// "label"=主文字 "secondaryLabel"=副文字 "tertiaryLabel"=辅助文字
+const COLORS: any = {
+  bg: "systemBackground",
+  cardBg: "secondarySystemFill",
+  cardBgAlt: "tertiarySystemFill",
   accent: "#6366F1",
   accentPurple: "#8B5CF6",
   green: "#10B981",
@@ -61,10 +62,10 @@ const COLORS = {
   red: "#EF4444",
   cyan: "#06B6D4",
   pink: "#EC4899",
-  textPrimary: "#F8FAFC",
-  textSecondary: "#94A3B8",
-  textTertiary: "#64748B",
-  divider: "#1E2235",
+  textPrimary: "label",
+  textSecondary: "secondaryLabel",
+  textTertiary: "tertiaryLabel",
+  divider: "separator",
 }
 
 // --- Storage Keys ---
@@ -539,10 +540,6 @@ function StatCard({ label, value, subtitle, icon, color }: {
   return (
     <VStack
       // @ts-ignore
-      background={COLORS.cardBg}
-      // @ts-ignore
-      cornerRadius={16}
-      // @ts-ignore
       padding={16}
       spacing={8}
     >
@@ -551,13 +548,10 @@ function StatCard({ label, value, subtitle, icon, color }: {
           systemName={icon}
           width={16}
           height={16}
-          // @ts-ignore
           foregroundStyle={color}
         />
         <Text
-          // @ts-ignore
           fontSize={12}
-          // @ts-ignore
           foregroundStyle={COLORS.textSecondary}
         >
           {label}
@@ -565,15 +559,12 @@ function StatCard({ label, value, subtitle, icon, color }: {
       </HStack>
       <Text
         font="title"
-        // @ts-ignore
         foregroundStyle={COLORS.textPrimary}
       >
         {value}
       </Text>
       <Text
-        // @ts-ignore
         fontSize={11}
-        // @ts-ignore
         foregroundStyle={COLORS.textTertiary}
       >
         {subtitle}
@@ -590,10 +581,6 @@ function CreditGauge({ used, total }: { used: number; total: number }) {
   return (
     <VStack
       // @ts-ignore
-      background={COLORS.cardBg}
-      // @ts-ignore
-      cornerRadius={16}
-      // @ts-ignore
       padding={16}
       spacing={10}
       alignment="center"
@@ -603,13 +590,10 @@ function CreditGauge({ used, total }: { used: number; total: number }) {
           systemName="bolt.fill"
           width={16}
           height={16}
-          // @ts-ignore
           foregroundStyle={gaugeColor}
         />
         <Text
-          // @ts-ignore
           fontSize={12}
-          // @ts-ignore
           foregroundStyle={COLORS.textSecondary}
         >
           额度使用
@@ -623,7 +607,6 @@ function CreditGauge({ used, total }: { used: number; total: number }) {
         currentValueLabel={
           <Text
             font="title"
-            // @ts-ignore
             foregroundStyle={gaugeColor}
           >
             {pct}%
@@ -631,9 +614,7 @@ function CreditGauge({ used, total }: { used: number; total: number }) {
         }
       />
       <Text
-        // @ts-ignore
         fontSize={11}
-        // @ts-ignore
         foregroundStyle={COLORS.textTertiary}
         multilineTextAlignment="center"
       >
@@ -656,10 +637,6 @@ function CacheHitCard({ records }: { records: PlatformRecord[] }) {
   return (
     <VStack
       // @ts-ignore
-      background={COLORS.cardBg}
-      // @ts-ignore
-      cornerRadius={16}
-      // @ts-ignore
       padding={16}
       spacing={10}
       alignment="center"
@@ -669,13 +646,10 @@ function CacheHitCard({ records }: { records: PlatformRecord[] }) {
           systemName="bolt.badge.a.fill"
           width={16}
           height={16}
-          // @ts-ignore
           foregroundStyle={COLORS.cyan}
         />
         <Text
-          // @ts-ignore
           fontSize={12}
-          // @ts-ignore
           foregroundStyle={COLORS.textSecondary}
         >
           缓存命中
@@ -689,7 +663,6 @@ function CacheHitCard({ records }: { records: PlatformRecord[] }) {
         currentValueLabel={
           <Text
             font="title"
-            // @ts-ignore
             foregroundStyle={COLORS.cyan}
           >
             {pct}%
@@ -697,9 +670,7 @@ function CacheHitCard({ records }: { records: PlatformRecord[] }) {
         }
       />
       <Text
-        // @ts-ignore
         fontSize={11}
-        // @ts-ignore
         foregroundStyle={COLORS.textTertiary}
         multilineTextAlignment="center"
       >
@@ -730,10 +701,6 @@ function TopModelCard({ records }: { records: PlatformRecord[] }) {
   return (
     <VStack
       // @ts-ignore
-      background={COLORS.cardBg}
-      // @ts-ignore
-      cornerRadius={16}
-      // @ts-ignore
       padding={16}
       spacing={8}
     >
@@ -742,13 +709,10 @@ function TopModelCard({ records }: { records: PlatformRecord[] }) {
           systemName="cpu"
           width={16}
           height={16}
-          // @ts-ignore
           foregroundStyle={COLORS.accentPurple}
         />
         <Text
-          // @ts-ignore
           fontSize={12}
-          // @ts-ignore
           foregroundStyle={COLORS.textSecondary}
         >
           最常用模型
@@ -756,7 +720,6 @@ function TopModelCard({ records }: { records: PlatformRecord[] }) {
       </HStack>
       <Text
         font="headline"
-        // @ts-ignore
         foregroundStyle={COLORS.textPrimary}
       >
         {info.name}
@@ -766,13 +729,10 @@ function TopModelCard({ records }: { records: PlatformRecord[] }) {
           systemName="circle.fill"
           width={6}
           height={6}
-          // @ts-ignore
           foregroundStyle={info.color}
         />
         <Text
-          // @ts-ignore
           fontSize={11}
-          // @ts-ignore
           foregroundStyle={COLORS.textTertiary}
         >
           {fmt(topTokens)} tokens · {modelReqs[topModel] || 0} 次
@@ -796,10 +756,6 @@ function TokenBreakdownBar({ records }: { records: PlatformRecord[] }) {
   return (
     <VStack
       // @ts-ignore
-      background={COLORS.cardBg}
-      // @ts-ignore
-      cornerRadius={16}
-      // @ts-ignore
       padding={16}
       spacing={12}
     >
@@ -808,13 +764,10 @@ function TokenBreakdownBar({ records }: { records: PlatformRecord[] }) {
           systemName="chart.pie.fill"
           width={16}
           height={16}
-          // @ts-ignore
           foregroundStyle={COLORS.accent}
         />
         <Text
-          // @ts-ignore
           fontSize={13}
-          // @ts-ignore
           foregroundStyle={COLORS.textSecondary}
           font="headline"
         >
@@ -822,9 +775,7 @@ function TokenBreakdownBar({ records }: { records: PlatformRecord[] }) {
         </Text>
         <Spacer />
         <Text
-          // @ts-ignore
           fontSize={12}
-          // @ts-ignore
           foregroundStyle={COLORS.textTertiary}
         >
           {fmt(total)} 总计
@@ -837,22 +788,17 @@ function TokenBreakdownBar({ records }: { records: PlatformRecord[] }) {
             systemName="square.fill"
             width={8}
             height={8}
-            // @ts-ignore
             foregroundStyle={COLORS.blue}
           />
           <Text
-            // @ts-ignore
             fontSize={12}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
           >
             缓存命中输入
           </Text>
           <Spacer />
           <Text
-            // @ts-ignore
             fontSize={12}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
             font="subheadline"
           >
@@ -864,22 +810,17 @@ function TokenBreakdownBar({ records }: { records: PlatformRecord[] }) {
             systemName="square.fill"
             width={8}
             height={8}
-            // @ts-ignore
             foregroundStyle={COLORS.accent}
           />
           <Text
-            // @ts-ignore
             fontSize={12}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
           >
             未命中缓存输入
           </Text>
           <Spacer />
           <Text
-            // @ts-ignore
             fontSize={12}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
             font="subheadline"
           >
@@ -891,22 +832,17 @@ function TokenBreakdownBar({ records }: { records: PlatformRecord[] }) {
             systemName="square.fill"
             width={8}
             height={8}
-            // @ts-ignore
             foregroundStyle={COLORS.green}
           />
           <Text
-            // @ts-ignore
             fontSize={12}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
           >
             输出 Token
           </Text>
           <Spacer />
           <Text
-            // @ts-ignore
             fontSize={12}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
             font="subheadline"
           >
@@ -937,29 +873,23 @@ function ModelRow({ modelId, tokens, requests, totalTokens }: {
           alignment="center"
         >
           <Text
-            // @ts-ignore
             fontSize={11}
             font="caption"
-            // @ts-ignore
-            foregroundStyle="#FFFFFF"
+            foregroundStyle={COLORS.textPrimary}
           >
             {info.short}
           </Text>
         </VStack>
         <VStack spacing={2}>
           <Text
-            // @ts-ignore
             fontSize={13}
             font="subheadline"
-            // @ts-ignore
             foregroundStyle={COLORS.textPrimary}
           >
             {info.name}
           </Text>
           <Text
-            // @ts-ignore
             fontSize={11}
-            // @ts-ignore
             foregroundStyle={COLORS.textTertiary}
           >
             {fmt(tokens)} tokens · {requests} 次
@@ -968,10 +898,8 @@ function ModelRow({ modelId, tokens, requests, totalTokens }: {
         <Spacer />
         <VStack alignment="trailing" spacing={2}>
           <Text
-            // @ts-ignore
             fontSize={13}
             font="subheadline"
-            // @ts-ignore
             foregroundStyle={info.color}
           >
             {pct}%
@@ -981,7 +909,6 @@ function ModelRow({ modelId, tokens, requests, totalTokens }: {
       <ProgressView
         value={pct}
         total={100}
-        // @ts-ignore
         tint={info.color}
       />
     </VStack>
@@ -1010,10 +937,8 @@ function TimeRangeSelector({ selected, onSelect }: {
               alignment="center"
             >
               <Text
-                // @ts-ignore
                 fontSize={12}
                 font="subheadline"
-                // @ts-ignore
                 foregroundStyle={isActive ? "#FFFFFF" : COLORS.textSecondary}
               >
                 {r}
@@ -1026,7 +951,7 @@ function TimeRangeSelector({ selected, onSelect }: {
   )
 }
 
-function HeaderSection({ planName, validUntil }: { planName: string; validUntil: string }) {
+function HeaderSection({ validUntil }: { validUntil: string }) {
   const now = new Date()
   const dateStr = `${now.getMonth() + 1}月${now.getDate()}日`
 
@@ -1035,22 +960,9 @@ function HeaderSection({ planName, validUntil }: { planName: string; validUntil:
       <HStack alignment="center">
         <Spacer />
         <VStack alignment="center" spacing={2}>
-          <HStack spacing={6}>
-            <Text font="largeTitle">Xiaomi MIMO</Text>
-            <Text
-              // @ts-ignore
-              fontSize={12}
-              // @ts-ignore
-              foregroundStyle={COLORS.textTertiary}
-              font="caption"
-            >
-              Tokei
-            </Text>
-          </HStack>
+          <Text font="largeTitle">Xiaomi MIMO</Text>
           <Text
-            // @ts-ignore
             fontSize={13}
-            // @ts-ignore
             foregroundStyle={COLORS.textSecondary}
             multilineTextAlignment="center"
           >
@@ -1058,24 +970,6 @@ function HeaderSection({ planName, validUntil }: { planName: string; validUntil:
           </Text>
         </VStack>
         <Spacer />
-        <VStack alignment="trailing" spacing={2}>
-          <Image
-            systemName="clock.fill"
-            width={32}
-            height={32}
-            // @ts-ignore
-            foregroundStyle={COLORS.accent}
-          />
-          <Text
-            // @ts-ignore
-            fontSize={9}
-            // @ts-ignore
-            foregroundStyle={COLORS.textTertiary}
-            multilineTextAlignment="center"
-          >
-            {planName}
-          </Text>
-        </VStack>
       </HStack>
     </VStack>
   )
@@ -1086,12 +980,12 @@ function HeaderSection({ planName, validUntil }: { planName: string; validUntil:
 // ============================================================
 export default function DashboardView() {
   const [data, setData] = useState<PlatformData>(EMPTY_DATA)
-  // 初始化时从 Storage 恢复上次选择，保证与桌面组件一致
   const [timeRange, setTimeRangeState] = useState<TimeRange>(loadTimeRange())
   const [syncing, setSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState("")
   const [isLoggedIn, setIsLoggedIn] = useState(hasCookies())
   const [autoRefresh, setAutoRefresh] = useState(true)
+  // COLORS 已使用系统语义颜色（label/secondaryLabel 等），自动跟随系统明暗模式
 
   // 切换时间范围：持久化 + 触发 Widget 刷新
   const setTimeRange = (range: TimeRange) => {
@@ -1226,8 +1120,6 @@ export default function DashboardView() {
     <NavigationStack>
       <VStack
         // @ts-ignore
-        background={COLORS.bg}
-        // @ts-ignore
         padding={0}
         spacing={0}
       >
@@ -1238,7 +1130,7 @@ export default function DashboardView() {
             spacing={20}
           >
             {/* 标题区域 */}
-            <HeaderSection planName={data.planName} validUntil={data.validUntil} />
+            <HeaderSection validUntil={data.validUntil} />
 
             {/* 未登录：醒目的登录入口 */}
             {!isLoggedIn ? (
@@ -1253,32 +1145,26 @@ export default function DashboardView() {
                 alignment="center"
               >
                 <Text
-                  // @ts-ignore
                   fontSize={48}
                 >
                   🔐
                 </Text>
                 <Text
                   font="headline"
-                  // @ts-ignore
                   foregroundStyle={COLORS.textPrimary}
                   multilineTextAlignment="center"
                 >
                   需要登录小米账号
                 </Text>
                 <Text
-                  // @ts-ignore
                   fontSize={13}
-                  // @ts-ignore
                   foregroundStyle={COLORS.textSecondary}
                   multilineTextAlignment="center"
                 >
                   点击下方按钮打开 MiMo 平台
                 </Text>
                 <Text
-                  // @ts-ignore
                   fontSize={13}
-                  // @ts-ignore
                   foregroundStyle={COLORS.textSecondary}
                   multilineTextAlignment="center"
                 >
@@ -1290,9 +1176,7 @@ export default function DashboardView() {
                 />
                 {syncStatus ? (
                   <Text
-                    // @ts-ignore
                     fontSize={12}
-                    // @ts-ignore
                     foregroundStyle={syncing ? COLORS.blue : COLORS.textTertiary}
                     multilineTextAlignment="center"
                   >
@@ -1321,9 +1205,7 @@ export default function DashboardView() {
                 </HStack>
                 {syncStatus ? (
                   <Text
-                    // @ts-ignore
                     fontSize={11}
-                    // @ts-ignore
                     foregroundStyle={syncing ? COLORS.blue : COLORS.textTertiary}
                   >
                     {syncStatus}
@@ -1331,9 +1213,7 @@ export default function DashboardView() {
                 ) : null}
                 {autoRefresh ? (
                   <Text
-                    // @ts-ignore
                     fontSize={10}
-                    // @ts-ignore
                     foregroundStyle={COLORS.accent}
                   >
                     Widget 每 15 分钟自动拉取最新数据
@@ -1379,12 +1259,10 @@ export default function DashboardView() {
                   systemName="chart.bar.fill"
                   width={16}
                   height={16}
-                  // @ts-ignore
                   foregroundStyle={COLORS.blue}
                 />
                 <Text
                   font="headline"
-                  // @ts-ignore
                   foregroundStyle={COLORS.textPrimary}
                 >
                   每日 Token 趋势
@@ -1418,9 +1296,7 @@ export default function DashboardView() {
                     alignment="center"
                   >
                     <Text
-                      // @ts-ignore
                       fontSize={12}
-                      // @ts-ignore
                       foregroundStyle={COLORS.textTertiary}
                     >
                       暂无数据，点击刷新按钮拉取
@@ -1443,21 +1319,17 @@ export default function DashboardView() {
                   systemName="cpu"
                   width={16}
                   height={16}
-                  // @ts-ignore
                   foregroundStyle={COLORS.orange}
                 />
                 <Text
                   font="headline"
-                  // @ts-ignore
                   foregroundStyle={COLORS.textPrimary}
                 >
                   模型用量排行
                 </Text>
                 <Spacer />
                 <Text
-                  // @ts-ignore
                   fontSize={12}
-                  // @ts-ignore
                   foregroundStyle={COLORS.textTertiary}
                 >
                   {Object.keys(modelStats).length} 个模型
@@ -1479,7 +1351,6 @@ export default function DashboardView() {
                     return (
                       <VStack key={entry[0]} spacing={0}>
                         {idx > 0 && (
-                          // @ts-ignore
                           <Divider background={COLORS.divider} />
                         )}
                         <VStack padding={{ top: idx > 0 ? 12 : 0 }}>
@@ -1503,17 +1374,13 @@ export default function DashboardView() {
             {/* 数据来源 */}
             <VStack spacing={6} alignment="center">
               <Text
-                // @ts-ignore
                 fontSize={11}
-                // @ts-ignore
                 foregroundStyle={COLORS.textTertiary}
               >
                 数据来源：MiMo 开放平台 · 实时拉取
               </Text>
               <Text
-                // @ts-ignore
                 fontSize={10}
-                // @ts-ignore
                 foregroundStyle={COLORS.textTertiary}
               >
                 套餐有效期至 {data.validUntil} · 上次更新 {lastUpdated}
