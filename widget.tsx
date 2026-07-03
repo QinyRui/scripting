@@ -536,7 +536,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
           alignment="center"
         >
           <ZStack frame={{ width: 40, height: 40 }}>
-            <Image imageUrl={ICON} resizable={true}
+            <Image imageUrl={useRole?.avatarUrl || ICON} resizable={true}
               // @ts-ignore
               mask={<RoundedRectangle cornerRadius={8} fill="black" />}
               frame={{ width: 40, height: 40 }}
@@ -618,7 +618,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
             <VStack alignment="center" spacing={3}
               frame={{ width: 88 }}
             >
-              <Image imageUrl={ICON} resizable={true}
+              <Image imageUrl={useRole?.avatarUrl || ICON} resizable={true}
                 // @ts-ignore
                 mask={<RoundedRectangle cornerRadius={12} fill="black" />}
                 frame={{ width: 48, height: 48 }}
@@ -669,8 +669,36 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
                       return actions.length === 0 || actions.includes(t.id)
                     })
                     .map((t: any) => (
+                    t.isCheckIn ? (
+                    <HStack key={t.id} spacing={8} alignment="center"
+                      // @ts-ignore
+                      padding={{ vertical: 6, horizontal: 8 }}
+                      // @ts-ignore
+                      background="rgba(255,255,255,0.06)"
+                      // @ts-ignore
+                      cornerRadius={8}
+                    >
+                      <Text font="title2">{'\uD83D\uDCC5'}</Text>
+                      <VStack spacing={1} frame={{ maxWidth: 'infinity' }}>
+                        <Text font="footnote" fontWeight="bold">打卡</Text>
+                        <Text font="caption2"
+                          // @ts-ignore
+                          foregroundStyle="systemOrange"
+                        >{'\uD83E\uDE99 +' + (t.current >= 5 ? 50 : t.current >= 3 ? 40 : 30)}</Text>
+                      </VStack>
+                      <VStack alignment="trailing" spacing={0}>
+                        <Text font="caption2"
+                          // @ts-ignore
+                          foregroundStyle="tertiaryLabel"
+                        >{'已连续打卡'}</Text>
+                        <Text font="title3" fontWeight="bold"
+                          // @ts-ignore
+                          foregroundStyle={t.done ? 'systemGreen' : 'systemBlue'}
+                        >{(useRole?.continuousDays || t.current) + '天'}</Text>
+                      </VStack>
+                    </HStack>
+                    ) : (
                     <VStack key={t.id} spacing={1}>
-                      {/* 任务名 + 奖励 + 进度 */}
                       <HStack alignment="center">
                         <Text font="caption2"
                           // @ts-ignore
@@ -680,17 +708,8 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
                         <Text font="caption2" fontWeight="bold"
                           // @ts-ignore
                           foregroundStyle={t.done ? 'systemGreen' : 'systemBlue'}
-                        >{t.isCheckIn ? (t.current > 0 ? '连续 ' + t.current + ' 天' : '未打卡') : (t.current + '/' + t.total)}</Text>
+                        >{t.current + '/' + t.total}</Text>
                       </HStack>
-                      {/* 进度条（打卡任务显示档位） */}
-                      {t.isCheckIn ? (
-                        t.current > 0 ? (
-                          <Text font="caption2"
-                            // @ts-ignore
-                            foregroundStyle="tertiaryLabel"
-                          >{t.current >= 5 ? '已满档 +50' : t.current >= 3 ? '连续满3天 +40' : '普通 +30'}</Text>
-                        ) : null
-                      ) : (
                       <HStack spacing={0} frame={{ height: 3 }}>
                         <VStack frame={{ width: Math.round(BAR_TOTAL * Math.min(t.current / t.total, 1)), height: 3 }}
                           // @ts-ignore
@@ -707,8 +726,8 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
                           />
                         ) : null}
                       </HStack>
-                      )}
                     </VStack>
+                    )
                   ))
                 ) : (
                   <Text font="caption2"
@@ -799,7 +818,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
         >
           {/* 顶部：图标 + 账号信息 + 米游币 */}
           <HStack spacing={10} alignment="center">
-            <Image imageUrl={ICON} resizable={true}
+            <Image imageUrl={useRole?.avatarUrl || ICON} resizable={true}
               // @ts-ignore
               mask={<RoundedRectangle cornerRadius={10} fill="black" />}
               frame={{ width: 44, height: 44 }}
