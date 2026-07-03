@@ -1006,7 +1006,9 @@ export default function DashboardView() {
       const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0]
       return records.filter(function(r) { return r.date >= weekAgo })
     }
-    return records // 本月 = 全部当前月数据
+    // 本月：只保留当月记录，自动过滤旧月数据
+    var currentMonth = today.slice(0, 7)  // YYYY-MM
+    return records.filter(function(r) { return r.date.slice(0, 7) === currentMonth })
   }
 
   const filtered = getFilteredRecords(data.records)
