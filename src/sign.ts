@@ -80,8 +80,8 @@ async function executeGameSign(board: Board): Promise<TaskResult> {
       return { success: true, message: `✅ ${msg}` }
     }
 
-    // 4. 获取奖励信息
-    const award = await getSignAwards(board, signInfo.total_sign_day)
+    // 4. 获取奖励信息（未签到时 total_sign_day 不含今天，需 +1 取当天奖励）
+    const award = await getSignAwards(board, signInfo.total_sign_day + 1)
     Storage.set('game_sign_reward', JSON.stringify({ name: award.name, count: award.count }))
     await randomSleep()
 
