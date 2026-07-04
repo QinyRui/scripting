@@ -3,6 +3,6 @@
   "name": "米游社",
   "version": "3.0.4",
   "icon": "gamecontroller.fill",
-  "color": "rgba(252, 124, 93,1)",
+  "color": "rgba(252,124,93,1)",
   "runInApp": true
 }
