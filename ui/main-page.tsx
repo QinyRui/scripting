@@ -133,7 +133,7 @@ async function refreshWidgetRoleData() {
     const recordUrl = `https://api-takumi-record.mihoyo.com/game_record/app/card/wapi/getGameRecordCard?uid=${mihoyoUid}`
     const recordHeaders = getBBSHeaders(recordUrl)
 
-    const [rolesRes, missionRes, recordRes, userInfoRes] = await Promise.all([
+    const [rolesRes, missionRes, recordRes] = await Promise.all([
       fetch(roleUrl, { method: 'GET', headers: roleHeaders })
         .then(r => r.json()).catch(() => null),
       (async () => {
@@ -144,9 +144,6 @@ async function refreshWidgetRoleData() {
       })(),
       fetch(recordUrl, { method: 'GET', headers: recordHeaders })
         .then(r => r.json()).catch(() => null),
-      // 获取BBS用户头像
-      mihoyoUid ? fetch(`https://bbs-api.miyoushe.com/user/api/getUserFullInfo?uid=${mihoyoUid}`)
-        .then(r => r.json()).catch(() => null) : Promise.resolve(null),
     ])
 
     const role = rolesRes?.data?.list?.find((r: any) => r.is_chosen) || rolesRes?.data?.list?.[0]
@@ -305,7 +302,6 @@ async function refreshWidgetRoleData() {
       rewardName,
       rewardCount,
       rewardIcon,
-      avatarUrl: userInfoRes?.data?.user_info?.avatar_url || '',
       fetchTime: Date.now(),
     }
 
@@ -528,7 +524,7 @@ export function MainPage() {
                 fill="rgba(255,255,255,0.08)"
               />
               <Image
-                imageUrl={roleData?.avatarUrl || MIHOYO_ICON_URL}
+                imageUrl={MIHOYO_ICON_URL}
                 resizable={true}
                 // @ts-ignore
                 mask={<Circle fill="black" />}
