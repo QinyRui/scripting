@@ -948,74 +948,167 @@ function HeroCard({
   return (
     <VStack
       padding={16}
-      spacing={12}
+      spacing={14}
       // @ts-ignore
       background={gradient("linear", {
-        colors: ["rgba(13,148,136,0.25)", "rgba(13,140,160,0.15)"],
-        startPoint: "top",
-        endPoint: "bottom",
+        colors: ["rgba(13,148,136,0.35)", "rgba(50,173,230,0.2)", "rgba(88,86,214,0.12)"],
+        startPoint: "topLeading",
+        endPoint: "bottomTrailing",
       }) as any}
       // @ts-ignore
-      mask={<RoundedRectangle cornerRadius={12} fill="black" />}
+      mask={<RoundedRectangle cornerRadius={16} fill="black" />}
     >
-      <HStack spacing={8} alignment="center">
-        {githubIconPath ? (
-          <Image
-            filePath={githubIconPath}
-            frame={{ width: 32, height: 32 }}
-          />
-        ) : (
-          <Image
-            systemName="chevron.left.forwardslash.chevron.right"
-            font="title3"
-            foregroundStyle="systemTeal"
-          />
-        )}
-        <Text font="headline" foregroundStyle="label">
-          {repoName}
-        </Text>
+      {/* 彩色 GitHub Logo + 仓库名 */}
+      <VStack spacing={10} alignment="center">
+        <ZStack alignment="center">
+          {/* 外层彩色光晕环 */}
+          <Circle fill="rgba(13,148,136,0.35)" frame={{ width: 76, height: 76 }} />
+          {/* 中层半透明底 */}
+          <Circle fill="rgba(255,255,255,0.12)" frame={{ width: 62, height: 62 }} />
+          {/* GitHub Logo（缩放版）*/}
+          <Image filePath="github-logo.png" frame={{ width: 48, height: 48 }} />
+        </ZStack>
+        <Text font="title3" fontWeight="bold" foregroundStyle="white">{repoName || "未配置仓库"}</Text>
+      </VStack>
+
+      {/* 分隔线 */}
+      <VStack frame={{ maxWidth: "infinity", height: 1 }} background="rgba(255,255,255,0.1)" />
+
+      {/* 信息网格 2×2 */}
+      <HStack spacing={10}>
+        <HStack spacing={4} alignment="center" frame={{ maxWidth: "infinity" }}
+          padding={{ vertical: 6, horizontal: 8 }}
+          // @ts-ignore
+          background="rgba(255,255,255,0.08)"
+          // @ts-ignore
+          mask={<RoundedRectangle cornerRadius={10} fill="black" />}
+        >
+          <Image systemName="arrow.triangle.branch" font="caption" foregroundStyle="rgba(255,200,100,1)" />
+          <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
+            <Text font="caption2" foregroundStyle="rgba(255,255,255,0.45)">分支</Text>
+            <Text font="footnote" foregroundStyle="white" lineLimit={1}>{branch || "main"}</Text>
+          </VStack>
+        </HStack>
+        <HStack spacing={4} alignment="center" frame={{ maxWidth: "infinity" }}
+          padding={{ vertical: 6, horizontal: 8 }}
+          // @ts-ignore
+          background="rgba(255,255,255,0.08)"
+          // @ts-ignore
+          mask={<RoundedRectangle cornerRadius={10} fill="black" />}
+        >
+          <Circle fill={configReady ? "systemGreen" : "systemOrange"} frame={{ width: 8, height: 8 }} />
+          <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
+            <Text font="caption2" foregroundStyle="rgba(255,255,255,0.45)">状态</Text>
+            <Text font="footnote" foregroundStyle="white">{configReady ? "就绪" : "待配置"}</Text>
+          </VStack>
+        </HStack>
       </HStack>
 
-      <HStack spacing={16}>
-        <VStack alignment="leading" spacing={2}>
-          <Text font="caption" foregroundStyle="secondaryLabel">
-            分支
-          </Text>
-          <Text font="subheadline" foregroundStyle="label">
-            {branch || "main"}
-          </Text>
-        </VStack>
-        <Spacer />
-        <VStack alignment="trailing" spacing={2}>
-          <Text font="caption" foregroundStyle="secondaryLabel">
-            状态
-          </Text>
-          <Text font="subheadline" foregroundStyle="label">
-            {configReady ? "就绪" : "待配置"}
-          </Text>
-        </VStack>
-      </HStack>
-
-      <HStack spacing={16}>
-        <VStack alignment="leading" spacing={2}>
-          <Text font="caption" foregroundStyle="secondaryLabel">
-            文件
-          </Text>
-          <Text font="subheadline" foregroundStyle="label">
-            {selectedCountText}
-          </Text>
-        </VStack>
-        <Spacer />
-        <VStack alignment="trailing" spacing={2}>
-          <Text font="caption" foregroundStyle="secondaryLabel">
-            路径
-          </Text>
-          <Text font="subheadline" foregroundStyle="label" lineLimit={1}>
-            {repoName}
-          </Text>
-        </VStack>
+      <HStack spacing={10}>
+        <HStack spacing={4} alignment="center" frame={{ maxWidth: "infinity" }}
+          padding={{ vertical: 6, horizontal: 8 }}
+          // @ts-ignore
+          background="rgba(255,255,255,0.08)"
+          // @ts-ignore
+          mask={<RoundedRectangle cornerRadius={10} fill="black" />}
+        >
+          <Image systemName="doc.text.fill" font="caption" foregroundStyle="rgba(100,180,255,1)" />
+          <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
+            <Text font="caption2" foregroundStyle="rgba(255,255,255,0.45)">文件</Text>
+            <Text font="footnote" foregroundStyle="white" lineLimit={1}>{selectedCountText}</Text>
+          </VStack>
+        </HStack>
+        <HStack spacing={4} alignment="center" frame={{ maxWidth: "infinity" }}
+          padding={{ vertical: 6, horizontal: 8 }}
+          // @ts-ignore
+          background="rgba(255,255,255,0.08)"
+          // @ts-ignore
+          mask={<RoundedRectangle cornerRadius={10} fill="black" />}
+        >
+          <Image systemName="folder.fill" font="caption" foregroundStyle="rgba(180,120,255,1)" />
+          <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
+            <Text font="caption2" foregroundStyle="rgba(255,255,255,0.45)">路径</Text>
+            <Text font="footnote" foregroundStyle="white" lineLimit={1}>{repoName}</Text>
+          </VStack>
+        </HStack>
       </HStack>
     </VStack>
+  )
+}
+
+// ═══════ 凭证配置图形化图标按钮 ═══════
+
+function CredentialIcon(props: {
+  icon: string
+  label: string
+  value: string
+  color: string
+  isPresented: boolean
+  onShow: () => void
+  onHide: () => void
+  popoverTitle: string
+  placeholder: string
+  onChanged: (v: string) => void
+}) {
+  const hasValue = Boolean(props.value.trim())
+  const displayValue = props.label === "Token"
+    ? (hasValue ? props.value.slice(0, 6) + "••••" : "")
+    : (props.value.length > 10 ? props.value.slice(0, 10) + "…" : props.value)
+
+  return (
+    <Button
+      buttonStyle="plain"
+      action={props.onShow}
+      frame={{ maxWidth: "infinity" }}
+      popover={{
+        isPresented: props.isPresented,
+        onChanged: (v: boolean) => { if (!v) props.onHide() },
+        presentationCompactAdaptation: 'popover',
+        arrowEdge: 'bottom' as any,
+        content: (
+          <VStack
+            spacing={10}
+            padding={16}
+            frame={{ width: 280 }}
+            // @ts-ignore
+            background="rgba(35,35,35,0.95)"
+            // @ts-ignore
+            mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+          >
+            <HStack spacing={8} alignment="center">
+              <ZStack alignment="center">
+                <Circle fill={`${props.color}33` as any} frame={{ width: 32, height: 32 }} />
+                <Image systemName={props.icon} font="body" foregroundStyle={props.color as any} />
+              </ZStack>
+              <Text font="headline" foregroundStyle="white">{props.popoverTitle}</Text>
+            </HStack>
+            <TextField title={props.popoverTitle} value={props.value} prompt={props.placeholder} onChanged={props.onChanged} />
+            <Text font="caption" foregroundStyle="tertiaryLabel">
+              {hasValue ? `当前: ${props.value.length > 30 ? props.value.slice(0, 30) + "…" : props.value}` : "尚未配置"}
+            </Text>
+          </VStack>
+        )
+      }}
+    >
+      <VStack
+        spacing={6}
+        alignment="center"
+        padding={{ vertical: 12, horizontal: 4 }}
+        frame={{ maxWidth: "infinity" }}
+      >
+        <ZStack alignment="center">
+          <Circle fill={`${props.color}20` as any} frame={{ width: 44, height: 44 }} />
+          <Image systemName={props.icon} font="title3" foregroundStyle={props.color as any} />
+        </ZStack>
+        <Text font="caption" foregroundStyle="label" lineLimit={1}>{props.label}</Text>
+        <HStack spacing={3} alignment="center">
+          <Circle fill={hasValue ? "systemGreen" : "systemRed"} frame={{ width: 5, height: 5 }} />
+          <Text font="caption2" foregroundStyle="secondaryLabel" lineLimit={1}>
+            {hasValue ? (props.label === "Token" ? "已配置" : displayValue || "已配置") : "未配置"}
+          </Text>
+        </HStack>
+      </VStack>
+    </Button>
   )
 }
 
@@ -1052,6 +1145,9 @@ function View() {
   // 删除分支相关状态
   const [deleteBranchName, setDeleteBranchName] = useState("")
   const [isDeletingBranch, setIsDeletingBranch] = useState(false)
+
+  // 凭证弹窗状态
+  const [editingField, setEditingField] = useState<string | null>(null)
 
   // 添加上传日志的辅助函数
   const addUploadLog = (log: string) => {
@@ -1558,9 +1654,16 @@ function View() {
             toolbar={{
               topBarLeading: [<Button title="关闭" systemImage="xmark" action={dismiss} />],
               topBarTrailing: [
-                <Button action={() => setShowSettings(true)}>
-                  <Image systemName="gearshape.fill" font="callout" foregroundStyle="systemTeal" />
-                </Button>
+                <HStack alignment="center" spacing={8}>
+                  <Image
+                    filePath="github-mark-light.png"
+                    resizable={true}
+                    frame={{ width: 24, height: 24 }}
+                  />
+                  <Button action={() => setShowSettings(true)}>
+                    <Image systemName="gearshape.fill" font="callout" foregroundStyle="systemTeal" />
+                  </Button>
+                </HStack>
               ],
             }}
           >
@@ -1663,34 +1766,136 @@ function View() {
               ],
             }}
           >
-            {/* 凭证配置 */}
+            {/* ═══════ 凭证配置（图形化图标按钮）═══════ */}
             <Section header={<SectionHeader title="凭证配置" />} footer={<Text attributedString={`[生成 GitHub Classic Token →](https://github.com/settings/tokens/new)`} foregroundStyle="tertiaryLabel" font="caption" />}>
-              <TextField title="访问令牌 Token" value={token} onChanged={setToken} />
-              <TextField title="仓库所有者" value={authorName} onChanged={setAuthorName} />
-              <TextField title="仓库 URL" value={repoUrl} onChanged={setRepoUrl} />
-              <TextField title="默认分支 / 目录路径" value={branch} onChanged={setBranch} />
-              <TextField title="提交邮箱" value={authorEmail} onChanged={setAuthorEmail} />
+              <VStack spacing={10}>
+                <HStack spacing={10}>
+                  <CredentialIcon icon="key.fill" label="Token" value={token} color="rgba(255,149,0,1)" isPresented={editingField === "token"} onShow={() => setEditingField("token")} onHide={() => setEditingField(null)} popoverTitle="访问令牌" placeholder="ghp_xxxx" onChanged={setToken} />
+                  <CredentialIcon icon="person.fill" label="所有者" value={authorName} color="rgba(0,122,255,1)" isPresented={editingField === "owner"} onShow={() => setEditingField("owner")} onHide={() => setEditingField(null)} popoverTitle="仓库所有者" placeholder="QinyRui" onChanged={setAuthorName} />
+                </HStack>
+                <HStack spacing={10}>
+                  <CredentialIcon icon="link" label="仓库 URL" value={repoUrl} color="rgba(175,82,222,1)" isPresented={editingField === "url"} onShow={() => setEditingField("url")} onHide={() => setEditingField(null)} popoverTitle="仓库 URL" placeholder="https://github.com/..." onChanged={setRepoUrl} />
+                  <CredentialIcon icon="envelope.fill" label="邮箱" value={authorEmail} color="rgba(52,199,89,1)" isPresented={editingField === "email"} onShow={() => setEditingField("email")} onHide={() => setEditingField(null)} popoverTitle="提交邮箱" placeholder="your@email.com" onChanged={setAuthorEmail} />
+                </HStack>
+                <HStack spacing={10}>
+                  <CredentialIcon icon="arrow.triangle.branch" label="分支" value={branch} color="rgba(13,148,136,1)" isPresented={editingField === "branch"} onShow={() => setEditingField("branch")} onHide={() => setEditingField(null)} popoverTitle="默认分支" placeholder="main" onChanged={setBranch} />
+                </HStack>
+              </VStack>
             </Section>
             {/* 提交信息 */}
             <Section header={<SectionHeader title="提交信息" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">自定义 Git 提交说明，留空则使用默认格式。</Text>}>
               <TextField title="提交说明文字" value={commitMessage} prompt="提交说明文字" onChanged={setCommitMessage} />
             </Section>
-            {/* 创建文件夹 */}
-            <Section header={<SectionHeader title="在 GitHub 创建文件夹" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">在指定分支中创建文件夹（自动生成 .gitkeep 占位文件）。</Text>}>
-              <TextField title="文件夹路径" value={folderPath} prompt="例如 images/wallpapers" onChanged={setFolderPath} />
-              <TextField title="目标分支（留空用默认）" value={folderTargetBranch} prompt={branch || "main"} onChanged={setFolderTargetBranch} />
-              <Button title={isCreatingFolder ? "创建中…" : "创建文件夹"} systemImage="folder.badge.plus" disabled={!folderPath.trim() || isCreatingFolder} action={handleCreateFolder} />
-            </Section>
-            {/* 创建分支 */}
-            <Section header={<SectionHeader title="在 GitHub 创建分支" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">基于源分支创建新分支，新分支将包含源分支的最新代码。</Text>}>
-              <TextField title="新分支名称" value={newBranchName} prompt="例如 feature/login" onChanged={setNewBranchName} />
-              <TextField title="源分支（留空用默认）" value={sourceBranchName} prompt={branch || "main"} onChanged={setSourceBranchName} />
-              <Button title={isCreatingBranch ? "创建中…" : "创建分支"} systemImage="arrow.triangle.branch" disabled={!newBranchName.trim() || isCreatingBranch} action={handleCreateBranch} />
-            </Section>
-            {/* 删除分支 */}
-            <Section header={<SectionHeader title="删除分支" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">⚠️ 此操作不可逆，分支将被永久删除。主分支（main/master/develop）受保护无法删除。</Text>}>
-              <TextField title="分支名称" value={deleteBranchName} prompt="例如 photos, feature/xxx" onChanged={setDeleteBranchName} />
-              <Button title={isDeletingBranch ? "删除中…" : "删除分支"} systemImage="trash" tint="systemRed" disabled={!deleteBranchName.trim() || isDeletingBranch} action={handleDeleteBranch} />
+            {/* ═══════ 仓库操作（图形化图标弹窗）═══════ */}
+            <Section header={<SectionHeader title="仓库操作" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">点击图标按钮打开操作面板，在弹窗中填写信息并执行。</Text>}>
+              <HStack spacing={10}>
+                {/* 创建文件夹 */}
+                <Button
+                  buttonStyle="plain"
+                  action={() => setEditingField(editingField === "opFolder" ? null : "opFolder")}
+                  frame={{ maxWidth: "infinity" }}
+                  popover={{
+                    isPresented: editingField === "opFolder",
+                    onChanged: (v: boolean) => { if (!v) setEditingField(null) },
+                    presentationCompactAdaptation: 'popover',
+                    arrowEdge: 'bottom' as any,
+                    content: (
+                      <VStack spacing={10} padding={16} frame={{ width: 280 }}
+                        // @ts-ignore
+                        background="rgba(35,35,35,0.95)"
+                        // @ts-ignore
+                        mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+                      >
+                        <HStack spacing={8} alignment="center">
+                          <ZStack alignment="center"><Circle fill="rgba(52,199,89,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="folder.badge.plus" font="body" foregroundStyle="rgba(52,199,89,1)" /></ZStack>
+                          <Text font="headline" foregroundStyle="white">创建文件夹</Text>
+                        </HStack>
+                        <TextField title="文件夹路径" value={folderPath} prompt="例如 images/wallpapers" onChanged={setFolderPath} />
+                        <TextField title="目标分支" value={folderTargetBranch} prompt={branch || "main"} onChanged={setFolderTargetBranch} />
+                        <Button title={isCreatingFolder ? "创建中…" : "创建文件夹"} systemImage="folder.badge.plus" disabled={!folderPath.trim() || isCreatingFolder} action={handleCreateFolder} />
+                        <Text font="caption" foregroundStyle="tertiaryLabel">自动生成 .gitkeep 占位文件</Text>
+                      </VStack>
+                    )
+                  }}
+                >
+                  <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
+                    <ZStack alignment="center"><Circle fill="rgba(52,199,89,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="folder.badge.plus" font="title3" foregroundStyle="rgba(52,199,89,1)" /></ZStack>
+                    <Text font="caption" foregroundStyle="label" lineLimit={1}>创建文件夹</Text>
+                    <Text font="caption2" foregroundStyle="secondaryLabel">点击配置</Text>
+                  </VStack>
+                </Button>
+
+                {/* 创建分支 */}
+                <Button
+                  buttonStyle="plain"
+                  action={() => setEditingField(editingField === "opBranch" ? null : "opBranch")}
+                  frame={{ maxWidth: "infinity" }}
+                  popover={{
+                    isPresented: editingField === "opBranch",
+                    onChanged: (v: boolean) => { if (!v) setEditingField(null) },
+                    presentationCompactAdaptation: 'popover',
+                    arrowEdge: 'bottom' as any,
+                    content: (
+                      <VStack spacing={10} padding={16} frame={{ width: 280 }}
+                        // @ts-ignore
+                        background="rgba(35,35,35,0.95)"
+                        // @ts-ignore
+                        mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+                      >
+                        <HStack spacing={8} alignment="center">
+                          <ZStack alignment="center"><Circle fill="rgba(175,82,222,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="arrow.triangle.branch" font="body" foregroundStyle="rgba(175,82,222,1)" /></ZStack>
+                          <Text font="headline" foregroundStyle="white">创建分支</Text>
+                        </HStack>
+                        <TextField title="新分支名称" value={newBranchName} prompt="例如 feature/login" onChanged={setNewBranchName} />
+                        <TextField title="源分支" value={sourceBranchName} prompt={branch || "main"} onChanged={setSourceBranchName} />
+                        <Button title={isCreatingBranch ? "创建中…" : "创建分支"} systemImage="arrow.triangle.branch" disabled={!newBranchName.trim() || isCreatingBranch} action={handleCreateBranch} />
+                        <Text font="caption" foregroundStyle="tertiaryLabel">基于源分支创建新分支</Text>
+                      </VStack>
+                    )
+                  }}
+                >
+                  <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
+                    <ZStack alignment="center"><Circle fill="rgba(175,82,222,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="arrow.triangle.branch" font="title3" foregroundStyle="rgba(175,82,222,1)" /></ZStack>
+                    <Text font="caption" foregroundStyle="label" lineLimit={1}>创建分支</Text>
+                    <Text font="caption2" foregroundStyle="secondaryLabel">点击配置</Text>
+                  </VStack>
+                </Button>
+
+                {/* 删除分支 */}
+                <Button
+                  buttonStyle="plain"
+                  action={() => setEditingField(editingField === "opDelete" ? null : "opDelete")}
+                  frame={{ maxWidth: "infinity" }}
+                  popover={{
+                    isPresented: editingField === "opDelete",
+                    onChanged: (v: boolean) => { if (!v) setEditingField(null) },
+                    presentationCompactAdaptation: 'popover',
+                    arrowEdge: 'bottom' as any,
+                    content: (
+                      <VStack spacing={10} padding={16} frame={{ width: 280 }}
+                        // @ts-ignore
+                        background="rgba(35,35,35,0.95)"
+                        // @ts-ignore
+                        mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+                      >
+                        <HStack spacing={8} alignment="center">
+                          <ZStack alignment="center"><Circle fill="rgba(255,59,48,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="trash.fill" font="body" foregroundStyle="rgba(255,59,48,1)" /></ZStack>
+                          <Text font="headline" foregroundStyle="white">删除分支</Text>
+                        </HStack>
+                        <Text font="caption" foregroundStyle="rgba(255,59,48,0.8)">⚠️ 此操作不可逆</Text>
+                        <TextField title="分支名称" value={deleteBranchName} prompt="例如 photos, feature/xxx" onChanged={setDeleteBranchName} />
+                        <Button title={isDeletingBranch ? "删除中…" : "删除分支"} systemImage="trash" tint="systemRed" disabled={!deleteBranchName.trim() || isDeletingBranch} action={handleDeleteBranch} />
+                      </VStack>
+                    )
+                  }}
+                >
+                  <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
+                    <ZStack alignment="center"><Circle fill="rgba(255,59,48,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="trash.fill" font="title3" foregroundStyle="rgba(255,59,48,1)" /></ZStack>
+                    <Text font="caption" foregroundStyle="label" lineLimit={1}>删除分支</Text>
+                    <Text font="caption2" foregroundStyle="rgba(255,59,48,0.7)">⚠️ 危险</Text>
+                  </VStack>
+                </Button>
+              </HStack>
             </Section>
           </List>
         </NavigationStack>
