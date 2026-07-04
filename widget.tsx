@@ -536,7 +536,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
           alignment="center"
         >
           <ZStack frame={{ width: 40, height: 40 }}>
-            <Image imageUrl={useRole?.avatarUrl || ICON} resizable={true}
+            <Image imageUrl={ICON} resizable={true}
               // @ts-ignore
               mask={<RoundedRectangle cornerRadius={8} fill="black" />}
               frame={{ width: 40, height: 40 }}
@@ -618,7 +618,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
             <VStack alignment="center" spacing={3}
               frame={{ width: 88 }}
             >
-              <Image imageUrl={useRole?.avatarUrl || ICON} resizable={true}
+              <Image imageUrl={ICON} resizable={true}
                 // @ts-ignore
                 mask={<RoundedRectangle cornerRadius={12} fill="black" />}
                 frame={{ width: 48, height: 48 }}
@@ -818,7 +818,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
         >
           {/* 顶部：图标 + 账号信息 + 米游币 */}
           <HStack spacing={10} alignment="center">
-            <Image imageUrl={useRole?.avatarUrl || ICON} resizable={true}
+            <Image imageUrl={ICON} resizable={true}
               // @ts-ignore
               mask={<RoundedRectangle cornerRadius={10} fill="black" />}
               frame={{ width: 44, height: 44 }}
