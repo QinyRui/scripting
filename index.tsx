@@ -962,11 +962,11 @@ function HeroCard({
       <VStack spacing={10} alignment="center">
         <ZStack alignment="center">
           {/* 外层彩色光晕环 */}
-          <Circle fill="rgba(13,148,136,0.35)" frame={{ width: 76, height: 76 }} />
+          <Circle fill="rgba(13,148,136,0.35)" frame={{ width: 84, height: 84 }} />
           {/* 中层半透明底 */}
-          <Circle fill="rgba(255,255,255,0.12)" frame={{ width: 62, height: 62 }} />
-          {/* GitHub Logo（缩放版）*/}
-          <Image filePath="github-logo.png" frame={{ width: 48, height: 48 }} />
+          <Circle fill="rgba(255,255,255,0.12)" frame={{ width: 70, height: 70 }} />
+          {/* GitHub Logo（从 GitHub 加载）*/}
+          <Image imageUrl="https://raw.githubusercontent.com/QinyRui/scripting/Github%E5%B7%A5%E5%85%B7%E7%AE%B1/L.PNG" resizable={true} frame={{ width: 60, height: 60 }} />
         </ZStack>
         <Text font="title3" fontWeight="bold" foregroundStyle="white">{repoName || "未配置仓库"}</Text>
       </VStack>
