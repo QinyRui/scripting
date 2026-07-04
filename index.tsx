@@ -22,6 +22,7 @@ import {
   gradient,
   ScrollView,
   Rectangle,
+  ScrollViewReader,
 } from "scripting"
 
 // 自定义提示函数
@@ -1153,6 +1154,8 @@ function View() {
   const addUploadLog = (log: string) => {
     const timestamp = new Date().toLocaleTimeString("zh-CN", { hour12: false })
     setUploadLogs(prev => [...prev, `${timestamp} ${log}`])
+    // 自动滚动到底部
+    setTimeout(() => { logScrollProxyRef?.scrollTo("logBottom", "bottom") }, 50)
   }
   
   // 初始化：下载 GitHub 图标到本地缓存
@@ -1552,6 +1555,9 @@ function View() {
   const handleClearHistory = () => {
     setUploadHistory([])
   }
+
+  // 日志自动滚动代理
+  let logScrollProxyRef: any = null
 
   // ═══════ 设置页辅助函数 ═══════
   function parseOwnerRepo() {
@@ -1961,28 +1967,33 @@ function View() {
                   </VStack>
                 ) : null}
 
-                {/* 日志列表 */}
-                <ScrollView frame={{ height: 200 }}>
-                  <VStack
-                    spacing={4}
-                    frame={{ maxWidth: "infinity" }}
-                    padding={{ top: 8, bottom: 8, leading: 12, trailing: 12 }}
-                    background="rgba(0,0,0,0.4)"
-                    // @ts-ignore
-                    mask={<RoundedRectangle cornerRadius={8} fill="black" />}
-                  >
-                    {uploadLogs.length === 0 ? (
-                      <Text font="caption" foregroundStyle="tertiaryLabel">等待开始...</Text>
-                    ) : (
-                      uploadLogs.map((log: string, index: number) => (
-                        <Text key={index} font="caption" foregroundStyle="white" selectionDisabled={false}>
-                          {log}
-                        </Text>
-                      ))
-                    )}
-                    <Rectangle key="bottom" foregroundStyle="clear" frame={{ maxWidth: "infinity", height: 1 }} />
-                  </VStack>
-                </ScrollView>
+                {/* 日志列表（自动滚动）*/}
+                <ScrollViewReader>{(proxy) => {
+                  logScrollProxyRef = proxy
+                  return (
+                    <ScrollView frame={{ height: 200 }}>
+                      <VStack
+                        spacing={4}
+                        frame={{ maxWidth: "infinity" }}
+                        padding={{ top: 8, bottom: 8, leading: 12, trailing: 12 }}
+                        background="rgba(0,0,0,0.4)"
+                        // @ts-ignore
+                        mask={<RoundedRectangle cornerRadius={8} fill="black" />}
+                      >
+                        {uploadLogs.length === 0 ? (
+                          <Text font="caption" foregroundStyle="tertiaryLabel">等待开始...</Text>
+                        ) : (
+                          uploadLogs.map((log: string, index: number) => (
+                            <Text key={index} font="caption" foregroundStyle="white" selectionDisabled={false}>
+                              {log}
+                            </Text>
+                          ))
+                        )}
+                        <VStack key="logBottom" frame={{ maxWidth: "infinity", height: 1 }} />
+                      </VStack>
+                    </ScrollView>
+                  )
+                }}</ScrollViewReader>
 
                 {/* 底部状态 */}
                 <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
