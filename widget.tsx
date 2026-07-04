@@ -13,6 +13,17 @@ function readJSON(key: string): any {
   try { const s = Storage.get<string>(key); return s ? JSON.parse(s) : null } catch { return null }
 }
 
+// Widget 内 fetch 超时保护（防止 API 挂起导致 iOS 杀掉 widget 进程）
+const WIDGET_FETCH_TIMEOUT = 8000
+function fetchTimeout(url: string, init?: any): Promise<any> {
+  return Promise.race([
+    fetch(url, init),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('fetch timeout')), WIDGET_FETCH_TIMEOUT)
+    )
+  ])
+}
+
 function formatTime(ts: number): string {
   if (!ts) return ''
   const d = new Date(ts)
@@ -144,15 +155,14 @@ async function checkTodaySigned(cookieStr: string): Promise<boolean> {
   if (!cookieStr) return false
   try {
     const roleUrl = 'https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz=hk4e_cn'
-    const roleRes = await fetch(roleUrl, { method: 'GET', headers: getBBSHeaders(roleUrl) })
+    const roleRes = await fetchTimeout(roleUrl, { method: 'GET', headers: getBBSHeaders(roleUrl) })
       .then((r: any) => r.json()).catch(() => null)
     const role = roleRes?.data?.list?.[0]
     if (!role?.game_uid) return false
 
-    // 使用 info API（与 RunTasks 一致），用 getSignHeaders（无 DS）
     const infoUrl = `https://api-takumi.mihoyo.com/event/luna/hk4e/info?lang=zh-cn&region=${role.region || 'cn_gf01'}&act_id=e202311201442471&uid=${role.game_uid}`
     const infoHeaders = getSignHeaders('hk4e')
-    const infoRes = await fetch(infoUrl, { method: 'GET', headers: infoHeaders })
+    const infoRes = await fetchTimeout(infoUrl, { method: 'GET', headers: infoHeaders })
       .then((r: any) => r.json()).catch(() => null)
     console.log('[Widget] checkTodaySigned retcode:', infoRes?.retcode, 'is_sign:', infoRes?.data?.is_sign)
     return !!infoRes?.data?.is_sign
@@ -167,7 +177,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
 
   // 1. 获取角色信息
   const roleUrl = 'https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz=hk4e_cn'
-  const roleRes = await fetch(roleUrl, { method: 'GET', headers: getBBSHeaders(roleUrl) })
+  const roleRes = await fetchTimeout(roleUrl, { method: 'GET', headers: getBBSHeaders(roleUrl) })
     .then((r: any) => r.json()).catch(() => null)
   const role = roleRes?.data?.list?.find((r: any) => r.is_chosen) || roleRes?.data?.list?.[0]
   const gameUid = role?.game_uid || ''
@@ -183,7 +193,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
     // 用 info API 检查签到状态（getSignHeaders，无 DS）
     const infoUrl = `https://api-takumi.mihoyo.com/event/luna/hk4e/info?lang=zh-cn&region=${gameRegion}&act_id=e202311201442471&uid=${gameUid}`
     const infoHeaders = getSignHeaders('hk4e')
-    const infoRes = await fetch(infoUrl, { method: 'GET', headers: infoHeaders })
+    const infoRes = await fetchTimeout(infoUrl, { method: 'GET', headers: infoHeaders })
       .then((r: any) => r.json()).catch(() => null)
     const isSigned = !!infoRes?.data?.is_sign
     signDays = infoRes?.data?.total_sign_day || 0
@@ -195,11 +205,11 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
         const signBody = { act_id: 'e202311201442471', region: gameRegion, uid: gameUid }
         const signApiHeaders = getSignHeaders('hk4e')
         signApiHeaders['Content-Type'] = 'application/json'
-        const signRes = await fetch(signApiUrl, { method: 'POST', headers: signApiHeaders, body: JSON.stringify(signBody) })
+        const signRes = await fetchTimeout(signApiUrl, { method: 'POST', headers: signApiHeaders, body: JSON.stringify(signBody) })
           .then((r: any) => r.json()).catch(() => null)
         console.log('[Widget] 签到API retcode:', signRes?.retcode, 'message:', signRes?.message)
         // 签到后重新查询签到天数
-        const infoRes2 = await fetch(infoUrl, { method: 'GET', headers: infoHeaders })
+        const infoRes2 = await fetchTimeout(infoUrl, { method: 'GET', headers: infoHeaders })
           .then((r: any) => r.json()).catch(() => null)
         signDays = infoRes2?.data?.total_sign_day || signDays
       } catch (e: any) { console.log('[Widget] 签到异常:', e.message) }
@@ -209,7 +219,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
     // 获取今日奖励（用 getSignHeaders）
     try {
       const homeUrl = 'https://api-takumi.mihoyo.com/event/luna/hk4e/home?lang=zh-cn&act_id=e202311201442471'
-      const homeRes = await fetch(homeUrl, { method: 'GET', headers: getSignHeaders('hk4e') })
+      const homeRes = await fetchTimeout(homeUrl, { method: 'GET', headers: getSignHeaders('hk4e') })
         .then((r: any) => r.json()).catch(() => null)
       const todayDay = signDays || homeRes?.data?.info?.total_sign_day || 0
       const awards = homeRes?.data?.awards || []
@@ -223,7 +233,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
 
   // 3. 获取米游币任务状态
   const missionUrl = 'https://bbs-api.miyoushe.com/apihub/wapi/getUserMissionsState'
-  const missionRes = await fetch(missionUrl, { method: 'GET', headers: getBBSHeaders(missionUrl) })
+  const missionRes = await fetchTimeout(missionUrl, { method: 'GET', headers: getBBSHeaders(missionUrl) })
     .then((r: any) => r.json()).catch(() => null)
   const totalPoints = missionRes?.data?.total_points || 0
   const alreadyReceived = missionRes?.data?.already_received_points || 0
@@ -235,7 +245,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
 
   // 4. 获取游戏记录
   const recordUrl = `https://api-takumi-record.mihoyo.com/game_record/app/card/wapi/getGameRecordCard?uid=${mihoyoUid}`
-  const recordRes = await fetch(recordUrl, { method: 'GET', headers: getBBSHeaders(recordUrl) })
+  const recordRes = await fetchTimeout(recordUrl, { method: 'GET', headers: getBBSHeaders(recordUrl) })
     .then((r: any) => r.json()).catch(() => null)
   const gameRecord = recordRes?.data?.list?.[0]
   const gameStats = gameRecord?.data || []
@@ -291,7 +301,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
     const pointUrl = 'https://bbs-api.miyoushe.com/common/homutreasure/v1/web/user/record?app_id=1&point_sn=myb&action=1&size=20'
     const pointCookie = Storage.get<string>('mihoyo_cookie') || ''
     const pointDs = getDS('', 'app_id=1&point_sn=myb&action=1&size=20')
-    const pointRes = await fetch(pointUrl, {
+    const pointRes = await fetchTimeout(pointUrl, {
       method: 'GET',
       headers: {
         'User-Agent': UA,
@@ -431,7 +441,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
         } else {
           // 已签到，仍需拉取最新任务进度写入 Storage
           const missionsUrl = 'https://bbs-api.miyoushe.com/apihub/wapi/getUserMissionsState'
-          const missionsRes = await fetch(missionsUrl, { method: 'GET', headers: getBBSHeaders(missionsUrl) })
+          const missionsRes = await fetchTimeout(missionsUrl, { method: 'GET', headers: getBBSHeaders(missionsUrl) })
             .then((r: any) => r.json()).catch(() => null)
           const totalPoints = missionsRes?.data?.total_points || 0
           const alreadyReceived = missionsRes?.data?.already_received_points || 0
@@ -987,6 +997,7 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
       date: nextRefresh
     })
   } catch (error) {
+    const refreshMin = Number(read('widget_refresh_interval', '15')) || 15
     Widget.present(
       <VStack
         // @ts-ignore
@@ -1004,6 +1015,9 @@ async function autoSignAndRefresh(cookieStr: string): Promise<{ result: string; 
           foregroundStyle="systemRed"
         >加载失败</Text>
       </VStack>
-    )
+    , {
+      policy: "after",
+      date: new Date(Date.now() + refreshMin * 60 * 1000)
+    })
   }
 })()
