@@ -16,7 +16,7 @@
     "fr" : ""
   },
   "version" : "1.2.3",
-  "name" : "九号APP签到",
+  "name" : "九号签到",
   "contributors" : [
     {
       "email" : "602839678@qq.com",
@@ -33,7 +33,7 @@
   "runInApp" : true,
   "remoteResource" : {
     "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH",
     "hash" : "575659e12b658bb148baa2be530eef58"
   },
   "entry" : "index.tsx",
