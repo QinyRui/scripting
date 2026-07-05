@@ -196,6 +196,22 @@ function getCookieValue(cookieStr: string, name: string): string {
   return ""
 }
 
+/** 检查 Cookie 是否有效（调用轻量级接口验证） */
+async function checkCookieValid(): Promise<boolean> {
+  const cookieStr = loadCookieStr()
+  if (!cookieStr) return false
+  try {
+    const res = await fetch(MIMO_BASE + "/api/v1/tokenPlan/usage", {
+      headers: { "Accept": "application/json", "Cookie": cookieStr }
+    })
+    const data = await res.json()
+    // code === 0 表示有效，其他（如 401/403/未登录）表示过期
+    return data && data.code === 0
+  } catch (e) {
+    return false
+  }
+}
+
 /** 带 Cookie 的 GET 请求（已验证可用） */
 async function apiGet(path: string): Promise<any> {
   const cookieStr = loadCookieStr()
@@ -1042,6 +1058,17 @@ export default function DashboardView() {
     }
 
     setSyncing(true)
+    setSyncStatus("正在验证登录状态...")
+
+    // 先验证 Cookie 是否有效
+    const cookieValid = await checkCookieValid()
+    if (!cookieValid) {
+      setSyncing(false)
+      setIsLoggedIn(false)
+      setSyncStatus("⚠️ 登录已过期，请重新登录")
+      return
+    }
+
     setSyncStatus("正在拉取实时数据...")
     const newData = await fetchAllData()
     setSyncing(false)
@@ -1099,18 +1126,28 @@ export default function DashboardView() {
     const savedPref = Storage.get(AUTO_REFRESH_KEY)
     if (savedPref === "0") setAutoRefresh(false)
 
-    if (hasCookies()) {
-      setIsLoggedIn(true)
-      const saved = loadData()
-      if (saved.records.length > 0) {
-        setData(saved)
-        setSyncStatus("缓存数据 · " + new Date(saved.lastUpdated).toLocaleTimeString("zh-CN"))
+    async function initApp() {
+      if (hasCookies()) {
+        setIsLoggedIn(true)
+        const saved = loadData()
+        if (saved.records.length > 0) {
+          setData(saved)
+          setSyncStatus("缓存数据 · " + new Date(saved.lastUpdated).toLocaleTimeString("zh-CN"))
+        }
+        // 后台验证 Cookie 是否有效
+        const cookieValid = await checkCookieValid()
+        if (!cookieValid) {
+          setIsLoggedIn(false)
+          setSyncStatus("⚠️ 登录已过期，请重新登录")
+        } else {
+          // Cookie 有效，自动拉取最新数据
+          handleSync()
+        }
       } else {
-        handleSync()
+        setSyncStatus("")
       }
-    } else {
-      setSyncStatus("")
     }
+    initApp()
   }, [])
 
   // 刷新时间格式
