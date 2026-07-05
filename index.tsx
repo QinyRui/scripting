@@ -23,8 +23,7 @@ import {
   ScrollView,
   ProgressView,
   Notification,
-  Rectangle,
-  Widget
+  Rectangle
 } from "scripting"
 
 import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, openBlindBox, receiveBlindBox, diagnoseBlindBoxApi, type NinebotWidgetData } from "./api"
@@ -38,8 +37,11 @@ declare const UIImage: any
 
 
 // ==================== 应用 Logo ====================
+// 使用当前项目 photos 目录下的真实品牌 logo（紫底抽象"7"形）
 const LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/ninebot-logo-new.jpg"
 const logoImage = UIImage.fromFile(LOGO_PATH)
+
+// 顶部品牌区固定尺寸（与原本 emoji 圆形视觉权重对齐）
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
@@ -77,9 +79,6 @@ export interface NinebotSettings {
   autoSign: boolean
   autoSignTime: string
   autoOpenBlindBox: boolean
-  autoUseSignCard: boolean
-  vehicleApiKey: string
-  vehicleSn: string
   titleDayColor: Color
   titleNightColor: Color
   descDayColor: Color
@@ -97,9 +96,6 @@ const defaultSettings: NinebotSettings = {
   autoSign: false,
   autoSignTime: "00:30",
   autoOpenBlindBox: false,
-  autoUseSignCard: false,
-  vehicleApiKey: "",
-  vehicleSn: "",
   titleDayColor: "#333333" as unknown as Color,
   titleNightColor: "#FFFFFF" as unknown as Color,
   descDayColor: "#666666" as unknown as Color,
@@ -785,9 +781,6 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [autoSign, setAutoSign] = useState(initial.autoSign ?? false)
   const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
-  const [autoUseSignCard, setAutoUseSignCard] = useState(initial.autoUseSignCard ?? false)
-  const [vehicleApiKey, setVehicleApiKey] = useState(initial.vehicleApiKey || "")
-  const [vehicleSn, setVehicleSn] = useState(initial.vehicleSn || "")
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
@@ -809,9 +802,6 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       autoSign: !!autoSign,
       autoSignTime: (autoSignTime || "00:30").trim(),
       autoOpenBlindBox: !!autoOpenBlindBox,
-      autoUseSignCard: !!autoUseSignCard,
-      vehicleApiKey: (vehicleApiKey ?? "").trim(),
-      vehicleSn: (vehicleSn ?? "").trim(),
       titleDayColor: initial.titleDayColor,
       titleNightColor: initial.titleNightColor,
       descDayColor: initial.descDayColor,
@@ -1093,22 +1083,6 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                 tint="systemPurple" 
               />
             </HStack>
-            <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
-              <HomeQuickButton 
-                icon="rectangle.compress.vertical" 
-                title="中号预览" 
-                subtitle="Medium" 
-                action={() => { Widget.preview({ family: "systemMedium" }) }}
-                tint="systemBlue" 
-              />
-              <HomeQuickButton 
-                icon="rectangle.expand.vertical" 
-                title="大号预览" 
-                subtitle="Large" 
-                action={() => { Widget.preview({ family: "systemLarge" }) }}
-                tint="systemOrange" 
-              />
-            </HStack>
           </VStack>
         </Section>
 
@@ -1302,61 +1276,21 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
             </VStack>
           </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="calendar.badge.plus" foregroundStyle="systemTeal" font={16} /></ZStack>
-            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
-              <Text fontWeight="semibold">自动补签</Text>
-              <Text font="caption" foregroundStyle="secondaryLabel">
-                {autoUseSignCard ? '有补签卡时自动补签缺失天数' : '开启后自动使用补签卡'}
-              </Text>
-            </VStack>
-            <Toggle
-              title=""
-              value={autoUseSignCard}
-              onChanged={setAutoUseSignCard}
-            />
-          </HStack>
-
-          {/* 车辆监控配置 */}
-          <HStack padding={{ horizontal: 16, vertical: 8 }} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemBlue" opacity={0.15} /><Image systemName="car.fill" foregroundStyle="systemBlue" font={16} /></ZStack>
-            <Text fontWeight="semibold" foregroundStyle="label">车辆监控</Text>
-          </HStack>
-          <VStack spacing={8} padding={{ horizontal: 16 }}>
-            <Text font="caption" foregroundStyle="secondaryLabel">通过 OpenClaw Skill 查询车辆电量、里程、位置等信息</Text>
-            <TextField
-              title="Device Service Key"
-              value={vehicleApiKey}
-              onChanged={setVehicleApiKey}
-              prompt="输入九号 Device Service Key"
-            />
-            <TextField
-              title="车辆 SN"
-              value={vehicleSn}
-              onChanged={setVehicleSn}
-              prompt="留空则自动选择第一辆"
-            />
-          </VStack>
-
-          {onOpenBlindBox ? (
-            <VStack
-              padding={{ horizontal: 16, vertical: 12 }}
-              spacing={4}
-              alignment="leading"
-              onTapGesture={onOpenBlindBox}
-            >
-              <HStack spacing={12} alignment="center">
-                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="gift.circle.fill" foregroundStyle="systemOrange" font={18} /></ZStack>
-                <Text fontWeight="semibold" foregroundStyle="label">盲盒管理</Text>
-                <Spacer />
+          {onOpenBlindBox && (
+            <VStack padding={{ horizontal: 16, vertical: 16 }} spacing={12} onTapGesture={onOpenBlindBox}>
+              <HStack alignment="center" spacing={12}>
+                <ZStack frame={{ width: 32, height: 32 }}>
+                  <Circle fill="systemOrange" opacity={0.15} />
+                  <Image systemName="gift.circle.fill" foregroundStyle="systemOrange" font={18} />
+                </ZStack>
+                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="semibold" foregroundStyle="label">盲盒管理</Text>
+                  <Text font="caption" foregroundStyle="secondaryLabel">查看待开盲盒、一键领取</Text>
+                </VStack>
                 <Image systemName="chevron.right" font={14} foregroundStyle="tertiaryLabel" fontWeight="semibold" />
               </HStack>
-              <HStack spacing={12} alignment="center">
-                <ZStack frame={{ width: 32, height: 32 }} />
-                <Text font="caption" foregroundStyle="secondaryLabel">查看待开盲盒、一键领取</Text>
-              </HStack>
             </VStack>
-          ) : null}
+          )}
         </Section>
 
       </List>
