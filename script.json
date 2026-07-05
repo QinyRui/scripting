@@ -1,53 +1,53 @@
 {
-  "permissions" : null,
+  "icon" : "scooter",
   "color" : "rgba(0, 50, 222, 1.00)",
   "intentInputTypes" : [
 
   ],
-  "runInApp" : true,
+  "localizedDescriptions" : {
+    "de" : "",
+    "ru" : "",
+    "pt" : "",
+    "es" : "",
+    "zh" : "",
+    "en" : "",
+    "it" : "",
+    "ja" : "",
+    "fr" : ""
+  },
+  "version" : "1.2.3",
+  "name" : "九号APP签到",
+  "contributors" : [
+    {
+      "email" : "602839678@qq.com",
+      "name" : "QinyRui",
+      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    }
+  ],
   "author" : {
     "name" : "QinyRui",
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
   },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/JH\/photos\/LOUGO.png",
+  "runInApp" : true,
   "remoteResource" : {
-    "hash" : "e87132c85603411cc25ae9d81e0dfa33",
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/JH"
+    "autoUpdateInterval" : 300,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "575659e12b658bb148baa2be530eef58"
   },
-  "name" : "九号系统签到",
-  "contributors" : [
-    {
-      "name" : "QinyRui",
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-    }
-  ],
-  "version" : "1.2.5",
-  "description" : "6-29: 新增内容\n设置页新增「自动补签」开关",
   "entry" : "index.tsx",
+  "permissions" : null,
   "localizedNames" : {
-    "es" : "",
-    "it" : "",
     "de" : "",
-    "pt" : "",
-    "fr" : "",
-    "zh" : "",
-    "ru" : "",
     "ja" : "",
-    "en" : ""
-  },
-  "icon" : "scooter",
-  "localizedDescriptions" : {
+    "pt" : "",
+    "ru" : "",
+    "zh" : "",
+    "it" : "",
     "en" : "",
     "fr" : "",
-    "ru" : "",
-    "ja" : "",
-    "de" : "",
-    "es" : "",
-    "pt" : "",
-    "it" : "",
-    "zh" : ""
+    "es" : ""
   },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png"
+  "description" : "修复：盲盒接口已更新新接口，正常返回"
 }
