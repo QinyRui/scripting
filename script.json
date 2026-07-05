@@ -1,64 +1,8 @@
 {
-  "localizedDescriptions" : {
-    "de" : "",
-    "it" : "",
-    "ru" : "",
-    "ja" : "",
-    "es" : "",
-    "pt" : "",
-    "zh" : "",
-    "fr" : "",
-    "en" : ""
-  },
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
-  "color" : "rgba(143, 168, 149,1)",
-  "intentInputTypes" : [
-
-  ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/CY.PNG",
-  "permissions" : [
-    "calendar",
-    "reminders",
-    "alarms",
-    "contacts",
-    "location",
-    "homeKit",
-    "photos",
-    "health",
-    "clipboard",
-    "fileSystem"
-  ],
-  "remoteResource" : {
-    "hash" : "a04a995b7d8cefd7c59acb1c2434b3bf",
-    "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
-  },
-  "version" : "6.3.5",
-  "contributors" : [
-    {
-      "email" : "602839678@qq.com",
-      "name" : "QinyRui",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-    }
-  ],
-  "name" : "彩云天气",
-  "description" : "更新：1. 新增农历节日倒计时数据",
-  "icon" : "cloud.sun.rain.fill",
-  "entry" : "index.tsx",
-  "localizedNames" : {
-    "en" : "",
-    "zh" : "",
-    "ru" : "",
-    "ja" : "",
-    "es" : "",
-    "it" : "",
-    "de" : "",
-    "pt" : "",
-    "fr" : ""
-  },
-  "runInApp" : true
+  "name": "彩云天气",
+  "entry": "index.tsx",
+  "version": "6.3.5",
+  "icon": "cloud.sun.rain.fill",
+  "color": "rgba(143, 168, 149,1)",
+  "runInApp": true
 }
