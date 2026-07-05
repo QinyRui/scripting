@@ -161,9 +161,9 @@ async function fetchUsageRecords(): Promise<PlatformRecord[]> {
   return []
 }
 
-async function fetchFreshCredits(data: PlatformData): Promise<PlatformData> {
+async function fetchFreshCredits(data: PlatformData): Promise<{ data: PlatformData; cookieValid: boolean }> {
   var cookieStr = loadCookieStr()
-  if (!cookieStr) return data
+  if (!cookieStr) return { data: data, cookieValid: false }
   try {
     var results = await Promise.all([
       fetch(MIMO_BASE + "/api/v1/tokenPlan/usage", {
@@ -175,6 +175,8 @@ async function fetchFreshCredits(data: PlatformData): Promise<PlatformData> {
     ])
     var usageResp = results[0]
     var detailResp = results[1]
+    // 检测 Cookie 是否过期（API 返回非0 code 表示认证失败）
+    var cookieValid = (usageResp && usageResp.code === 0)
     if (usageResp && usageResp.code === 0 && usageResp.data) {
       var mu = usageResp.data.monthUsage
       if (mu && mu.items && mu.items.length > 0) {
@@ -187,20 +189,28 @@ async function fetchFreshCredits(data: PlatformData): Promise<PlatformData> {
       data.planName = detailResp.data.planName || data.planName
       data.validUntil = (detailResp.data.currentPeriodEnd || data.validUntil).split(" ")[0]
     }
-    // 拉取每日 records（修复桌面 widget 今日明细全为 0 的问题）
+    // 拉取每日 records
     var records = await fetchUsageRecords()
     if (records.length > 0) {
       data.records = records
     }
     data.lastUpdated = new Date().toISOString()
     saveData(data)
+    return { data: data, cookieValid: cookieValid }
   } catch (e) {}
-  return data
+  return { data: data, cookieValid: false }
 }
 
 async function main() {
   var data = loadData()
-  try { data = await fetchFreshCredits(data) } catch (e) {}
+  var cookieValid = true
+  try {
+    var result = await fetchFreshCredits(data)
+    data = result.data
+    cookieValid = result.cookieValid
+  } catch (e) {
+    cookieValid = false
+  }
 
   // 读取主应用当前选择的时间范围（联动同步）
   var timeRange = loadTimeRange()
@@ -246,9 +256,14 @@ async function main() {
   var totalInput = todayHit + todayMiss
   var cachePct = totalInput > 0 ? Math.round((todayHit / totalInput) * 100) : 0
 
-  var syncTime = data.lastUpdated
-    ? new Date(data.lastUpdated).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
-    : "--:--"
+  // Cookie 过期时显示警告
+  var cookieExpired = !cookieValid
+
+  var syncTime = cookieExpired
+    ? "⚠️ 需重新登录"
+    : (data.lastUpdated
+      ? new Date(data.lastUpdated).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
+      : "--:--")
 
   // 顶部主标题随主应用切换：今日用量 / 本周用量 / 本月用量
   var titleText = timeRange + "用量"
@@ -330,7 +345,7 @@ async function main() {
               // @ts-ignore
               fontSize={9}
               // @ts-ignore
-              foregroundStyle={C.dim}
+              foregroundStyle={cookieExpired ? C.yellow : C.dim}
             >{syncTime}</Text>
           </VStack>
         </HStack>
@@ -762,7 +777,7 @@ async function main() {
             // @ts-ignore
             fontSize={7}
             // @ts-ignore
-            foregroundStyle={C.dim}
+            foregroundStyle={cookieExpired ? C.yellow : C.dim}
           >{syncTime}</Text>
         </HStack>
 
