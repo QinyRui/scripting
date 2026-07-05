@@ -1,19 +1,43 @@
 {
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/小米api\/photos\/XM.PNG",
-  "color" : "rgba(0, 198, 165,1)",
-  "localizedNames" : {
-    "ru" : "",
+  "localizedDescriptions" : {
+    "pt" : "",
+    "es" : "",
+    "en" : "",
+    "zh" : "",
+    "de" : "",
+    "ja" : "",
     "it" : "",
     "fr" : "",
-    "pt" : "",
+    "ru" : ""
+  },
+  "intentInputTypes" : [
+
+  ],
+  "name" : "Xiaomi MIMO",
+  "version" : "1.0.1",
+  "localizedNames" : {
+    "fr" : "",
     "en" : "",
     "es" : "",
     "ja" : "",
+    "pt" : "",
+    "it" : "",
+    "ru" : "",
     "de" : "",
     "zh" : ""
   },
+  "runInApp" : true,
+  "description" : "优化脚本21:23",
+  "remoteResource" : {
+    "autoUpdateInterval" : null,
+    "hash" : "f2d46faa56b460059228b5185561e59a",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/小米api"
+  },
+  "entry" : "index.tsx",
   "icon" : "chart.pie.fill",
-  "intentInputTypes" : [
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/小米api\/photos\/XM.PNG",
+  "color" : "rgba(0, 198, 165,1)",
+  "contributors" : [
 
   ],
   "permissions" : null,
@@ -21,29 +45,5 @@
     "name" : "QinyRui",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "email" : "602839678@qq.com"
-  },
-  "contributors" : [
-
-  ],
-  "description" : "优化脚本21:23",
-  "remoteResource" : {
-    "autoUpdateInterval" : 300,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/小米api",
-    "hash" : "85967a564301e6a950ee09f4c1a5aa7f"
-  },
-  "runInApp" : true,
-  "entry" : "index.tsx",
-  "version" : "1.0.1",
-  "name" : "Xiaomi MIMO",
-  "localizedDescriptions" : {
-    "en" : "",
-    "es" : "",
-    "fr" : "",
-    "it" : "",
-    "ru" : "",
-    "ja" : "",
-    "de" : "",
-    "zh" : "",
-    "pt" : ""
   }
 }
