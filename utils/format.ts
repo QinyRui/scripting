@@ -6,11 +6,12 @@ import { greetingText } from "./constants"
 
 export function provideGreeting(d: Date) {
   const h = d.getHours()
-  if (h < 5 || h >= 23) return greetingText.nightGreeting
-  if (h < 11) return greetingText.morningGreeting
-  if (h < 13) return greetingText.noonGreeting
+  if (h < 5) return greetingText.lateNightGreeting
+  if (h < 8) return greetingText.morningGreeting
+  if (h < 12) return greetingText.forenoonGreeting
+  if (h < 14) return greetingText.noonGreeting
   if (h < 18) return greetingText.afternoonGreeting
-  return greetingText.nightText
+  return greetingText.nightGreeting
 }
 
 export function getDateStr(d: Date) {
