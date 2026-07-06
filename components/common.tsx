@@ -137,15 +137,27 @@ function CompactCountdownRow({ icon, text, accent, widgetType }: { icon: string;
   )
 }
 
-// ─── 倒计时区块（三行：节气 / 阳历节日 / 农历节日） ───
+// ─── 从倒计时文本中提取天数 ───
+function extractDays(text: string): number {
+  const m = text.match(/还有(\d+)天/)
+  return m ? parseInt(m[1], 10) : 0
+}
+
+// ─── 倒计时区块（按天数从少到多排列） ───
 function BottomCountdownBlock({ primary, secondary, tertiary, widgetType }: { primary: string; secondary: string; tertiary: string; widgetType: "medium" | "large" }) {
-  if (!primary && !secondary && !tertiary) return null
+  const items = [
+    { text: primary, icon: "sun.max.fill", accent: "#ffd166" },
+    { text: secondary, icon: "heart.fill", accent: "#ff8fab" },
+    { text: tertiary, icon: "moon.stars.fill", accent: "#ff7a5a" },
+  ].filter(item => Boolean(item.text))
+  if (items.length === 0) return null
+  items.sort((a, b) => extractDays(a.text) - extractDays(b.text))
   return (
     <VStack alignment="leading" spacing={1} padding={{ top: widgetType === "medium" ? 1 : 2 }}>
       <DashedDivider widgetType={widgetType} />
-      {primary ? <CompactCountdownRow icon="sun.max.fill" text={primary} accent="#ffd166" widgetType={widgetType} /> : null}
-      {secondary ? <CompactCountdownRow icon="heart.fill" text={secondary} accent="#ff8fab" widgetType={widgetType} /> : null}
-      {tertiary ? <CompactCountdownRow icon="moon.stars.fill" text={tertiary} accent="#ff7a5a" widgetType={widgetType} /> : null}
+      {items.map((item, idx) => (
+        <CompactCountdownRow key={idx} icon={item.icon} text={item.text} accent={item.accent} widgetType={widgetType} />
+      ))}
     </VStack>
   )
 }
@@ -315,7 +327,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
 
   return (
     <VStack alignment="leading" spacing={widgetType === "medium" ? 1 : 2} frame={{ width: leftWidth, alignment: "leading" }} {...offsetStyle(widgetType, "left")}>
-      <SectionText text={provideGreeting(currentDate)} font={s(widgetType === "medium" ? 21 : 19, "greeting")} color={c("#ffffff", "greeting")} lineLimit={1} />
+      <SectionText text={provideGreeting(currentDate)} font={s(widgetType === "medium" ? 18 : 17, "greeting")} color={c("#ffffff", "greeting")} />
       <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
         <SectionText text={dateLineText} font={s(widgetType === "medium" ? 12 : 13, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
       </HStack>
@@ -324,7 +336,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
         // 双行模式：行政层级 + 精细位置（缩进表示层级）
         <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
           <HStack spacing={2} alignment="center" frame={{ width: leftWidth, alignment: "leading" }}>
-            <Image systemName="mappin.and.ellipse" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
+            <Image systemName="paperplane.circle.fill" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
             <SectionText text={cityStr.admin} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} minScaleFactor={0.7} />
           </HStack>
           <HStack spacing={2} alignment="top" frame={{ width: leftWidth, alignment: "leading" }} padding={{ leading: 13, top: 0 }}>
@@ -334,7 +346,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
       ) : (
         // 单行模式：📍 完整地址
         <HStack spacing={2} alignment="center" frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 0, bottom: 0 }}>
-          <Image systemName="mappin.and.ellipse" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
+          <Image systemName="paperplane.circle.fill" font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.92)", "info") as any} />
           <SectionText text={cityStr.text} font={s(widgetType === "medium" ? 8.5 : 9.5, "info")} color={c("rgba(255,255,255,0.92)", "info")} lineLimit={locationLineLimit} minScaleFactor={0.7} />
         </HStack>
       )}
@@ -346,9 +358,10 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
           weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} widgetType={widgetType} /> : <Spacer />
         )}
       </HStack>
-      <VStack alignment="leading" spacing={0} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
+      <HStack alignment="leading" spacing={2} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
+        <Image systemName="speaker.wave.2.bubble" font={s(widgetType === "medium" ? 8 : 10, "weather")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.7)", "weather") as any} />
         <SectionText text={wDescText} font={s(widgetType === "medium" ? 10 : 13, "weather")} color={c("#ffffff", "weather")} lineLimit={0} minScaleFactor={0.5} />
-      </VStack>
+      </HStack>
       <Spacer minLength={widgetType === "medium" ? 1 : 2} />
       <BottomCountdownBlock primary={primaryCountdownText} secondary={secondaryCountdownText} tertiary={tertiaryCountdownText} widgetType={widgetType} />
     </VStack>
