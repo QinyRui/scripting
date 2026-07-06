@@ -187,9 +187,7 @@ const sizeGuideItems: MenuItem[] = [
   { icon: "rectangle.grid.1x2.fill", title: "大号组件布局特点", note: "大号会在顶部信息区下方继续显示时间栏与整月日历，适合检查下半区是否被遮挡或过密。" },
 ]
 
-const serviceItems: MenuItem[] = [
-  { icon: "globe", title: "申请彩云 Token", url: "https://platform.caiyunapp.com/login" },
-]
+
 
 function writeApiKey(apiKey: string) {
   const payload = { apiKey: apiKey.trim() }
@@ -667,19 +665,6 @@ function AboutDetailView() {
             <HStack spacing={8} alignment="center">
               <Image systemName="paperplane.fill" foregroundStyle="systemBlue" />
               <Text fontWeight="bold" foregroundStyle="systemBlue">Telegram 频道</Text>
-            </HStack>
-          </Link>
-          
-          <HStack spacing={0} padding={{ top: 12 }}>
-            <Spacer />
-            <VStack frame={{ maxWidth: "infinity", height: 1 }} background="separator" />
-            <Spacer />
-          </HStack>
-          
-          <Link url="https://platform.caiyunapp.com/login">
-            <HStack spacing={8} alignment="center">
-              <Image systemName="globe.asia.australia.fill" foregroundStyle="systemCyan" />
-              <Text fontWeight="bold" foregroundStyle="systemCyan">申请彩云 Token</Text>
             </HStack>
           </Link>
           
