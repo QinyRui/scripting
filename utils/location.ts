@@ -91,7 +91,10 @@ async function bdc(lat: number, lon: number) {
     const url =
       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`
 
-    const res = await fetch(url)
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 5000)
+    const res = await fetch(url, { signal: controller.signal as any })
+    clearTimeout(timer)
     const json = await res.json()
 
     if (!json?.city && !json?.locality) return null
@@ -194,12 +197,19 @@ export async function callReverseGeocode(options: {
   latitude: number
   longitude: number
 }) {
-  const [appleRes, bdcRes] = await Promise.all([
+  const [appleRes, bdcRes] = await Promise.allSettled([
     appleGeocode(options.latitude, options.longitude),
     bdc(options.latitude, options.longitude),
   ])
 
-  const best = merge([appleRes, bdcRes])
+  const results = [
+    appleRes.status === "fulfilled" ? appleRes.value : null,
+    bdcRes.status === "fulfilled" ? bdcRes.value : null,
+  ].filter(Boolean)
+
+  if (results.length === 0) return null
+
+  const best = merge(results)
   if (!best) return null
 
   appendDebugLog("location v3 result", best)
