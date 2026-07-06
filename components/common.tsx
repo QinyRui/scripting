@@ -358,7 +358,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
           weatherInfo.future && weatherInfo.future.length > 0 ? <ForecastView future={weatherInfo.future} widgetType={widgetType} /> : <Spacer />
         )}
       </HStack>
-      <HStack alignment="leading" spacing={2} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
+      <HStack alignment="top" spacing={2} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <Image systemName="speaker.wave.2.bubble" font={s(widgetType === "medium" ? 8 : 10, "weather")} renderingMode="template" foregroundStyle={c("rgba(255,255,255,0.7)", "weather") as any} />
         <SectionText text={wDescText} font={s(widgetType === "medium" ? 10 : 13, "weather")} color={c("#ffffff", "weather")} lineLimit={0} minScaleFactor={0.5} />
       </HStack>
