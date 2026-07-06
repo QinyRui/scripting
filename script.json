@@ -1,53 +1,60 @@
 {
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/彩云天气\/photos\/云.PNG",
+  "contributors" : [
+
+  ],
   "color" : "rgba(143, 168, 149,1)",
-  "remoteResource" : {
-    "hash" : "125df1399f3bffe778ff1f42acb24493",
-    "autoUpdateInterval" : null,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
+  "localizedNames" : {
+    "zh" : "",
+    "ja" : "",
+    "en" : "",
+    "ru" : "",
+    "fr" : "",
+    "de" : "",
+    "it" : "",
+    "es" : "",
+    "pt" : ""
   },
-  "description" : "更新：1. 新增农历节日倒计时数据（utils\/lunar.ts）",
-  "name" : "天气",
   "runInApp" : true,
   "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+    "email" : "602839678@qq.com"
   },
-  "icon" : "cloud.sun.rain.fill",
-  "permissions" : null,
+  "iconImage" : null,
+  "name" : "彩云天气",
+  "entry" : "index.tsx",
   "localizedDescriptions" : {
-    "fr" : "",
-    "es" : "",
     "zh" : "",
-    "en" : "",
-    "de" : "",
-    "ru" : "",
-    "pt" : "",
     "ja" : "",
-    "it" : ""
+    "en" : "",
+    "ru" : "",
+    "fr" : "",
+    "de" : "",
+    "it" : "",
+    "es" : "",
+    "pt" : ""
   },
+  "permissions" : [
+    "calendar",
+    "reminders",
+    "alarms",
+    "contacts",
+    "location",
+    "homeKit",
+    "photos",
+    "health",
+    "clipboard",
+    "fileSystem"
+  ],
+  "description" : null,
+  "icon" : "cloud.sun.rain.fill",
   "intentInputTypes" : [
 
   ],
-  "contributors" : [
-    {
-      "email" : "602839678@qq.com",
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "name" : "QinyRui"
-    }
-  ],
-  "localizedNames" : {
-    "es" : "",
-    "ja" : "",
-    "it" : "",
-    "pt" : "",
-    "de" : "",
-    "ru" : "",
-    "zh" : "",
-    "en" : "",
-    "fr" : ""
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "hash" : "492a1bdea675d9f644b99ce7585ad64f",
+    "autoUpdateInterval" : 300
   },
-  "version" : "6.3.4",
-  "entry" : "index.tsx"
+  "version" : "6.3.5"
 }
