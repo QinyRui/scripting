@@ -1774,7 +1774,7 @@ function View() {
                     }
                   },
                   presentationCompactAdaptation: 'popover',
-                  arrowEdge: 'top' as any,
+                  arrowEdge: 'bottom' as any,
                   content: (
                     <VStack
                       // @ts-ignore
