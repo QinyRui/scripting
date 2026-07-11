@@ -1058,60 +1058,57 @@ function CredentialIcon(props: {
     ? (hasValue ? props.value.slice(0, 6) + "••••" : "")
     : (props.value.length > 10 ? props.value.slice(0, 10) + "…" : props.value)
 
+  const currentDisplay = hasValue
+    ? (props.value.length > 30 ? props.value.slice(0, 30) + "…" : props.value)
+    : "尚未配置"
+
   return (
-    <Button
-      buttonStyle="plain"
-      action={props.onShow}
-      frame={{ maxWidth: "infinity" }}
-      popover={{
-        isPresented: props.isPresented,
-        onChanged: (v: boolean) => { if (!v) props.onHide() },
-        presentationCompactAdaptation: 'popover',
-        arrowEdge: 'top' as any,
-        content: (
-          <VStack
-            spacing={10}
-            padding={16}
-            frame={{ width: 280 }}
-            // @ts-ignore
-            background="rgba(35,35,35,0.95)"
-            // @ts-ignore
-            mask={<RoundedRectangle cornerRadius={16} fill="black" />}
-          >
-            <HStack spacing={8} alignment="center">
-              <ZStack alignment="center">
-                <Circle fill={`${props.color}33` as any} frame={{ width: 32, height: 32 }} />
-                <Image systemName={props.icon} font="body" foregroundStyle={props.color as any} />
-              </ZStack>
-              <Text font="headline" foregroundStyle="white">{props.popoverTitle}</Text>
-            </HStack>
-            <TextField title={props.popoverTitle} value={props.value} prompt={props.placeholder} onChanged={props.onChanged} />
-            <Text font="caption" foregroundStyle="tertiaryLabel">
-              {hasValue ? `当前: ${props.value.length > 30 ? props.value.slice(0, 30) + "…" : props.value}` : "尚未配置"}
-            </Text>
-          </VStack>
-        )
-      }}
-    >
-      <VStack
-        spacing={6}
-        alignment="center"
-        padding={{ vertical: 12, horizontal: 4 }}
+    <VStack spacing={4} frame={{ maxWidth: "infinity" }}>
+      <Button
+        buttonStyle="plain"
+        action={props.isPresented ? props.onHide : props.onShow}
         frame={{ maxWidth: "infinity" }}
       >
-        <ZStack alignment="center">
-          <Circle fill={`${props.color}20` as any} frame={{ width: 44, height: 44 }} />
-          <Image systemName={props.icon} font="title3" foregroundStyle={props.color as any} />
-        </ZStack>
-        <Text font="caption" foregroundStyle="label" lineLimit={1}>{props.label}</Text>
-        <HStack spacing={3} alignment="center">
-          <Circle fill={hasValue ? "systemGreen" : "systemRed"} frame={{ width: 5, height: 5 }} />
-          <Text font="caption2" foregroundStyle="secondaryLabel" lineLimit={1}>
-            {hasValue ? (props.label === "Token" ? "已配置" : displayValue || "已配置") : "未配置"}
-          </Text>
-        </HStack>
-      </VStack>
-    </Button>
+        <VStack
+          spacing={6}
+          alignment="center"
+          padding={{ vertical: 12, horizontal: 4 }}
+          frame={{ maxWidth: "infinity" }}
+        >
+          <ZStack alignment="center">
+            <Circle fill={`${props.color}20` as any} frame={{ width: 44, height: 44 }} />
+            <Image systemName={props.icon} font="title3" foregroundStyle={props.color as any} />
+          </ZStack>
+          <Text font="caption" foregroundStyle="label" lineLimit={1}>{props.label}</Text>
+          <HStack spacing={3} alignment="center">
+            <Circle fill={hasValue ? "systemGreen" : "systemRed"} frame={{ width: 5, height: 5 }} />
+            <Text font="caption2" foregroundStyle="secondaryLabel" lineLimit={1}>
+              {hasValue ? (props.label === "Token" ? "已配置" : displayValue || "已配置") : "未配置"}
+            </Text>
+          </HStack>
+        </VStack>
+      </Button>
+      {props.isPresented ? (
+        <VStack
+          spacing={10}
+          padding={12}
+          // @ts-ignore
+          background="rgba(35,35,35,0.95)"
+          // @ts-ignore
+          mask={<RoundedRectangle cornerRadius={12} fill="black" />}
+        >
+          <HStack spacing={8} alignment="center">
+            <ZStack alignment="center">
+              <Circle fill={`${props.color}33` as any} frame={{ width: 28, height: 28 }} />
+              <Image systemName={props.icon} font="caption" foregroundStyle={props.color as any} />
+            </ZStack>
+            <Text font="subheadline" foregroundStyle="white" bold>{props.popoverTitle}</Text>
+          </HStack>
+          <TextField title="" value={props.value} prompt={props.placeholder} onChanged={props.onChanged} />
+          <Text font="caption2" foregroundStyle="tertiaryLabel">当前: {currentDisplay}</Text>
+        </VStack>
+      ) : null}
+    </VStack>
   )
 }
 
@@ -1886,115 +1883,89 @@ function View() {
               </VStack>
             </Section>
             {/* ═══════ 仓库操作（图形化图标弹窗）═══════ */}
-            <Section header={<SectionHeader title="仓库操作" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">点击图标按钮打开操作面板，在弹窗中填写信息并执行。</Text>}>
-              <HStack spacing={10}>
-                {/* 创建文件夹 */}
-                <Button
-                  buttonStyle="plain"
-                  action={() => setEditingField(editingField === "opFolder" ? null : "opFolder")}
-                  frame={{ maxWidth: "infinity" }}
-                  popover={{
-                    isPresented: editingField === "opFolder",
-                    onChanged: (v: boolean) => { if (!v) setEditingField(null) },
-                    presentationCompactAdaptation: 'popover',
-                    arrowEdge: 'top' as any,
-                    content: (
-                      <VStack spacing={10} padding={16} frame={{ width: 280 }}
-                        // @ts-ignore
-                        background="rgba(35,35,35,0.95)"
-                        // @ts-ignore
-                        mask={<RoundedRectangle cornerRadius={16} fill="black" />}
-                      >
-                        <HStack spacing={8} alignment="center">
-                          <ZStack alignment="center"><Circle fill="rgba(52,199,89,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="folder.badge.plus" font="body" foregroundStyle="rgba(52,199,89,1)" /></ZStack>
-                          <Text font="headline" foregroundStyle="white">创建文件夹</Text>
-                        </HStack>
-                        <TextField title="文件夹路径" value={folderPath} prompt="例如 images/wallpapers" onChanged={setFolderPath} />
-                        <TextField title="目标分支" value={folderTargetBranch} prompt={branch || "main"} onChanged={setFolderTargetBranch} />
-                        <Button title={isCreatingFolder ? "创建中…" : "创建文件夹"} systemImage="folder.badge.plus" disabled={!folderPath.trim() || isCreatingFolder} action={handleCreateFolder} />
-                        <Text font="caption" foregroundStyle="tertiaryLabel">自动生成 .gitkeep 占位文件</Text>
-                      </VStack>
-                    )
-                  }}
-                >
-                  <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
-                    <ZStack alignment="center"><Circle fill="rgba(52,199,89,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="folder.badge.plus" font="title3" foregroundStyle="rgba(52,199,89,1)" /></ZStack>
-                    <Text font="caption" foregroundStyle="label" lineLimit={1}>创建文件夹</Text>
-                    <Text font="caption2" foregroundStyle="secondaryLabel">点击配置</Text>
-                  </VStack>
-                </Button>
+            <Section header={<SectionHeader title="仓库操作" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">点击图标按钮打开操作面板，在面板中填写信息并执行。</Text>}>
+              <VStack spacing={12}>
+                <HStack spacing={10}>
+                  {/* 创建文件夹 */}
+                  <Button buttonStyle="plain" action={() => setEditingField(editingField === "opFolder" ? null : "opFolder")} frame={{ maxWidth: "infinity" }}>
+                    <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
+                      <ZStack alignment="center"><Circle fill="rgba(52,199,89,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="folder.badge.plus" font="title3" foregroundStyle="rgba(52,199,89,1)" /></ZStack>
+                      <Text font="caption" foregroundStyle="label" lineLimit={1}>创建文件夹</Text>
+                      <Text font="caption2" foregroundStyle="secondaryLabel">点击配置</Text>
+                    </VStack>
+                  </Button>
+                  {/* 创建分支 */}
+                  <Button buttonStyle="plain" action={() => setEditingField(editingField === "opBranch" ? null : "opBranch")} frame={{ maxWidth: "infinity" }}>
+                    <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
+                      <ZStack alignment="center"><Circle fill="rgba(175,82,222,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="arrow.triangle.branch" font="title3" foregroundStyle="rgba(175,82,222,1)" /></ZStack>
+                      <Text font="caption" foregroundStyle="label" lineLimit={1}>创建分支</Text>
+                      <Text font="caption2" foregroundStyle="secondaryLabel">点击配置</Text>
+                    </VStack>
+                  </Button>
+                  {/* 删除分支 */}
+                  <Button buttonStyle="plain" action={() => setEditingField(editingField === "opDelete" ? null : "opDelete")} frame={{ maxWidth: "infinity" }}>
+                    <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
+                      <ZStack alignment="center"><Circle fill="rgba(255,59,48,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="trash.fill" font="title3" foregroundStyle="rgba(255,59,48,1)" /></ZStack>
+                      <Text font="caption" foregroundStyle="label" lineLimit={1}>删除分支</Text>
+                      <Text font="caption2" foregroundStyle="rgba(255,59,48,0.7)">⚠️ 危险</Text>
+                    </VStack>
+                  </Button>
+                </HStack>
 
-                {/* 创建分支 */}
-                <Button
-                  buttonStyle="plain"
-                  action={() => setEditingField(editingField === "opBranch" ? null : "opBranch")}
-                  frame={{ maxWidth: "infinity" }}
-                  popover={{
-                    isPresented: editingField === "opBranch",
-                    onChanged: (v: boolean) => { if (!v) setEditingField(null) },
-                    presentationCompactAdaptation: 'popover',
-                    arrowEdge: 'top' as any,
-                    content: (
-                      <VStack spacing={10} padding={16} frame={{ width: 280 }}
-                        // @ts-ignore
-                        background="rgba(35,35,35,0.95)"
-                        // @ts-ignore
-                        mask={<RoundedRectangle cornerRadius={16} fill="black" />}
-                      >
-                        <HStack spacing={8} alignment="center">
-                          <ZStack alignment="center"><Circle fill="rgba(175,82,222,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="arrow.triangle.branch" font="body" foregroundStyle="rgba(175,82,222,1)" /></ZStack>
-                          <Text font="headline" foregroundStyle="white">创建分支</Text>
-                        </HStack>
-                        <TextField title="新分支名称" value={newBranchName} prompt="例如 feature/login" onChanged={setNewBranchName} />
-                        <TextField title="源分支" value={sourceBranchName} prompt={branch || "main"} onChanged={setSourceBranchName} />
-                        <Button title={isCreatingBranch ? "创建中…" : "创建分支"} systemImage="arrow.triangle.branch" disabled={!newBranchName.trim() || isCreatingBranch} action={handleCreateBranch} />
-                        <Text font="caption" foregroundStyle="tertiaryLabel">基于源分支创建新分支</Text>
-                      </VStack>
-                    )
-                  }}
-                >
-                  <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
-                    <ZStack alignment="center"><Circle fill="rgba(175,82,222,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="arrow.triangle.branch" font="title3" foregroundStyle="rgba(175,82,222,1)" /></ZStack>
-                    <Text font="caption" foregroundStyle="label" lineLimit={1}>创建分支</Text>
-                    <Text font="caption2" foregroundStyle="secondaryLabel">点击配置</Text>
+                {/* 创建文件夹面板 */}
+                {editingField === "opFolder" ? (
+                  <VStack spacing={10} padding={16}
+                    // @ts-ignore
+                    background="rgba(35,35,35,0.95)"
+                    // @ts-ignore
+                    mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+                  >
+                    <HStack spacing={8} alignment="center">
+                      <ZStack alignment="center"><Circle fill="rgba(52,199,89,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="folder.badge.plus" font="body" foregroundStyle="rgba(52,199,89,1)" /></ZStack>
+                      <Text font="headline" foregroundStyle="white">创建文件夹</Text>
+                    </HStack>
+                    <TextField title="文件夹路径" value={folderPath} prompt="例如 images/wallpapers" onChanged={setFolderPath} />
+                    <TextField title="目标分支" value={folderTargetBranch} prompt={branch || "main"} onChanged={setFolderTargetBranch} />
+                    <Button title={isCreatingFolder ? "创建中…" : "创建文件夹"} systemImage="folder.badge.plus" disabled={!folderPath.trim() || isCreatingFolder} action={handleCreateFolder} />
                   </VStack>
-                </Button>
+                ) : null}
 
-                {/* 删除分支 */}
-                <Button
-                  buttonStyle="plain"
-                  action={() => setEditingField(editingField === "opDelete" ? null : "opDelete")}
-                  frame={{ maxWidth: "infinity" }}
-                  popover={{
-                    isPresented: editingField === "opDelete",
-                    onChanged: (v: boolean) => { if (!v) setEditingField(null) },
-                    presentationCompactAdaptation: 'popover',
-                    arrowEdge: 'top' as any,
-                    content: (
-                      <VStack spacing={10} padding={16} frame={{ width: 280 }}
-                        // @ts-ignore
-                        background="rgba(35,35,35,0.95)"
-                        // @ts-ignore
-                        mask={<RoundedRectangle cornerRadius={16} fill="black" />}
-                      >
-                        <HStack spacing={8} alignment="center">
-                          <ZStack alignment="center"><Circle fill="rgba(255,59,48,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="trash.fill" font="body" foregroundStyle="rgba(255,59,48,1)" /></ZStack>
-                          <Text font="headline" foregroundStyle="white">删除分支</Text>
-                        </HStack>
-                        <Text font="caption" foregroundStyle="rgba(255,59,48,0.8)">⚠️ 此操作不可逆</Text>
-                        <TextField title="分支名称" value={deleteBranchName} prompt="例如 photos, feature/xxx" onChanged={setDeleteBranchName} />
-                        <Button title={isDeletingBranch ? "删除中…" : "删除分支"} systemImage="trash" tint="systemRed" disabled={!deleteBranchName.trim() || isDeletingBranch} action={handleDeleteBranch} />
-                      </VStack>
-                    )
-                  }}
-                >
-                  <VStack spacing={6} alignment="center" padding={{ vertical: 12, horizontal: 4 }} frame={{ maxWidth: "infinity" }}>
-                    <ZStack alignment="center"><Circle fill="rgba(255,59,48,0.2)" frame={{ width: 44, height: 44 }} /><Image systemName="trash.fill" font="title3" foregroundStyle="rgba(255,59,48,1)" /></ZStack>
-                    <Text font="caption" foregroundStyle="label" lineLimit={1}>删除分支</Text>
-                    <Text font="caption2" foregroundStyle="rgba(255,59,48,0.7)">⚠️ 危险</Text>
+                {/* 创建分支面板 */}
+                {editingField === "opBranch" ? (
+                  <VStack spacing={10} padding={16}
+                    // @ts-ignore
+                    background="rgba(35,35,35,0.95)"
+                    // @ts-ignore
+                    mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+                  >
+                    <HStack spacing={8} alignment="center">
+                      <ZStack alignment="center"><Circle fill="rgba(175,82,222,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="arrow.triangle.branch" font="body" foregroundStyle="rgba(175,82,222,1)" /></ZStack>
+                      <Text font="headline" foregroundStyle="white">创建分支</Text>
+                    </HStack>
+                    <TextField title="新分支名称" value={newBranchName} prompt="例如 feature/login" onChanged={setNewBranchName} />
+                    <TextField title="源分支" value={sourceBranchName} prompt={branch || "main"} onChanged={setSourceBranchName} />
+                    <Button title={isCreatingBranch ? "创建中…" : "创建分支"} systemImage="arrow.triangle.branch" disabled={!newBranchName.trim() || isCreatingBranch} action={handleCreateBranch} />
                   </VStack>
-                </Button>
-              </HStack>
+                ) : null}
+
+                {/* 删除分支面板 */}
+                {editingField === "opDelete" ? (
+                  <VStack spacing={10} padding={16}
+                    // @ts-ignore
+                    background="rgba(35,35,35,0.95)"
+                    // @ts-ignore
+                    mask={<RoundedRectangle cornerRadius={16} fill="black" />}
+                  >
+                    <HStack spacing={8} alignment="center">
+                      <ZStack alignment="center"><Circle fill="rgba(255,59,48,0.2)" frame={{ width: 32, height: 32 }} /><Image systemName="trash.fill" font="body" foregroundStyle="rgba(255,59,48,1)" /></ZStack>
+                      <Text font="headline" foregroundStyle="white">删除分支</Text>
+                    </HStack>
+                    <Text font="caption" foregroundStyle="rgba(255,59,48,0.8)">⚠️ 此操作不可逆</Text>
+                    <TextField title="分支名称" value={deleteBranchName} prompt="例如 photos, feature/xxx" onChanged={setDeleteBranchName} />
+                    <Button title={isDeletingBranch ? "删除中…" : "删除分支"} systemImage="trash" tint="systemRed" disabled={!deleteBranchName.trim() || isDeletingBranch} action={handleDeleteBranch} />
+                  </VStack>
+                ) : null}
+              </VStack>
             </Section>
           </List>
         </VStack>
@@ -2005,8 +1976,13 @@ function View() {
 }
 
 async function run() {
-  await Navigation.present(<View />)
-  Script.exit()
+  try {
+    await Navigation.present(<View />)
+  } catch (e) {
+    console.log("[视图] 关闭:", e)
+  } finally {
+    Script.exit()
+  }
 }
 
 run()
