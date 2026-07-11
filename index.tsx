@@ -22,6 +22,9 @@ import {
   gradient,
   ScrollView,
   Rectangle,
+  TabView,
+  Label,
+  useObservable,
 } from "scripting"
 
 // 自定义提示函数
@@ -1064,7 +1067,7 @@ function CredentialIcon(props: {
         isPresented: props.isPresented,
         onChanged: (v: boolean) => { if (!v) props.onHide() },
         presentationCompactAdaptation: 'popover',
-        arrowEdge: 'bottom' as any,
+        arrowEdge: 'top' as any,
         content: (
           <VStack
             spacing={10}
@@ -1129,8 +1132,8 @@ function View() {
   const [uploadLogs, setUploadLogs] = useState<string[]>([])
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
 
-  // 设置页面切换
-  const [showSettings, setShowSettings] = useState(false)
+  // Tab 页切换
+  const mainTabIndex = useObservable<number>(0)
 
   // 创建文件夹相关状态
   const [folderPath, setFolderPath] = useState("")
@@ -1644,29 +1647,25 @@ function View() {
 
 
   return (
-    <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-      {/* ═══════ 主内容：上传 / 设置 切换 ═══════ */}
-      {!showSettings ? (
-        <NavigationStack>
-          <List
-            navigationTitle="GitHub 上传"
-            navigationBarTitleDisplayMode="inline"
-            toolbar={{
-              topBarLeading: [<Button title="关闭" systemImage="xmark" action={dismiss} />],
-              topBarTrailing: [
-                <HStack alignment="center" spacing={8}>
+    <NavigationStack>
+      <TabView selection={mainTabIndex}>
+        {/* ═══════ Tab 0：主页 ═══════ */}
+        <VStack tag={0} tabItem={<Label title="主页" systemImage="house.fill" />}>
+          <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+            <List
+              navigationTitle="GitHub 上传"
+              navigationBarTitleDisplayMode="inline"
+              toolbar={{
+                topBarLeading: [<Button title="关闭" systemImage="xmark" action={dismiss} />],
+                topBarTrailing: [
                   <Image
                     filePath="github-mark-light.png"
                     resizable={true}
                     frame={{ width: 24, height: 24 }}
                   />
-                  <Button action={() => setShowSettings(true)}>
-                    <Image systemName="gearshape.fill" font="callout" foregroundStyle="systemTeal" />
-                  </Button>
-                </HStack>
-              ],
-            }}
-          >
+                ],
+              }}
+            >
         {/* ═══════ 头部仪表盘 ═══════ */}
         <Section>
           <HeroCard
@@ -1754,17 +1753,121 @@ function View() {
         </Section>
 
       </List>
-        </NavigationStack>
-      ) : (
-        <NavigationStack>
+
+            {/* ═══════ 悬浮上传按钮 ═══════ */}
+            <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ bottom: 100 }}>
+              <Spacer />
+              <HStack frame={{ maxWidth: "infinity" }} alignment="center">
+                <Spacer />
+                <Button
+                  action={() => handleUpload()}
+                  disabled={selectedEntries.length === 0}
+                  buttonStyle="plain"
+                  clipShape="circle"
+                  popover={{
+                  isPresented: showUploadPopup,
+                  onChanged: (v: boolean) => {
+                    setShowUploadPopup(v)
+                    if (!v) {
+                      setUploadLogs([])
+                      setUploadStatus("idle")
+                    }
+                  },
+                  presentationCompactAdaptation: 'popover',
+                  arrowEdge: 'top' as any,
+                  content: (
+                    <VStack
+                      // @ts-ignore
+                      background="rgba(35,35,35,0.95)"
+                      // @ts-ignore
+                      mask={<RoundedRectangle cornerRadius={20} fill="black" />}
+                      // @ts-ignore
+                      padding={{ vertical: 16, horizontal: 14 }}
+                      spacing={8}
+                      frame={{ width: 280 }}
+                    >
+                      <HStack spacing={10} alignment="center" frame={{ maxWidth: "infinity" }}>
+                        <Image
+                          systemName={uploadStatus === "uploading" ? "hourglass" : uploadStatus === "success" ? "checkmark.circle.fill" : uploadStatus === "error" ? "xmark.circle.fill" : "hourglass"}
+                          font="title3"
+                          foregroundStyle={uploadStatus === "success" ? "systemGreen" : uploadStatus === "error" ? "systemRed" : "systemBlue"}
+                        />
+                        <Text font="headline" foregroundStyle="white">
+                          {uploadStatus === "uploading" ? "执行中..." : uploadStatus === "success" ? "任务完成" : uploadStatus === "error" ? "任务失败" : "准备中..."}
+                        </Text>
+                      </HStack>
+                      {uploadStatus === "uploading" ? (
+                        <VStack spacing={6} frame={{ maxWidth: "infinity" }}>
+                          <ProgressView
+                            value={uploadProgress}
+                            total={1}
+                            progressViewStyle="linear"
+                            frame={{ maxWidth: "infinity" }}
+                          />
+                          <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
+                            {Math.round(uploadProgress * 100)}% 完成
+                          </Text>
+                        </VStack>
+                      ) : null}
+                      <ScrollView frame={{ height: 200 }}>
+                        <VStack
+                          spacing={4}
+                          frame={{ maxWidth: "infinity" }}
+                          padding={{ top: 8, bottom: 8, leading: 12, trailing: 12 }}
+                          background="rgba(0,0,0,0.4)"
+                          // @ts-ignore
+                          mask={<RoundedRectangle cornerRadius={8} fill="black" />}
+                        >
+                          {uploadLogs.length === 0 ? (
+                            <Text font="caption" foregroundStyle="tertiaryLabel">等待开始...</Text>
+                          ) : (
+                            [...uploadLogs].reverse().map((log: string, index: number) => (
+                              <Text key={index} font="caption" foregroundStyle="white" selectionDisabled={false}>
+                                {log}
+                              </Text>
+                            ))
+                          )}
+                        </VStack>
+                      </ScrollView>
+                      <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
+                        {uploadStatus === "uploading"
+                          ? `上传中... ${Math.round(uploadProgress * 100)}%`
+                          : uploadStatus === "success"
+                            ? `✓ 成功上传 ${uploadHistory.length} 个文件`
+                            : uploadStatus === "error"
+                              ? "✗ 上传失败，请查看日志"
+                              : ""
+                        }
+                      </Text>
+                      {uploadStatus !== "uploading" ? (
+                        <Button action={() => setShowUploadPopup(false)}>
+                          <Text fontWeight="bold" foregroundStyle="systemGreen">确定</Text>
+                        </Button>
+                      ) : null}
+                    </VStack>
+                  )
+                }}
+                >
+                  <ZStack alignment="center" frame={{ width: 56, height: 56 }}>
+                    <Circle fill="rgba(13,148,136,0.85)" frame={{ width: 56, height: 56 }} />
+                    <VStack spacing={0} alignment="center">
+                      <Image systemName="arrow.up" font="headline" foregroundStyle="white" />
+                      <Text font="caption2" foregroundStyle="white">上传</Text>
+                    </VStack>
+                  </ZStack>
+                </Button>
+                <Spacer />
+              </HStack>
+            </VStack>
+          </ZStack>
+        </VStack>
+
+        {/* ═══════ Tab 1：设置 ═══════ */}
+        <VStack tag={1} tabItem={<Label title="设置" systemImage="gearshape.fill" />}>
           <List
             navigationTitle="设置"
             navigationBarTitleDisplayMode="inline"
-            toolbar={{
-              topBarLeading: [
-                <Button title="返回" systemImage="chevron.left" action={() => setShowSettings(false)} />
-              ],
-            }}
+            toolbar={{ topBarLeading: [] }}
           >
             {/* ═══════ 凭证配置（图形化图标按钮）═══════ */}
             <Section header={<SectionHeader title="凭证配置" />} footer={<Text attributedString={`[生成 GitHub Classic Token →](https://github.com/settings/tokens/new)`} foregroundStyle="tertiaryLabel" font="caption" />}>
@@ -1782,10 +1885,6 @@ function View() {
                 </HStack>
               </VStack>
             </Section>
-            {/* 提交信息 */}
-            <Section header={<SectionHeader title="提交信息" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">自定义 Git 提交说明，留空则使用默认格式。</Text>}>
-              <TextField title="提交说明文字" value={commitMessage} prompt="提交说明文字" onChanged={setCommitMessage} />
-            </Section>
             {/* ═══════ 仓库操作（图形化图标弹窗）═══════ */}
             <Section header={<SectionHeader title="仓库操作" />} footer={<Text font="caption" foregroundStyle="tertiaryLabel">点击图标按钮打开操作面板，在弹窗中填写信息并执行。</Text>}>
               <HStack spacing={10}>
@@ -1798,7 +1897,7 @@ function View() {
                     isPresented: editingField === "opFolder",
                     onChanged: (v: boolean) => { if (!v) setEditingField(null) },
                     presentationCompactAdaptation: 'popover',
-                    arrowEdge: 'bottom' as any,
+                    arrowEdge: 'top' as any,
                     content: (
                       <VStack spacing={10} padding={16} frame={{ width: 280 }}
                         // @ts-ignore
@@ -1834,7 +1933,7 @@ function View() {
                     isPresented: editingField === "opBranch",
                     onChanged: (v: boolean) => { if (!v) setEditingField(null) },
                     presentationCompactAdaptation: 'popover',
-                    arrowEdge: 'bottom' as any,
+                    arrowEdge: 'top' as any,
                     content: (
                       <VStack spacing={10} padding={16} frame={{ width: 280 }}
                         // @ts-ignore
@@ -1870,7 +1969,7 @@ function View() {
                     isPresented: editingField === "opDelete",
                     onChanged: (v: boolean) => { if (!v) setEditingField(null) },
                     presentationCompactAdaptation: 'popover',
-                    arrowEdge: 'bottom' as any,
+                    arrowEdge: 'top' as any,
                     content: (
                       <VStack spacing={10} padding={16} frame={{ width: 280 }}
                         // @ts-ignore
@@ -1898,127 +1997,10 @@ function View() {
               </HStack>
             </Section>
           </List>
-        </NavigationStack>
-      )}
+        </VStack>
 
-      {/* ═══════ 悬浮上传按钮（仅主页显示）═══════ */}
-      {!showSettings && (
-      <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ bottom: 100 }}>
-        <Spacer />
-        <HStack frame={{ maxWidth: "infinity" }} alignment="center">
-          <Spacer />
-          <Button
-            action={() => handleUpload()}
-            disabled={selectedEntries.length === 0}
-            buttonStyle="plain"
-            clipShape="circle"
-            popover={{
-            isPresented: showUploadPopup,
-            onChanged: (v: boolean) => {
-              setShowUploadPopup(v)
-              if (!v) {
-                setUploadLogs([])
-                setUploadStatus("idle")
-              }
-            },
-            presentationCompactAdaptation: 'popover',
-            arrowEdge: 'bottom' as any,
-            content: (
-              <VStack
-                // @ts-ignore
-                background="rgba(35,35,35,0.95)"
-                // @ts-ignore
-                mask={<RoundedRectangle cornerRadius={20} fill="black" />}
-                // @ts-ignore
-                padding={{ vertical: 16, horizontal: 14 }}
-                spacing={8}
-                frame={{ width: 280 }}
-              >
-                {/* 顶部状态图标和标题 */}
-                <HStack spacing={10} alignment="center" frame={{ maxWidth: "infinity" }}>
-                  <Image
-                    systemName={uploadStatus === "uploading" ? "hourglass" : uploadStatus === "success" ? "checkmark.circle.fill" : uploadStatus === "error" ? "xmark.circle.fill" : "hourglass"}
-                    font="title3"
-                    foregroundStyle={uploadStatus === "success" ? "systemGreen" : uploadStatus === "error" ? "systemRed" : "systemBlue"}
-                  />
-                  <Text font="headline" foregroundStyle="white">
-                    {uploadStatus === "uploading" ? "执行中..." : uploadStatus === "success" ? "任务完成" : uploadStatus === "error" ? "任务失败" : "准备中..."}
-                  </Text>
-                </HStack>
-
-                {/* 进度条 */}
-                {uploadStatus === "uploading" ? (
-                  <VStack spacing={6} frame={{ maxWidth: "infinity" }}>
-                    <ProgressView
-                      value={uploadProgress}
-                      total={1}
-                      progressViewStyle="linear"
-                      frame={{ maxWidth: "infinity" }}
-                    />
-                    <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
-                      {Math.round(uploadProgress * 100)}% 完成
-                    </Text>
-                  </VStack>
-                ) : null}
-
-                {/* 日志列表（最新在上）*/}
-                <ScrollView frame={{ height: 200 }}>
-                  <VStack
-                    spacing={4}
-                    frame={{ maxWidth: "infinity" }}
-                    padding={{ top: 8, bottom: 8, leading: 12, trailing: 12 }}
-                    background="rgba(0,0,0,0.4)"
-                    // @ts-ignore
-                    mask={<RoundedRectangle cornerRadius={8} fill="black" />}
-                  >
-                    {uploadLogs.length === 0 ? (
-                      <Text font="caption" foregroundStyle="tertiaryLabel">等待开始...</Text>
-                    ) : (
-                      [...uploadLogs].reverse().map((log: string, index: number) => (
-                        <Text key={index} font="caption" foregroundStyle="white" selectionDisabled={false}>
-                          {log}
-                        </Text>
-                      ))
-                    )}
-                  </VStack>
-                </ScrollView>
-
-                {/* 底部状态 */}
-                <Text font="caption" foregroundStyle="secondaryLabel" frame={{ maxWidth: "infinity" }}>
-                  {uploadStatus === "uploading"
-                    ? `上传中... ${Math.round(uploadProgress * 100)}%`
-                    : uploadStatus === "success"
-                      ? `✓ 成功上传 ${uploadHistory.length} 个文件`
-                      : uploadStatus === "error"
-                        ? "✗ 上传失败，请查看日志"
-                        : ""
-                  }
-                </Text>
-
-                {/* 关闭按钮 */}
-                {uploadStatus !== "uploading" ? (
-                  <Button action={() => setShowUploadPopup(false)}>
-                    <Text fontWeight="bold" foregroundStyle="systemGreen">确定</Text>
-                  </Button>
-                ) : null}
-              </VStack>
-            )
-          }}
-        >
-          <ZStack alignment="center" frame={{ width: 56, height: 56 }}>
-            <Circle fill="rgba(13,148,136,0.85)" frame={{ width: 56, height: 56 }} />
-            <VStack spacing={0} alignment="center">
-              <Image systemName="arrow.up" font="headline" foregroundStyle="white" />
-              <Text font="caption2" foregroundStyle="white">上传</Text>
-            </VStack>
-          </ZStack>
-        </Button>
-        <Spacer />
-        </HStack>
-      </VStack>
-      )}
-
-    </ZStack>
+      </TabView>
+    </NavigationStack>
   )
 }
 
