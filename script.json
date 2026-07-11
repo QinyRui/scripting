@@ -1,47 +1,39 @@
 {
-  "icon" : "square.and.arrow.up",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/Github工具箱\/L.PNG",
-  "contributors" : [
-
-  ],
-  "name" : "Github 多功能上传",
-  "description" : "增加弹窗效果",
-  "runInApp" : true,
+  "color" : "rgba(28, 140, 255,1)",
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui"
+  },
   "version" : "1.0.0",
   "entry" : "index.tsx",
   "remoteResource" : {
+    "hash" : "2bc12421feb59661bae446434eef1cbe",
     "autoUpdateInterval" : 300,
-    "hash" : "6833ef7af4345b70cdcec6e262e7f820",
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/Github工具箱"
   },
-  "localizedNames" : {
-    "es" : "",
-    "it" : "",
-    "zh" : "",
-    "pt" : "",
-    "ru" : "",
-    "ja" : "",
-    "de" : "",
-    "fr" : "",
-    "en" : ""
-  },
+  "intentInputTypes" : [
+
+  ],
+  "description" : "增加弹窗效果",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/Github工具箱\/L.PNG",
+  "icon" : "square.and.arrow.up",
+  "runInApp" : true,
+  "contributors" : [
+
+  ],
   "localizedDescriptions" : {
+    "zh" : "",
+    "de" : "",
+    "en" : "",
+    "fr" : "",
+    "es" : "",
+    "ja" : "",
     "ru" : "",
     "it" : "",
-    "en" : "",
-    "es" : "",
-    "fr" : "",
-    "pt" : "",
-    "ja" : "",
-    "de" : "",
-    "zh" : ""
+    "pt" : ""
   },
-  "color" : "rgba(28, 140, 255,1)",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
-  },
+  "name" : "Github 多功能上传",
   "permissions" : [
     "calendar",
     "reminders",
@@ -54,7 +46,15 @@
     "clipboard",
     "fileSystem"
   ],
-  "intentInputTypes" : [
-
-  ]
+  "localizedNames" : {
+    "zh" : "",
+    "ja" : "",
+    "de" : "",
+    "it" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "fr" : "",
+    "pt" : ""
+  }
 }
