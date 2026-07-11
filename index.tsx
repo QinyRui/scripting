@@ -6,6 +6,7 @@ import { FontSettingsPage, FontSizeSubPage, FontColorSubPage } from "./pages/fon
 import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
 import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
+import { TyphoonMonitorPage } from "./pages/typhoon-monitor"
 import { reverseGeocodeOSM } from "./utils/location"
 import {
   Script,
@@ -575,6 +576,21 @@ function ConfigPage() {
           </VStack>
 
 
+        </Section>
+
+        {/* 台风实时监控 */}
+        <Section header={<Text font="headline">实用工具</Text>}>
+          <NavigationLink destination={<TyphoonMonitorPage />}>
+            <HStack padding={{ vertical: 8 }} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}>
+                <Circle fill="systemRed" opacity={0.15} />
+                <Image systemName="hurricane" foregroundStyle="systemRed" font={16} />
+              </ZStack>
+              <Text fontWeight="bold">台风实时监控</Text>
+              <Spacer />
+              <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
+            </HStack>
+          </NavigationLink>
         </Section>
 
       </List>
