@@ -371,7 +371,7 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
 // ─── 右侧天气面板 ───
 export function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherInfo; widgetType: "medium" | "large" }) {
   const wIco = weatherInfo.weatherIco || "sun.max.fill"
-  const wTemp = weatherInfo.bodyFeelingTemperature !== undefined ? weatherInfo.bodyFeelingTemperature : "-"
+  const wTemp = weatherInfo.temperature !== undefined ? weatherInfo.temperature : "-"
   const lineColor = c("#ffffff", "weather")
   const iconSize = widgetType === "medium" ? 27 : 30
   const temperatureFont = s(widgetType === "medium" ? 18 : 20, "weatherLarge")
@@ -386,7 +386,7 @@ export function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherI
       <VStack alignment="trailing" spacing={widgetType === "medium" ? 1 : 2}>
         <WeatherMetricLine label="风力" value={weatherInfo.windStr || "--"} />
         <WeatherMetricLine label="湿度" value={weatherInfo.humidity || "--"} />
-        <WeatherMetricLine label="体感" value={weatherInfo.comfort || "--"} />
+        <WeatherMetricLine label="体感" value={(weatherInfo.comfort || "--") + (weatherInfo.bodyFeelingTemperature !== undefined ? " " + weatherInfo.bodyFeelingTemperature + "°" : "")} />
         <WeatherMetricLine label="紫外线" value={weatherInfo.ultraviolet || "--"} />
         <WeatherMetricLine label="空气" value={weatherInfo.aqiInfo || "--"} />
       </VStack>
