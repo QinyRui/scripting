@@ -587,8 +587,6 @@ function ConfigPage() {
                 <Image systemName="hurricane" foregroundStyle="systemRed" font={16} />
               </ZStack>
               <Text fontWeight="bold">台风实时监控</Text>
-              <Spacer />
-              <Image systemName="chevron.right" font={12} foregroundStyle="tertiaryLabel" />
             </HStack>
           </NavigationLink>
         </Section>
