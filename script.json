@@ -1,8 +1,60 @@
 {
-  "name": "彩云天气",
-  "entry": "index.tsx",
-  "version": "6.3.5",
-  "icon": "cloud.sun.rain.fill",
-  "color": "rgba(143, 168, 149,1)",
-  "runInApp": true
+  "localizedNames" : {
+    "it" : "",
+    "en" : "",
+    "zh" : "",
+    "es" : "",
+    "fr" : "",
+    "ru" : "",
+    "pt" : "",
+    "ja" : "",
+    "de" : ""
+  },
+  "permissions" : [
+    "calendar",
+    "reminders",
+    "alarms",
+    "contacts",
+    "location",
+    "homeKit",
+    "photos",
+    "health",
+    "clipboard",
+    "fileSystem"
+  ],
+  "intentInputTypes" : [
+
+  ],
+  "iconImage" : "",
+  "localizedDescriptions" : {
+    "ja" : "",
+    "es" : "",
+    "pt" : "",
+    "zh" : "",
+    "it" : "",
+    "fr" : "",
+    "ru" : "",
+    "de" : "",
+    "en" : ""
+  },
+  "name" : "彩云天气",
+  "icon" : "cloud.sun.rain.fill",
+  "version" : "6.3.6",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "description" : "新增5项通知功能：变温、空气污染、大风、台风、地震",
+  "remoteResource" : {
+    "autoUpdateInterval" : null,
+    "hash" : "6113ee07b0a0411e9f5b56692940aa37",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
+  },
+  "runInApp" : true,
+  "color" : "rgba(143, 168, 149,1)",
+  "entry" : "index.tsx",
+  "contributors" : [
+
+  ]
 }
