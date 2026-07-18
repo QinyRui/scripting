@@ -31,6 +31,11 @@ export interface Profile {
     isSurroundNotify: boolean;
     isUselessNotify: boolean;
     NotificationInterval: number;
+    TemperatureChange: boolean;
+    AirPollution: boolean;
+    StrongWind: boolean;
+    TyphoonAlert: boolean;
+    EarthquakeAlert: boolean;
   };
   widget: {
     RefreshInterval: number;
@@ -45,11 +50,23 @@ export const profile: Profile = (Storage.get(SETTING_KEY) as any) || {
     isSurroundNotify: false,
     isUselessNotify: false,
     NotificationInterval: 0,
+    TemperatureChange: true,
+    AirPollution: true,
+    StrongWind: true,
+    TyphoonAlert: true,
+    EarthquakeAlert: true,
   },
   widget: {
     RefreshInterval: 0,
   },
 };
+
+// 合并默认值，确保旧存储数据也有新字段
+if (profile.notification.TemperatureChange === undefined) profile.notification.TemperatureChange = true;
+if (profile.notification.AirPollution === undefined) profile.notification.AirPollution = true;
+if (profile.notification.StrongWind === undefined) profile.notification.StrongWind = true;
+if (profile.notification.TyphoonAlert === undefined) profile.notification.TyphoonAlert = true;
+if (profile.notification.EarthquakeAlert === undefined) profile.notification.EarthquakeAlert = true;
 
 export function SettingView() {
   const dismiss = Navigation.useDismiss();
