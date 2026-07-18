@@ -299,7 +299,7 @@ function LevelSection() {
 // ─── 无台风空状态 ───
 function EmptyView() {
   return (
-    <VStack alignment="center" spacing={8} padding={{ vertical: 40 }}>
+    <VStack alignment="center" spacing={8} padding={{ vertical: 40 }} frame={{ maxWidth: "infinity" }}>
       <ZStack frame={{ width: 56, height: 56 }}>
         <Circle fill={{ color: "#8C7CFF", opacity: 0.12 } as any} />
         <Image systemName="hurricane" font={28} foregroundStyle="#8C7CFF" />
@@ -339,16 +339,18 @@ export function TyphoonMonitorPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [data, setData] = useState<any>(null)
+  const [empty, setEmpty] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
     setError("")
+    setEmpty(false)
     try {
       const result = await fetchTyphoonData()
       if (result) {
         setData(result)
       } else {
-        setError("当前没有活跃台风数据")
+        setEmpty(true)
       }
     } catch (e: any) {
       setError(e ? e.message || "网络请求失败" : "网络请求失败")
@@ -382,6 +384,16 @@ export function TyphoonMonitorPage() {
 
         {loading ? (
           <Section><LoadingView /></Section>
+        ) : empty ? (
+          <Section>
+            <EmptyView />
+            <Button action={loadData}>
+              <HStack alignment="center" spacing={6} padding={{ vertical: 10 }} frame={{ maxWidth: "infinity" }}>
+                <Image systemName="arrow.clockwise" font={14} foregroundStyle="systemBlue" />
+                <Text foregroundStyle="systemBlue" fontWeight="medium">刷新</Text>
+              </HStack>
+            </Button>
+          </Section>
         ) : error ? (
           <Section>
             <ErrorView message={error} />
