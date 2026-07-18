@@ -231,10 +231,14 @@ export async function safeGetWeather(forceRefresh = false): Promise<WeatherInfo>
     alertCount: Array.isArray(data.result?.alert?.content) ? data.result.alert.content.length : 0
   })
 
-  // 处理通知逻辑
+  // 处理通知逻辑（任一通知开启时均调用）
   const appProfile = (Storage.get("ColorfulCloudsSetting") as any) || {}
   const notificationSettings = appProfile.notification || {}
-  if (notificationSettings.Precipitation) {
+  const hasAnyNotification = notificationSettings.Precipitation ||
+    notificationSettings.TemperatureChange || notificationSettings.AirPollution ||
+    notificationSettings.StrongWind || notificationSettings.TyphoonAlert ||
+    notificationSettings.EarthquakeAlert
+  if (hasAnyNotification) {
     try {
       handleNotifications(data.result, location.isCurrentLocation, notificationSettings).catch(err => {
         appendDebugLog("handleNotifications background error", { message: String(err) })
