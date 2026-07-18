@@ -327,8 +327,8 @@ export function InfoSide({ weatherInfo, lunarStr, poetry, schedules, widgetType 
 
   return (
     <VStack alignment="leading" spacing={widgetType === "medium" ? 1 : 2} frame={{ width: leftWidth, alignment: "leading" }} {...offsetStyle(widgetType, "left")}>
-      <SectionText text={provideGreeting(currentDate)} font={s(widgetType === "medium" ? 18 : 17, "greeting")} color={c("#ffffff", "greeting")} />
-      <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 1 }}>
+
+      <HStack spacing={3} frame={{ width: leftWidth, alignment: "leading" }} padding={{ top: 2 }}>
         <SectionText text={dateLineText} font={s(widgetType === "medium" ? 12 : 13, "date")} color={c("#ffcc99", "date")} lineLimit={1} />
       </HStack>
       {/* 地理位置：自适应单/双行（超长自动转二行） */}
