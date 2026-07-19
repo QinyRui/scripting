@@ -100,6 +100,7 @@ const fontColorKeys: Record<string, string> = {
   info: "基础信息",
   weather: "天气详情",
   weatherLarge: "主温度",
+  forecastIcon: "未来三日天气符号",
   poetry: "诗词预报",
   timeInfo: "时间条 / 宜忌",
   calendar: "月历",
