@@ -1,39 +1,50 @@
 {
+  "entry" : "index.tsx",
+  "iconImage" : "",
+  "version" : "6.3.6",
+  "remoteResource" : {
+    "hash" : "64e7d76dafe62d879ef67a6865cb866c",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "autoUpdateInterval" : 300
+  },
+  "intentInputTypes" : [
+
+  ],
+  "icon" : "cloud.sun.rain.fill",
+  "runInApp" : true,
+  "localizedDescriptions" : {
+    "it" : "",
+    "zh" : "",
+    "de" : "",
+    "ja" : "",
+    "es" : "",
+    "en" : "",
+    "pt" : "",
+    "ru" : "",
+    "fr" : ""
+  },
+  "localizedNames" : {
+    "pt" : "",
+    "de" : "",
+    "it" : "",
+    "fr" : "",
+    "ja" : "",
+    "zh" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : ""
+  },
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "description" : "新增5项通知功能：变温、空气污染、大风、台风、地震",
+  "color" : "rgba(143, 168, 149,1)",
+  "name" : "彩云天气",
   "contributors" : [
 
   ],
-  "color" : "rgba(143, 168, 149,1)",
-  "localizedNames" : {
-    "zh" : "",
-    "ja" : "",
-    "en" : "",
-    "ru" : "",
-    "fr" : "",
-    "de" : "",
-    "it" : "",
-    "es" : "",
-    "pt" : ""
-  },
-  "runInApp" : true,
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
-  "iconImage" : null,
-  "name" : "彩云天气",
-  "entry" : "index.tsx",
-  "localizedDescriptions" : {
-    "zh" : "",
-    "ja" : "",
-    "en" : "",
-    "ru" : "",
-    "fr" : "",
-    "de" : "",
-    "it" : "",
-    "es" : "",
-    "pt" : ""
-  },
   "permissions" : [
     "calendar",
     "reminders",
@@ -45,16 +56,5 @@
     "health",
     "clipboard",
     "fileSystem"
-  ],
-  "description" : null,
-  "icon" : "cloud.sun.rain.fill",
-  "intentInputTypes" : [
-
-  ],
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "hash" : "492a1bdea675d9f644b99ce7585ad64f",
-    "autoUpdateInterval" : 300
-  },
-  "version" : "6.3.5"
+  ]
 }
