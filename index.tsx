@@ -1131,6 +1131,7 @@ function View() {
 
   // Tab 页切换
   const mainTabIndex = useObservable<number>(0)
+  const [showNavMenu, setShowNavMenu] = useState(false)
 
   // 创建文件夹相关状态
   const [folderPath, setFolderPath] = useState("")
@@ -1645,9 +1646,9 @@ function View() {
 
   return (
     <NavigationStack>
-      <TabView selection={mainTabIndex}>
-        {/* ═══════ Tab 0：主页 ═══════ */}
-        <VStack tag={0} tabItem={<Label title="主页" systemImage="house.fill" />}>
+      <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+        {/* ═══════ 主页 ═══════ */}
+        {mainTabIndex.value === 0 ? (
           <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
             <List
               navigationTitle="GitHub 上传"
@@ -1857,15 +1858,16 @@ function View() {
               </HStack>
             </VStack>
           </ZStack>
-        </VStack>
+        ) : null}
 
-        {/* ═══════ Tab 1：设置 ═══════ */}
-        <VStack tag={1} tabItem={<Label title="设置" systemImage="gearshape.fill" />}>
-          <List
-            navigationTitle="设置"
-            navigationBarTitleDisplayMode="inline"
-            toolbar={{ topBarLeading: [] }}
-          >
+        {/* ═══════ 设置页 ═══════ */}
+        {mainTabIndex.value === 1 ? (
+          <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+            <List
+              navigationTitle="设置"
+              navigationBarTitleDisplayMode="inline"
+              toolbar={{ topBarLeading: [] }}
+            >
             {/* ═══════ 凭证配置（图形化图标按钮）═══════ */}
             <Section header={<SectionHeader title="凭证配置" />} footer={<Text attributedString={`[生成 GitHub Classic Token →](https://github.com/settings/tokens/new)`} foregroundStyle="tertiaryLabel" font="caption" />}>
               <VStack spacing={10}>
@@ -1968,9 +1970,56 @@ function View() {
               </VStack>
             </Section>
           </List>
+          </ZStack>
+        ) : null}
+
+        {/* ═══════ 扇形展开浮动导航 ═══════ */}
+        <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={{ bottom: 20 }}>
+          <Spacer />
+          <HStack alignment="bottom" spacing={0} frame={{ maxWidth: "infinity" }}>
+            <Spacer />
+
+            {/* 扇形展开区域 */}
+            {showNavMenu ? (
+              <VStack spacing={0} alignment="trailing" padding={{ trailing: 4 }}>
+                {/* 设置按钮 - 最远 */}
+                <HStack spacing={8} alignment="center" padding={{ bottom: 6 }}>
+                  <Text font="caption" foregroundStyle="white" bold>设置</Text>
+                  <Button action={() => { mainTabIndex.setValue(1); setShowNavMenu(false) }} buttonStyle="plain">
+                    <ZStack alignment="center" frame={{ width: 44, height: 44 }}>
+                      <Circle fill="rgba(130,130,140,0.85)" frame={{ width: 44, height: 44 }} />
+                      <Image systemName="gearshape.fill" font="callout" foregroundStyle="white" />
+                    </ZStack>
+                  </Button>
+                </HStack>
+                {/* 主页按钮 - 较近 */}
+                <HStack spacing={8} alignment="center" padding={{ bottom: 6, trailing: 16 }}>
+                  <Text font="caption" foregroundStyle="white" bold>主页</Text>
+                  <Button action={() => { mainTabIndex.setValue(0); setShowNavMenu(false) }} buttonStyle="plain">
+                    <ZStack alignment="center" frame={{ width: 44, height: 44 }}>
+                      <Circle fill="rgba(13,148,136,0.85)" frame={{ width: 44, height: 44 }} />
+                      <Image systemName="house.fill" font="callout" foregroundStyle="white" />
+                    </ZStack>
+                  </Button>
+                </HStack>
+              </VStack>
+            ) : null}
+
+            {/* 主触发按钮 */}
+            <Button action={() => setShowNavMenu(!showNavMenu)} buttonStyle="plain">
+              <ZStack alignment="center" frame={{ width: 56, height: 56 }}>
+                <Circle fill="rgba(13,148,136,0.92)" frame={{ width: 56, height: 56 }} />
+                <Image
+                  systemName={showNavMenu ? "xmark" : "ellipsis"}
+                  font="title3"
+                  foregroundStyle="white"
+                />
+              </ZStack>
+            </Button>
+          </HStack>
         </VStack>
 
-      </TabView>
+      </ZStack>
     </NavigationStack>
   )
 }
