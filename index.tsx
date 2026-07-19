@@ -6,6 +6,7 @@ import { FontSettingsPage, FontSizeSubPage, FontColorSubPage } from "./pages/fon
 import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
 import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
+import { TyphoonMonitorPage } from "./pages/typhoon-monitor"
 import { reverseGeocodeOSM } from "./utils/location"
 import {
   Script,
@@ -299,6 +300,7 @@ function formatLocationDataForDisplay(loc: any): string {
 }
 
 const statusInfo = loadStatusInfo()
+let hasPromptedApiKey = false
 
 
 function formatUpdateTime(timestamp?: number) {
@@ -324,6 +326,16 @@ function ConfigPage() {
   const [notificationInterval, setNotificationInterval] = useState<number>(profile.notification.NotificationInterval)
 
   const timeGapList = [0, 5, 10, 15, 30]
+
+  // 首次使用时自动提示输入 API Key（延迟到 UI 渲染完成后）
+  useState(() => {
+    if (!hasPromptedApiKey && statusInfo.apiKeyText === "未设置") {
+      hasPromptedApiKey = true
+      setTimeout(() => {
+        inputApiKey().then(() => setStatusInfo(loadStatusInfo()))
+      }, 600)
+    }
+  })
 
   function updateChartStyle(nextStyle: "apple" | "caiyun") {
     const sc = ensureStyleConfig() as any
@@ -351,7 +363,12 @@ function ConfigPage() {
       isLocalNotify: local,
       isSurroundNotify: surround,
       isUselessNotify: useless,
-      NotificationInterval: interval
+      NotificationInterval: interval,
+      TemperatureChange: profile.notification.TemperatureChange,
+      AirPollution: profile.notification.AirPollution,
+      StrongWind: profile.notification.StrongWind,
+      TyphoonAlert: profile.notification.TyphoonAlert,
+      EarthquakeAlert: profile.notification.EarthquakeAlert,
     }
     Storage.set(SETTING_KEY, profile)
   }
@@ -577,6 +594,19 @@ function ConfigPage() {
 
         </Section>
 
+        {/* 台风实时监控 */}
+        <Section header={<Text font="headline">实用工具</Text>}>
+          <NavigationLink destination={<TyphoonMonitorPage />}>
+            <HStack padding={{ vertical: 8 }} spacing={12} alignment="center">
+              <ZStack frame={{ width: 32, height: 32 }}>
+                <Circle fill="systemRed" opacity={0.15} />
+                <Image systemName="hurricane" foregroundStyle="systemRed" font={16} />
+              </ZStack>
+              <Text fontWeight="bold">台风实时监控</Text>
+            </HStack>
+          </NavigationLink>
+        </Section>
+
       </List>
     </NavigationStack>
     <VStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} padding={20}>
@@ -584,9 +614,9 @@ function ConfigPage() {
       <HStack frame={{ maxWidth: "infinity" }}>
         <Spacer />
         <Button action={() => Navigation.present(<AboutDetailView />)}>
-          <ZStack frame={{ width: 50, height: 50 }}>
-            <Circle fill="#9333ea" />
-            <Image systemName="info" font={24} foregroundStyle="white" />
+          <ZStack frame={{ width: 44, height: 44 }}>
+            <Circle fill="#2c2c2e" />
+            <Image systemName="info" font={20} foregroundStyle="#aeaeb2" />
           </ZStack>
         </Button>
         <Spacer />
