@@ -39,6 +39,11 @@ export interface Profile {
     isSurroundNotify: boolean
     isUselessNotify: boolean
     NotificationInterval: number
+    TemperatureChange: boolean
+    AirPollution: boolean
+    StrongWind: boolean
+    TyphoonAlert: boolean
+    EarthquakeAlert: boolean
   }
   widget: {
     RefreshInterval: number
@@ -54,13 +59,25 @@ export function getDefaultProfile(): Profile {
       isSurroundNotify: false,
       isUselessNotify: false,
       NotificationInterval: 0,
+      TemperatureChange: true,
+      AirPollution: true,
+      StrongWind: true,
+      TyphoonAlert: true,
+      EarthquakeAlert: true,
     },
     widget: { RefreshInterval: 0 },
   }
 }
 
 export function loadProfile(): Profile {
-  return (Storage.get(SETTING_KEY) as Profile) || getDefaultProfile()
+  const stored = (Storage.get(SETTING_KEY) as any) || {};
+  const defaults = getDefaultProfile();
+  return {
+    ...defaults,
+    ...stored,
+    notification: { ...defaults.notification, ...(stored.notification || {}) },
+    widget: { ...defaults.widget, ...(stored.widget || {}) },
+  };
 }
 
 function saveProfile(profile: Profile) {
@@ -224,6 +241,101 @@ export function NotificationSettingsPage() {
                     title=""
                     value={n.isUselessNotify}
                     onChanged={(val) => update("isUselessNotify", val)}
+                  />
+                </HStack>
+
+                <Divider padding={{ leading: 64 }} />
+
+                {/* 变温提醒 */}
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
+                  <ZStack frame={{ width: 36, height: 36 }}>
+                    <Circle fill="systemOrange" opacity={0.15} />
+                    <Image systemName="thermometer.medium" font={17} foregroundStyle="systemOrange" />
+                  </ZStack>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
+                    <Text fontWeight="bold">变温提醒</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">未来24小时温差变化过大时提醒</Text>
+                  </VStack>
+                  <Toggle
+                    title=""
+                    value={n.TemperatureChange}
+                    onChanged={(val) => update("TemperatureChange", val)}
+                  />
+                </HStack>
+
+                <Divider padding={{ leading: 64 }} />
+
+                {/* 空气污染提醒 */}
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
+                  <ZStack frame={{ width: 36, height: 36 }}>
+                    <Circle fill="#FF9500" opacity={0.15} />
+                    <Image systemName="aqi.medium" font={17} foregroundStyle="#FF9500" />
+                  </ZStack>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
+                    <Text fontWeight="bold">空气污染提醒</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">未来24小时内空气污染持续达到一定时长时提醒</Text>
+                  </VStack>
+                  <Toggle
+                    title=""
+                    value={n.AirPollution}
+                    onChanged={(val) => update("AirPollution", val)}
+                  />
+                </HStack>
+
+                <Divider padding={{ leading: 64 }} />
+
+                {/* 大风提醒 */}
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
+                  <ZStack frame={{ width: 36, height: 36 }}>
+                    <Circle fill="systemCyan" opacity={0.15} />
+                    <Image systemName="wind" font={17} foregroundStyle="systemCyan" />
+                  </ZStack>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
+                    <Text fontWeight="bold">大风提醒</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">未来24小时风速超过范围时提醒</Text>
+                  </VStack>
+                  <Toggle
+                    title=""
+                    value={n.StrongWind}
+                    onChanged={(val) => update("StrongWind", val)}
+                  />
+                </HStack>
+
+                <Divider padding={{ leading: 64 }} />
+
+                {/* 台风信息速递 */}
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
+                  <ZStack frame={{ width: 36, height: 36 }}>
+                    <Circle fill="systemRed" opacity={0.15} />
+                    <Image systemName="hurricane" font={17} foregroundStyle="systemRed" />
+                  </ZStack>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
+                    <Text fontWeight="bold">台风信息速递</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">台风来临时与过境时提醒</Text>
+                  </VStack>
+                  <Toggle
+                    title=""
+                    value={n.TyphoonAlert}
+                    onChanged={(val) => update("TyphoonAlert", val)}
+                  />
+                </HStack>
+
+                <Divider padding={{ leading: 64 }} />
+
+                {/* 地震速报 */}
+                <HStack alignment="center" spacing={0} padding={{ vertical: 10, horizontal: 16 }} frame={{ maxWidth: "infinity" }}>
+                  <ZStack frame={{ width: 36, height: 36 }}>
+                    <Circle fill="#8C7CFF" opacity={0.15} />
+                    <Image systemName="arrow.down.to.line" font={17} foregroundStyle="#8C7CFF" />
+                  </ZStack>
+                  <VStack alignment="leading" spacing={1} padding={{ leading: 12 }} frame={{ maxWidth: "infinity" }}>
+                    <Text fontWeight="bold">地震速报</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel">所在地可能受到地震影响时提醒（烈度3含以上）</Text>
+                  </VStack>
+                  <Toggle
+                    title=""
+                    value={n.EarthquakeAlert}
+                    onChanged={(val) => update("EarthquakeAlert", val)}
                   />
                 </HStack>
               </VStack>
