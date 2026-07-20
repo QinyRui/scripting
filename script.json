@@ -1,14 +1,37 @@
 {
+  "entry" : "index.tsx",
+  "icon" : "cloud.sun.rain.fill",
+  "iconImage" : "",
+  "version" : "6.3.7",
+  "contributors" : [
+
+  ],
+  "runInApp" : true,
+  "color" : "rgba(143, 168, 149,1)",
   "localizedNames" : {
-    "it" : "",
-    "en" : "",
-    "zh" : "",
     "es" : "",
-    "fr" : "",
     "ru" : "",
+    "it" : "",
     "pt" : "",
     "ja" : "",
-    "de" : ""
+    "de" : "",
+    "en" : "",
+    "zh" : "",
+    "fr" : ""
+  },
+  "intentInputTypes" : [
+
+  ],
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "name" : "彩云天气",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
+    "autoUpdateInterval" : 300,
+    "hash" : "64e7d76dafe62d879ef67a6865cb866c"
   },
   "permissions" : [
     "calendar",
@@ -22,39 +45,16 @@
     "clipboard",
     "fileSystem"
   ],
-  "intentInputTypes" : [
-
-  ],
-  "iconImage" : "",
+  "description" : "7-15:新增5项通知功能：变温、空气污染、大风、台风、地震\n7-20:修复bug，主应用界面天气动画变化效果\n（）",
   "localizedDescriptions" : {
-    "ja" : "",
-    "es" : "",
-    "pt" : "",
     "zh" : "",
-    "it" : "",
+    "es" : "",
     "fr" : "",
+    "pt" : "",
     "ru" : "",
-    "de" : "",
-    "en" : ""
-  },
-  "name" : "彩云天气",
-  "icon" : "cloud.sun.rain.fill",
-  "version" : "6.3.6",
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "description" : "新增5项通知功能：变温、空气污染、大风、台风、地震",
-  "remoteResource" : {
-    "autoUpdateInterval" : null,
-    "hash" : "6113ee07b0a0411e9f5b56692940aa37",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气"
-  },
-  "runInApp" : true,
-  "color" : "rgba(143, 168, 149,1)",
-  "entry" : "index.tsx",
-  "contributors" : [
-
-  ]
+    "en" : "",
+    "it" : "",
+    "ja" : "",
+    "de" : ""
+  }
 }
