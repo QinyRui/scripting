@@ -314,19 +314,48 @@ function EmptyView() {
 
 function LoadingView() {
   return (
-    <VStack alignment="center" spacing={10} padding={{ vertical: 60 }}>
+    <VStack
+      alignment="center"
+      spacing={10}
+      padding={{ vertical: 60 }}
+      frame={{ maxWidth: "infinity" }}
+    >
       <Image systemName="arrow.triangle.2.circlepath" font={28} foregroundStyle="#8C7CFF" />
-      <Text font="subheadline" foregroundStyle="secondaryLabel">正在获取台风数据…</Text>
+      <Text
+        font="subheadline"
+        foregroundStyle="secondaryLabel"
+        multilineTextAlignment="center"
+        frame={{ maxWidth: "infinity" }}
+      >
+        正在获取台风数据…
+      </Text>
     </VStack>
   )
 }
 
 function ErrorView(props: { message: string }) {
   return (
-    <VStack alignment="center" spacing={8} padding={{ vertical: 40 }}>
+    <VStack
+      alignment="center"
+      spacing={8}
+      padding={{ vertical: 40 }}
+      frame={{ maxWidth: "infinity" }}
+    >
       <Image systemName="exclamationmark.triangle" font={28} foregroundStyle="systemOrange" />
-      <Text font="headline" foregroundStyle="label">加载失败</Text>
-      <Text font="subheadline" foregroundStyle="secondaryLabel" multilineTextAlignment="center">
+      <Text
+        font="headline"
+        foregroundStyle="label"
+        multilineTextAlignment="center"
+        frame={{ maxWidth: "infinity" }}
+      >
+        加载失败
+      </Text>
+      <Text
+        font="subheadline"
+        foregroundStyle="secondaryLabel"
+        multilineTextAlignment="center"
+        frame={{ maxWidth: "infinity" }}
+      >
         {props.message}
       </Text>
     </VStack>
