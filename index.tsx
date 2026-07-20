@@ -7,6 +7,7 @@ import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
 import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
 import { TyphoonMonitorPage } from "./pages/typhoon-monitor"
+import { WeatherHeroIcon } from "./components/weather-hero"
 import { reverseGeocodeOSM } from "./utils/location"
 import {
   Script,
@@ -379,15 +380,8 @@ function ConfigPage() {
         <List navigationBarTitleDisplayMode="inline">
         <Section>
           <VStack spacing={24} padding={{ vertical: 20 }}>
-            <VStack spacing={16} alignment="center">
-              <ZStack frame={{ width: 100, height: 100 }}>
-                <Circle fill={{ colors: ["#4facfe", "#00f2fe"], startPoint: "top", endPoint: "bottom" }} />
-                <Image systemName="cloud.sun.fill" font={40} foregroundStyle="white" />
-              </ZStack>
-              <VStack spacing={4} alignment="center">
-                <Text font="title" fontWeight="bold">彩云天气</Text>
-              </VStack>
-            </VStack>
+            {/* 天气变化轮播动画：晴/云/雨/雪/风/夜 */}
+            <WeatherHeroIcon />
 
             <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
               <HomeQuickButton icon="rectangle.expand.vertical" title="中号预览" subtitle="Medium" action="preview-medium" tint="systemBlue" />
