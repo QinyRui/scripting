@@ -94,16 +94,14 @@ function StatCard({ value, label, color, isLarge }: {
 }
 
 // ===== 签到成功通知 UI =====
-function SignInNotification() {
-  const data = Notification.current
-  const info = data?.userInfo || {}
-
-  const consecutiveDays = info.consecutiveDays || 0
-  const experience = info.experience || 0
-  const level = info.level || 0
-  const nCoin = info.nCoin || 0
-  const minLeftDaysToOpen = info.minLeftDaysToOpen
-  const notOpenedBlindBoxCount = info.notOpenedBlindBoxCount || 0
+function SignInNotification({ consecutiveDays = 0, experience = 0, level = 0, nCoin = 0, minLeftDaysToOpen, notOpenedBlindBoxCount = 0 }: {
+  consecutiveDays?: number
+  experience?: number
+  level?: number
+  nCoin?: number
+  minLeftDaysToOpen?: number
+  notOpenedBlindBoxCount?: number
+}) {
 
   return (
     // @ts-ignore
@@ -528,6 +526,13 @@ if (data) {
   } else if (type === "blindbox_ready") {
     Notification.present(<BlindBoxReadyNotification />)
   } else {
-    Notification.present(<SignInNotification />)
+    Notification.present(<SignInNotification
+      consecutiveDays={userInfo.consecutiveDays}
+      experience={userInfo.experience}
+      level={userInfo.level}
+      nCoin={userInfo.nCoin}
+      minLeftDaysToOpen={userInfo.minLeftDaysToOpen}
+      notOpenedBlindBoxCount={userInfo.notOpenedBlindBoxCount}
+    />)
   }
 }
