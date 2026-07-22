@@ -1,0 +1,49 @@
+{
+  "intentInputTypes" : [
+
+  ],
+  "name" : "九号APP签到",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "contributors" : [
+
+  ],
+  "icon" : "scooter",
+  "runInApp" : true,
+  "version" : "2.0.2",
+  "remoteResource" : {
+    "autoUpdateInterval" : 600,
+    "hash" : "769ffcbabab914c2c4b593d008f797c9",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+  },
+  "localizedNames" : {
+    "ru" : "",
+    "pt" : "",
+    "fr" : "",
+    "en" : "",
+    "ja" : "",
+    "es" : "",
+    "de" : "",
+    "it" : "",
+    "zh" : ""
+  },
+  "localizedDescriptions" : {
+    "it" : "",
+    "pt" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "ja" : "",
+    "de" : "",
+    "zh" : "",
+    "fr" : ""
+  },
+  "description" : "①主应用界面展示任务列表（自动任务测试中）\n②后续更新接入蓝牙协议，获取电量，位置，速度数据",
+  "permissions" : null,
+  "entry" : "index.tsx"
+}
