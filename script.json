@@ -1,49 +1,49 @@
 {
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
+    "autoUpdateInterval" : 600,
+    "hash" : "11c31e753df10f367a3b73827c6685b2"
+  },
+  "description" : "①主应用界面展示任务列表（自动任务测试中）\n②后续更新接入蓝牙协议，获取电量，位置，速度数据",
   "contributors" : [
 
   ],
-  "localizedDescriptions" : {
-    "zh" : "",
-    "pt" : "",
-    "de" : "",
-    "en" : "",
-    "ru" : "",
-    "es" : "",
-    "it" : "",
-    "ja" : "",
-    "fr" : ""
-  },
-  "localizedNames" : {
-    "ja" : "",
-    "it" : "",
-    "zh" : "",
-    "pt" : "",
-    "ru" : "",
-    "es" : "",
-    "en" : "",
-    "de" : "",
-    "fr" : ""
-  },
   "icon" : "scooter",
   "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "name" : "九号APP签到",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "version" : "2.0.5",
+  "localizedNames" : {
+    "zh" : "",
+    "ru" : "",
+    "es" : "",
+    "en" : "",
+    "de" : "",
+    "pt" : "",
+    "fr" : "",
+    "ja" : "",
+    "it" : ""
+  },
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "entry" : "index.tsx",
+  "localizedDescriptions" : {
+    "de" : "",
+    "fr" : "",
+    "zh" : "",
+    "it" : "",
+    "en" : "",
+    "es" : "",
+    "pt" : "",
+    "ru" : "",
+    "ja" : ""
+  },
   "author" : {
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "name" : "QinyRui",
     "email" : "602839678@qq.com"
   },
-  "version" : "2.0.3",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
   "permissions" : null,
-  "entry" : "index.tsx",
-  "description" : "①主应用界面展示任务列表（自动任务测试中）\n②后续更新接入蓝牙协议，获取电量，位置，速度数据",
-  "remoteResource" : {
-    "hash" : "769ffcbabab914c2c4b593d008f797c9",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
-    "autoUpdateInterval" : 600
-  },
-  "color" : "rgba(0, 50, 222, 1.00)"
+  "name" : "九号APP签到"
 }
