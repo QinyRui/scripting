@@ -28,7 +28,7 @@ import {
   Rectangle
 } from "scripting"
 
-import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, receiveBlindBox, getTaskList, type NinebotWidgetData, type TaskInfo } from "./api"
+import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, receiveBlindBox, getAllTasks, getTaskList, TASK_CATEGORY_LABELS, type NinebotWidgetData, type TaskInfo } from "./api"
 import { BlindBoxCeremony, GuideGesture, CeremonyTitle, BB } from "./utils/BlindBoxVisuals"
 
 declare const Storage: any
@@ -47,7 +47,7 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.0.2"
+const VERSION = "2.0.3"
 const BUILD_DATE = "2026-07-23"
 
 // ==================== 更新日志 (Surge风格) ====================
@@ -918,7 +918,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [tasks, setTasks] = useState<TaskInfo[]>([])
   const [tasksLoading, setTasksLoading] = useState(false)
 
-  // 加载每日任务
+  // 加载每日任务（多 typeCode 合并）
   const loadTasks = async () => {
     if (!authorization || !deviceId) {
       console.log("任务跳过: 无鉴权信息")
@@ -926,8 +926,8 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
     }
     setTasksLoading(true)
     try {
-      console.log("开始加载每日任务...")
-      const list = await getTaskList(authorization, deviceId)
+      console.log("开始加载每日任务（多类型）...")
+      const list = await getAllTasks(authorization, deviceId)
       console.log("任务加载成功:", list.length, "个")
       setTasks(list)
     } catch (e) {
@@ -1457,7 +1457,9 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
 
         {/* ==================== 每日任务 ==================== */}
         {tasks.length > 0 ? (
-          <Section header={<Text font="headline">每日任务</Text>}>
+          <Section header={<Text font="headline">每日任务</Text>}
+            footer={<Text font="footnote" foregroundStyle="secondaryLabel">共 {tasks.length} 个任务，{tasks.filter(t => t.rewardStatus === 3).length} 个已完成</Text>}
+          >
             {tasks.map((task) => (
               <HStack key={task.taskId} padding={16} spacing={12} alignment="center" frame={{ maxWidth: "infinity" }}>
                 <ZStack frame={{ width: 32, height: 32 }}>
@@ -1466,10 +1468,13 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                 </ZStack>
                 <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
                   <Text fontWeight="semibold" foregroundStyle="label" multilineTextAlignment="leading">{task.title}</Text>
-                  <Text font="caption" foregroundStyle="secondaryLabel" multilineTextAlignment="leading">{task.rewardDescription}</Text>
+                  <HStack spacing={6}>
+                    <Text font="caption2" foregroundStyle="systemBlue">{TASK_CATEGORY_LABELS[task.taskCategory] || "其他"}</Text>
+                    <Text font="caption" foregroundStyle="secondaryLabel" multilineTextAlignment="leading">{task.rewardDescription}</Text>
+                  </HStack>
                 </VStack>
                 <Text font="caption" foregroundStyle={task.rewardStatus === 3 ? "systemGreen" : "secondaryLabel"}>
-                  {task.rewardStatus === 3 ? "已完成" : "未完成"}
+                  {task.rewardStatus === 3 ? "✅" : "❌"}
                 </Text>
               </HStack>
             ))}
