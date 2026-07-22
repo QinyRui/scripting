@@ -1,5 +1,5 @@
 import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
-import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, type NinebotWidgetData, type VehicleInfo } from './api'
+import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getTaskList, TASK_CATEGORY_LABELS, type NinebotWidgetData, type VehicleInfo, type TaskInfo } from './api'
 import { getStorage, setStorage } from './utils/storage'
 
 // CalendarNotificationTrigger / DateComponents 为全局类型，不需要从 scripting 导入
@@ -924,6 +924,33 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
     try {
       await scheduleFutureBlindBoxNotifications(baseData)
     } catch (e) { console.log("盲盒未来通知调度失败:", e) }
+
+    // 每日任务提醒（每天只提醒一次）
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const lastTaskNotifDate = getStorage("ninebot.taskNotifDate")
+      if (lastTaskNotifDate !== today) {
+        const tasks = await getTaskList(auth, devId, 1)
+        const incomplete = tasks.filter((t: TaskInfo) => t.rewardStatus !== 3)
+        if (incomplete.length > 0) {
+          const lines = incomplete.map((t: TaskInfo) => {
+            const cat = TASK_CATEGORY_LABELS[t.taskCategory] || "其他"
+            return "  " + cat + " · " + t.title + "（" + t.rewardDescription + "）"
+          })
+          await Notification.schedule({
+            title: "📋 今日任务提醒",
+            subtitle: "九号电动车",
+            body: "你还有 " + incomplete.length + " 个任务未完成：\n" + lines.join("\n"),
+            iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
+            threadIdentifier: "ninebot-task",
+            customUI: true,
+            userInfo: { type: "task_reminder", incompleteCount: incomplete.length },
+          })
+          setStorage("ninebot.taskNotifDate", today)
+          console.log("📋 任务提醒已发送:", incomplete.length, "个未完成")
+        }
+      }
+    } catch (e) { console.log("任务提醒发送失败:", e) }
 
     // 获取车辆监控数据（如果配置了设备服务密钥）
     let vehicle: VehicleInfo | null = null
