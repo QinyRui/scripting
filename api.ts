@@ -616,14 +616,39 @@ export async function autoOpenBlindBoxes(authorization: string, deviceId: string
 // 任务中心 API
 // ========================
 
-/** 获取每日任务列表 */
-export async function getTaskList(authorization: string, deviceId: string): Promise<TaskInfo[]> {
+/** 任务分类标签 */
+export const TASK_CATEGORY_LABELS: Record<number, string> = {
+  1: "完善资料",
+  3: "车辆激活",
+  7: "内容点赞",
+}
+
+/** 获取指定 typeCode 的任务列表 */
+export async function getTaskList(authorization: string, deviceId: string, typeCode: number = 1): Promise<TaskInfo[]> {
   const headers = getAuthHeaders(authorization, deviceId)
-  const url = API_ENDPOINTS.taskList + "?typeCode=1&appVersion=" + APP_VERSION + "&platformType=iOS"
+  const url = API_ENDPOINTS.taskList + "?typeCode=" + typeCode + "&appVersion=" + APP_VERSION + "&platformType=iOS"
   const resp: any = await httpGet(url, { headers })
   if (!resp.data || resp.data.code !== 0) {
     throw new Error("任务列表获取失败: " + (resp.data?.msg || "code=" + resp.data?.code))
   }
   return (resp.data.data || []) as TaskInfo[]
+}
+
+/** 获取所有类型的任务（合并去重） */
+export async function getAllTasks(authorization: string, deviceId: string): Promise<TaskInfo[]> {
+  const allTasks: TaskInfo[] = []
+  const seen = new Set<string>()
+  for (const code of [1, 2, 3]) {
+    try {
+      const tasks = await getTaskList(authorization, deviceId, code)
+      for (const t of tasks) {
+        if (!seen.has(t.taskId)) {
+          seen.add(t.taskId)
+          allTasks.push(t)
+        }
+      }
+    } catch { }
+  }
+  return allTasks
 }
 
