@@ -47,7 +47,7 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.0.3"
+const VERSION = "2.0.5"
 const BUILD_DATE = "2026-07-23"
 
 // ==================== 更新日志 (Surge风格) ====================
