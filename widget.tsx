@@ -826,19 +826,26 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
         const signResult = await doSign(auth, devId)
         if (signResult.success) {
           baseData = await getNinebotInfo(auth, devId)
+        }
+      }
+
+      // 已签到但未通知 → 补发签到成功通知
+      if (baseData.isSigned) {
+        const today = new Date().toISOString().slice(0, 10)
+        const lastSignNotifDate = getStorage("ninebot.signNotifiedDate")
+        if (lastSignNotifDate !== today) {
           try {
-            // 构建盲盒等待描述
             let blindBoxInfo = ""
             if (baseData.minLeftDaysToOpen !== null && baseData.minLeftDaysToOpen !== undefined && baseData.minLeftDaysToOpen > 0) {
-              blindBoxInfo = ` | 🎁 下个盲盒 ${baseData.minLeftDaysToOpen} 天后`
+              blindBoxInfo = " | 🎁 下个盲盒 " + baseData.minLeftDaysToOpen + " 天后"
             } else if (baseData.notOpenedBlindBoxCount > 0) {
-              blindBoxInfo = ` | 🎁 有 ${baseData.notOpenedBlindBoxCount} 个盲盒可领`
+              blindBoxInfo = " | 🎁 有 " + baseData.notOpenedBlindBoxCount + " 个盲盒可领"
             }
 
             await Notification.schedule({
               title: "✅ 签到成功",
               subtitle: "九号电动车",
-              body: `🎉 已连续签到 ${baseData.consecutiveDays} 天\n+${baseData.experience} 经验 | 等级 ${baseData.level}${blindBoxInfo}`,
+              body: "🎉 已连续签到 " + baseData.consecutiveDays + " 天\n+" + baseData.experience + " 经验 | 等级 " + baseData.level + blindBoxInfo,
               iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
               threadIdentifier: "ninebot-sign",
               customUI: true,
@@ -852,7 +859,9 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
                 notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
               }
             })
-          } catch (e) { console.log("通知发送失败:", e) }
+            setStorage("ninebot.signNotifiedDate", today)
+            console.log("📋 签到成功通知已补发")
+          } catch (e) { console.log("签到通知发送失败:", e) }
         }
       }
     }
