@@ -1,49 +1,49 @@
 {
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
-    "autoUpdateInterval" : 600,
-    "hash" : "11c31e753df10f367a3b73827c6685b2"
-  },
-  "description" : "①主应用界面展示任务列表（自动任务测试中）\n②后续更新接入蓝牙协议，获取电量，位置，速度数据",
-  "contributors" : [
-
-  ],
-  "icon" : "scooter",
-  "runInApp" : true,
-  "intentInputTypes" : [
-
-  ],
-  "version" : "2.0.5",
   "localizedNames" : {
-    "zh" : "",
-    "ru" : "",
-    "es" : "",
-    "en" : "",
-    "de" : "",
-    "pt" : "",
     "fr" : "",
     "ja" : "",
-    "it" : ""
-  },
-  "color" : "rgba(0, 50, 222, 1.00)",
-  "entry" : "index.tsx",
-  "localizedDescriptions" : {
     "de" : "",
-    "fr" : "",
-    "zh" : "",
     "it" : "",
+    "pt" : "",
+    "zh" : "",
     "en" : "",
     "es" : "",
-    "pt" : "",
-    "ru" : "",
-    "ja" : ""
+    "ru" : ""
   },
+  "permissions" : null,
   "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "email" : "602839678@qq.com"
   },
   "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "permissions" : null,
-  "name" : "九号APP签到"
+  "localizedDescriptions" : {
+    "ja" : "",
+    "zh" : "",
+    "ru" : "",
+    "it" : "",
+    "pt" : "",
+    "fr" : "",
+    "de" : "",
+    "es" : "",
+    "en" : ""
+  },
+  "color" : "rgba(0, 50, 222, 1.00)",
+  "version" : "2.0.8",
+  "contributors" : [
+
+  ],
+  "entry" : "index.tsx",
+  "description" : "①预览按钮改用Widget.preview直接预览桌面组件\n②签到通知数据修复 + 补发机制\n③远程自动更新（remoteResource）\n④每日任务中心（多类型）",
+  "remoteResource" : {
+    "hash" : "499af496f7e1e56c3cf4bc70be384b8d",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
+    "autoUpdateInterval" : 600
+  },
+  "icon" : "scooter",
+  "intentInputTypes" : [
+
+  ],
+  "name" : "九号APP签到",
+  "runInApp" : true
 }
