@@ -25,7 +25,8 @@ import {
   ScrollView,
   ProgressView,
   Notification,
-  Rectangle
+  Rectangle,
+  Widget
 } from "scripting"
 
 import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, receiveBlindBox, getAllTasks, getTaskList, TASK_CATEGORY_LABELS, type NinebotWidgetData, type TaskInfo } from "./api"
@@ -47,7 +48,7 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.0.5"
+const VERSION = "2.0.8"
 const BUILD_DATE = "2026-07-23"
 
 // ==================== 更新日志 (Surge风格) ====================
@@ -434,6 +435,7 @@ function AboutView() {
 }
 
 // ==================== 辅助组件 ====================
+// ==================== HomeQuickButton ====================
 function HomeQuickButton({ icon, title, subtitle, action, tint }: { icon: string; title: string; subtitle: string; action: () => void; tint: string }) {
   return (
     <HStack spacing={12} frame={{ maxWidth: "infinity" }} alignment="center" padding={{ vertical: 8, horizontal: 4 }} onTapGesture={action}>
@@ -1239,6 +1241,34 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                 subtitle="点击安装与使用" 
                 action={installLoonPlugin} 
                 tint="systemPurple" 
+              />
+            </HStack>
+            <HStack spacing={0} alignment="top" frame={{ maxWidth: "infinity" }}>
+              <HomeQuickButton 
+                icon="rectangle.split.2x2" 
+                title="预览中号组件" 
+                subtitle="systemMedium" 
+                action={async () => {
+                  try {
+                    await Widget.preview({ family: "systemMedium" })
+                  } catch (e: any) {
+                    Dialog.alert({ title: "预览失败", message: String(e) })
+                  }
+                }} 
+                tint="systemIndigo" 
+              />
+              <HomeQuickButton 
+                icon="rectangle.split.3x3" 
+                title="预览大号组件" 
+                subtitle="systemLarge" 
+                action={async () => {
+                  try {
+                    await Widget.preview({ family: "systemLarge" })
+                  } catch (e: any) {
+                    Dialog.alert({ title: "预览失败", message: String(e) })
+                  }
+                }} 
+                tint="systemTeal" 
               />
             </HStack>
           </VStack>
