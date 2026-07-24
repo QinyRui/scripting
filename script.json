@@ -1,49 +1,49 @@
 {
+  "name" : "九号APP签到",
+  "runInApp" : true,
+  "color" : "rgba(0, 198, 165,1)",
   "contributors" : [
 
   ],
-  "entry" : "index.tsx",
-  "localizedNames" : {
-    "zh" : "",
-    "pt" : "",
-    "ja" : "",
-    "es" : "",
-    "fr" : "",
-    "en" : "",
-    "it" : "",
-    "de" : "",
-    "ru" : ""
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "localizedDescriptions" : {
-    "pt" : "",
-    "en" : "",
-    "ru" : "",
-    "es" : "",
-    "it" : "",
-    "zh" : "",
-    "ja" : "",
-    "de" : "",
-    "fr" : ""
-  },
   "permissions" : null,
-  "description" : "①新增个人成就API（总里程/今日里程/骑行天数/车型）\n②桌面组件重设计：去掉左侧图标，全宽布局\n③签到通知数据修复 + 补发机制\n④远程自动更新（remoteResource）\n⑤每日任务中心（多类型）",
-  "icon" : "scooter",
-  "version" : "2.1.8",
-  "name" : "九号APP签到",
-  "color" : "rgba(0, 198, 165,1)",
+  "localizedDescriptions" : {
+    "en" : "",
+    "fr" : "",
+    "zh" : "",
+    "it" : "",
+    "ru" : "",
+    "de" : "",
+    "ja" : "",
+    "pt" : "",
+    "es" : ""
+  },
+  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变",
   "remoteResource" : {
-    "hash" : "1a485e521a9988d74a0c7f40f98f90bf",
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+    "hash" : "b55ade7f7095fe8b9e2f5299492b40b7",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
+    "autoUpdateInterval" : 600
   },
-  "runInApp" : true,
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
+  "entry" : "index.tsx",
   "intentInputTypes" : [
 
-  ]
+  ],
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "version" : "2.1.9",
+  "localizedNames" : {
+    "ru" : "",
+    "de" : "",
+    "ja" : "",
+    "es" : "",
+    "it" : "",
+    "fr" : "",
+    "zh" : "",
+    "pt" : "",
+    "en" : ""
+  },
+  "icon" : "scooter",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png"
 }
