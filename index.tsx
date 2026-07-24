@@ -12,6 +12,7 @@ import {
   Markdown,
   useState,
   useEffect,
+  useObservable,
   Color,
   HStack,
   Spacer,
@@ -48,85 +49,9 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.0.8"
+const VERSION = "2.1.8"
 const BUILD_DATE = "2026-07-23"
 
-// ==================== 更新日志 (Surge风格) ====================
-function normalizeMarkdownContent(content: string): string {
-  return content.replace(/\r\n/g, "\n").trim()
-}
-
-function hashString(value: string): string {
-  let hash = 2166136261
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-  return (hash >>> 0).toString(16)
-}
-
-function useReleaseNotesSheet() {
-  const markdownFile = "release-notes.md"
-  const storageKey = "ninebot:release-notes:last-seen-hash"
-  const [content, setContent] = useState("")
-  const [contentHash, setContentHash] = useState("")
-  const [isPresented, setIsPresented] = useState(false)
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const filePath = Path.join(Script.directory, markdownFile)
-        const exists = await FileManager.exists(filePath)
-        if (!exists) return
-        const raw = await FileManager.readAsString(filePath)
-        const text = normalizeMarkdownContent(raw)
-        if (!text) return
-        const h = hashString(text)
-        const lastSeen = Storage.get(storageKey)
-        if (lastSeen === h) return
-        setContent(text)
-        setContentHash(h)
-        setIsPresented(true)
-      } catch (e) {
-        console.log("更新日志加载失败:", e)
-      }
-    }
-    load()
-  }, [])
-
-  function onChanged(presented: boolean) {
-    if (!presented && contentHash) {
-      Storage.set(storageKey, contentHash)
-    }
-    setIsPresented(presented)
-  }
-
-  return {
-    isPresented,
-    onChanged,
-    sheet: {
-      isPresented,
-      onChanged,
-      content: (
-        <NavigationStack presentationBackground="clear">
-          <ScrollView
-            background="clear"
-            scrollContentBackground="hidden"
-            navigationTitle="更新内容"
-            navigationBarTitleDisplayMode="inline"
-            toolbarBackgroundVisibility="hidden"
-            presentationDragIndicator="visible"
-            presentationDetents={["medium", "large"]}
-            presentationBackground="clear"
-            padding={{ top: 24, leading: 18, bottom: 18, trailing: 18 }}
-          >
-            <Markdown content={content} theme="basic" useDefaultHighlighterTheme scrollable={false} background="clear" />
-          </ScrollView>
-        </NavigationStack>
-      ),
-    },
-  }
-}
 
 // ==================== 存储键 ====================
 const SETTINGS_KEY = "ninebotSettings"
@@ -163,6 +88,10 @@ export interface NinebotSettings {
   titleNightColor: Color
   descDayColor: Color
   descNightColor: Color
+  // 成就数据（排行榜API所需）
+  achievementUid: string
+  achievementVehicleType: string
+  achievementWnumber: string
 }
 
 // ==================== 默认设置 ====================
@@ -180,6 +109,9 @@ const defaultSettings: NinebotSettings = {
   titleNightColor: "#FFFFFF" as unknown as Color,
   descDayColor: "#666666" as unknown as Color,
   descNightColor: "#CCCCCC" as unknown as Color,
+  achievementUid: "",
+  achievementVehicleType: "",
+  achievementWnumber: "",
 }
 
 // ==================== 工具函数 ====================
@@ -232,66 +164,46 @@ const testBoxJsConnection = async (url: string) => {
 const syncAuthFromBoxJs = async (boxJsUrl: string) => {
   try {
     const baseUrl = boxJsUrl.replace(/\/$/, "")
-    const authUrl = `${baseUrl}/query/data/ninebot.authorization`
-    const deviceUrl = `${baseUrl}/query/data/ninebot.deviceId`
+    const uidUrl = baseUrl + "/query/data/ninebot.achievementUid"
+    const vtypeUrl = baseUrl + "/query/data/ninebot.achievementVehicleType"
+    const wnumberUrl = baseUrl + "/query/data/ninebot.achievementWnumber"
+    const authUrl = baseUrl + "/query/data/ninebot.authorization"
+    const deviceUrl = baseUrl + "/query/data/ninebot.deviceId"
     
-    console.log(`📡 从 BoxJs 同步鉴权信息`)
-    console.log(`   Auth URL: ${authUrl}`)
-    console.log(`   Device URL: ${deviceUrl}`)
+    console.log("📡 从 BoxJs 同步鉴权 + 成就数据")
     
-    const [authResponse, deviceResponse] = await Promise.all([
-      fetch(authUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-          "User-Agent": "NinebotSettings/1.0.2",
-          "Referer": baseUrl,
-        },
-        timeout: 10000
-      }),
-      fetch(deviceUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-          "User-Agent": "NinebotSettings/1.0.2",
-          "Referer": baseUrl,
-        },
-        timeout: 10000
-      })
-    ])
-
-    console.log(`   Auth Status: ${authResponse.status}`)
-    console.log(`   Device Status: ${deviceResponse.status}`)
-
-    if (!authResponse.ok || !deviceResponse.ok) {
-      throw new Error("BoxJS 请求失败")
+    const fetchVal = async (url: string) => {
+      try {
+        const r = await fetch(url, {
+          method: "GET",
+          headers: { "Accept": "application/json", "Referer": baseUrl },
+          timeout: 10000
+        })
+        if (!r.ok) return ""
+        const d = JSON.parse(await r.text())
+        return d?.val || d?.value || d?.data || ""
+      } catch { return "" }
     }
 
-    const authText = await authResponse.text()
-    const deviceText = await deviceResponse.text()
-    
-    console.log(`   Auth Response: ${authText}`)
-    console.log(`   Device Response: ${deviceText}`)
+    const [authorization, deviceId, uid, vtype, wnumber] = await Promise.all([
+      fetchVal(authUrl),
+      fetchVal(deviceUrl),
+      fetchVal(uidUrl),
+      fetchVal(vtypeUrl),
+      fetchVal(wnumberUrl),
+    ])
 
-    const authData = JSON.parse(authText)
-    const deviceData = JSON.parse(deviceText)
-
-    const authorization = authData?.val || authData?.value || authData?.data || ""
-    const deviceId = deviceData?.val || deviceData?.value || deviceData?.data || ""
-
-    console.log(`   提取 authorization: ${authorization ? '成功' : '失败'}`)
-    console.log(`   提取 deviceId: ${deviceId ? '成功' : '失败'}`)
+    console.log("  authorization:", authorization ? "✅" : "❌")
+    console.log("  deviceId:", deviceId ? "✅" : "❌")
+    console.log("  uid:", uid ? "✅" : "❌")
+    console.log("  vehicleType:", vtype ? "✅" : "❌")
+    console.log("  wnumber:", wnumber ? "✅" : "❌")
 
     if (!authorization || !deviceId) {
       const missing = []
       if (!authorization) missing.push("authorization")
       if (!deviceId) missing.push("deviceId")
-      throw new Error(
-        `BoxJs 中未找到 ${missing.join(" 和 ")}\n\n` +
-        `请确保已在 BoxJs 中配置:\n` +
-        `• ninebot.authorization\n` +
-        `• ninebot.deviceId`
-      )
+      throw new Error("BoxJs 中未找到 " + missing.join(" 和 "))
     }
 
     console.log("✅ 同步成功")
@@ -299,7 +211,10 @@ const syncAuthFromBoxJs = async (boxJsUrl: string) => {
       success: true, 
       authorization, 
       deviceId,
-      message: `成功从 BoxJs 同步鉴权信息`
+      achievementUid: uid,
+      achievementVehicleType: vtype,
+      achievementWnumber: wnumber,
+      message: "成功从 BoxJs 同步鉴权 + 成就数据"
     }
 
   } catch (error: any) {
@@ -915,6 +830,9 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [autoSign, setAutoSign] = useState(initial.autoSign ?? false)
   const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
+  const achievementUidObs = useObservable(initial.achievementUid || Storage.get("ninebot.uid") || " ")
+  const achievementVehicleTypeObs = useObservable(initial.achievementVehicleType || Storage.get("ninebot.vehicleType") || " ")
+  const achievementWnumberObs = useObservable(initial.achievementWnumber || Storage.get("ninebot.wnumber") || " ")
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [tasks, setTasks] = useState<TaskInfo[]>([])
@@ -966,12 +884,19 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       titleNightColor: initial.titleNightColor,
       descDayColor: initial.descDayColor,
       descNightColor: initial.descNightColor,
+      achievementUid: (achievementUidObs.value || "").trim(),
+      achievementVehicleType: (achievementVehicleTypeObs.value || "").trim(),
+      achievementWnumber: (achievementWnumberObs.value || "").trim(),
     }
 
     Storage.set(SETTINGS_KEY, newSettings)
     Storage.set("ninebot.authorization", newSettings.authorization)
     Storage.set("ninebot.deviceId", newSettings.deviceId)
     Storage.set("ninebot.userAgent", newSettings.userAgent)
+    // 成就数据存储
+    Storage.set("ninebot.uid", newSettings.achievementUid)
+    Storage.set("ninebot.vehicleType", newSettings.achievementVehicleType)
+    Storage.set("ninebot.wnumber", newSettings.achievementWnumber)
     
     Dialog.alert({
       title: "保存成功",
@@ -999,10 +924,13 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       if (result.success) {
         setAuthorization(result.authorization)
         setDeviceId(result.deviceId)
+        if (result.achievementUid) achievementUidObs.setValue(result.achievementUid)
+        if (result.achievementVehicleType) achievementVehicleTypeObs.setValue(result.achievementVehicleType)
+        if (result.achievementWnumber) achievementWnumberObs.setValue(result.achievementWnumber)
         
         await Dialog.alert({
           title: "✅ 同步成功",
-          message: `${result.message}\n\n已自动填充到下方输入框\n请点击右上角"完成"按钮保存配置`,
+          message: `${result.message}\n\n已自动填充到下方输入框\n请点击右上角\"完成\"按钮保存配置`,
           buttonLabel: "确定"
         })
       } else {
@@ -1339,6 +1267,9 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                   ? "可使用上方同步按钮自动填充，或手动填写" 
                   : "请先运行签到脚本抓包获取 Authorization 和 Device ID"}
               </Text>
+              <Text font="caption" foregroundStyle="tertiaryLabel">
+                下方三项用于排行榜API，可从BoxJS同步或手动填写
+              </Text>
               {deviceId && !validateDeviceId(deviceId) ? (
                 <Text font="caption2" foregroundStyle="red">
                   ⚠️ DeviceId 格式错误，应为 UUID 格式
@@ -1402,6 +1333,39 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
             <Text fontWeight="bold" foregroundStyle={testing ? "secondaryLabel" : "systemBlue"}>{testing ? "测试中..." : "测试 API 连接"}</Text>
             <Spacer />
             <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
+          </HStack>
+
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}>
+              <Circle fill="systemBlue" opacity={0.15} />
+              <Image systemName="person.circle.fill" foregroundStyle="systemBlue" font={16} />
+            </ZStack>
+            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+              <Text fontWeight="bold">用户ID (uid)</Text>
+              <TextField value={achievementUidObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
+            </VStack>
+          </HStack>
+
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}>
+              <Circle fill="systemGreen" opacity={0.15} />
+              <Image systemName="car.fill" foregroundStyle="systemGreen" font={16} />
+            </ZStack>
+            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+              <Text fontWeight="bold">车型编号</Text>
+              <TextField value={achievementVehicleTypeObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
+            </VStack>
+          </HStack>
+
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}>
+              <Circle fill="systemPurple" opacity={0.15} />
+              <Image systemName="number" foregroundStyle="systemPurple" font={16} />
+            </ZStack>
+            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+              <Text fontWeight="bold">车架号 (wnumber)</Text>
+              <TextField value={achievementWnumberObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
+            </VStack>
           </HStack>
         </Section>
 
@@ -1485,6 +1449,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
           ) : null}
         </Section>
 
+
         {/* ==================== 每日任务 ==================== */}
         {tasks.length > 0 ? (
           <Section header={<Text font="headline">每日任务</Text>}
@@ -1554,10 +1519,9 @@ function getInitialView(): "settings" | "blindbox" {
 
 export default function App(_props: AppProps) {
   const [view, setView] = useState<"settings" | "blindbox">(getInitialView)
-  const releaseNotes = useReleaseNotesSheet()
 
   return (
-    <NavigationStack sheet={releaseNotes.sheet}>
+    <NavigationStack>
       {view === "blindbox" ? (
         <BlindBoxView onBack={() => setView("settings")} />
       ) : (
