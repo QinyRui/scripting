@@ -1,49 +1,49 @@
 {
-  "localizedNames" : {
-    "fr" : "",
-    "ja" : "",
-    "de" : "",
-    "it" : "",
-    "pt" : "",
-    "zh" : "",
-    "en" : "",
-    "es" : "",
-    "ru" : ""
-  },
-  "permissions" : null,
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com"
-  },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "localizedDescriptions" : {
-    "ja" : "",
-    "zh" : "",
-    "ru" : "",
-    "it" : "",
-    "pt" : "",
-    "fr" : "",
-    "de" : "",
-    "es" : "",
-    "en" : ""
-  },
-  "color" : "rgba(0, 50, 222, 1.00)",
-  "version" : "2.0.8",
   "contributors" : [
 
   ],
   "entry" : "index.tsx",
-  "description" : "①预览按钮改用Widget.preview直接预览桌面组件\n②签到通知数据修复 + 补发机制\n③远程自动更新（remoteResource）\n④每日任务中心（多类型）",
-  "remoteResource" : {
-    "hash" : "499af496f7e1e56c3cf4bc70be384b8d",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
-    "autoUpdateInterval" : 600
+  "localizedNames" : {
+    "zh" : "",
+    "pt" : "",
+    "ja" : "",
+    "es" : "",
+    "fr" : "",
+    "en" : "",
+    "it" : "",
+    "de" : "",
+    "ru" : ""
   },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "localizedDescriptions" : {
+    "pt" : "",
+    "en" : "",
+    "ru" : "",
+    "es" : "",
+    "it" : "",
+    "zh" : "",
+    "ja" : "",
+    "de" : "",
+    "fr" : ""
+  },
+  "permissions" : null,
+  "description" : "①新增个人成就API（总里程/今日里程/骑行天数/车型）\n②桌面组件重设计：去掉左侧图标，全宽布局\n③签到通知数据修复 + 补发机制\n④远程自动更新（remoteResource）\n⑤每日任务中心（多类型）",
   "icon" : "scooter",
+  "version" : "2.1.8",
+  "name" : "九号APP签到",
+  "color" : "rgba(0, 198, 165,1)",
+  "remoteResource" : {
+    "hash" : "1a485e521a9988d74a0c7f40f98f90bf",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+  },
+  "runInApp" : true,
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
+  },
   "intentInputTypes" : [
 
-  ],
-  "name" : "九号APP签到",
-  "runInApp" : true
+  ]
 }
