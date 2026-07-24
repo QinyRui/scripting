@@ -8,6 +8,7 @@ import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
 import { TyphoonMonitorPage } from "./pages/typhoon-monitor"
 import { WeatherHeroIcon } from "./components/weather-hero"
+import { useReleaseNotesSheet } from "./components/what-is-new"
 import { reverseGeocodeOSM } from "./utils/location"
 import {
   Script,
@@ -328,6 +329,9 @@ function ConfigPage() {
 
   const timeGapList = [0, 5, 10, 15, 30]
 
+  // 更新内容 Sheet（九号APP同款）
+  const releaseNotes = useReleaseNotesSheet()
+
   // 首次使用时自动提示输入 API Key（延迟到 UI 渲染完成后）
   useState(() => {
     if (!hasPromptedApiKey && statusInfo.apiKeyText === "未设置") {
@@ -376,7 +380,7 @@ function ConfigPage() {
 
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-      <NavigationStack>
+      <NavigationStack sheet={releaseNotes.sheet}>
         <List navigationBarTitleDisplayMode="inline">
         <Section>
           <VStack spacing={24} padding={{ vertical: 20 }}>
