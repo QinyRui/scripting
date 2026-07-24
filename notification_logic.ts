@@ -190,13 +190,13 @@ export async function handleNotifications(
         const storedWindSpeed = stored.strongWind.speed || 0;
         const storedWindTime = stored.strongWind.time || 0;
 
-        if (now - storedWindTime >= alertInterval && maxWindSpeed >= 10.8 && maxWindSpeed !== storedWindSpeed) {
+        if (now - storedWindTime >= alertInterval && maxWindSpeed >= 17.2 && maxWindSpeed !== storedWindSpeed) {
             const windLevel = getWindLevelBySpeed(maxWindSpeed);
             stored.strongWind.speed = maxWindSpeed;
             stored.strongWind.time = now;
             Storage.set(CACHE_KEY, stored);
             await sendNotification(
-                location + "：大风提醒",
+                location + "：大风提醒（预报）",
                 "预计最大风速" + maxWindSpeed.toFixed(1) + "m/s（" + windLevel + "），" + (windHour ? windHour + "前后" : "") + "请注意防范"
             );
         }
