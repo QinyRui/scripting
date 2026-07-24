@@ -401,15 +401,37 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                 待开盲盒
               </Text>
             </HStack>
-            {/* 盲盒进度方块 */}
+            {/* 盲盒进度方块 - 按倒计时天数渐变色 */}
             <HStack alignment="center" spacing={3} padding={{ top: 2 }}>
-              {Array.from({ length: Math.min(allBoxes, 7) }, (_, i) => (
-                <Rectangle
-                  key={"box-" + i}
-                  fill={i < info.openedBlindBoxCount ? "#34C759" : "#E5E5EA"}
-                  frame={{ width: 14, height: 14 }}
-                />
-              ))}
+              {(() => {
+                const sortedBoxes = (info.notOpenedBoxesDetail || [])
+                  .sort((a, b) => a.leftDaysToOpen - b.leftDaysToOpen)
+                  .slice(0, 7)
+                return Array.from({ length: sortedBoxes.length }, (_, i) => {
+                  const box = sortedBoxes[i]
+                  const days = box.leftDaysToOpen
+                  // 0天=全绿, 1天=较绿, 2天=更浅, 3天+=灰色
+                  let fillColor: string
+                  if (days <= 0) {
+                    fillColor = "#34C759"
+                  } else if (days === 1) {
+                    fillColor = "#8CE69A"
+                  } else if (days === 2) {
+                    fillColor = "#B8F0C4"
+                  } else if (days === 3) {
+                    fillColor = "#D4F5DC"
+                  } else {
+                    fillColor = "#E5E5EA"
+                  }
+                  return (
+                    <Rectangle
+                      key={"box-" + i}
+                      fill={fillColor as Color}
+                      frame={{ width: 14, height: 14 }}
+                    />
+                  )
+                })
+              })()}
             </HStack>
             <Text font="caption2" padding={{ top: 1 }}
               foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>
@@ -782,41 +804,41 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
           baseData = await getNinebotInfo(auth, devId)
         }
       }
+    }
 
-      // 已签到但未通知 → 补发签到成功通知
-      if (baseData.isSigned) {
-        const today = new Date().toISOString().slice(0, 10)
-        const lastSignNotifDate = getStorage("ninebot.signNotifiedDate")
-        if (lastSignNotifDate !== today) {
-          try {
-            let blindBoxInfo = ""
-            if (baseData.minLeftDaysToOpen !== null && baseData.minLeftDaysToOpen !== undefined && baseData.minLeftDaysToOpen > 0) {
-              blindBoxInfo = " | 🎁 下个盲盒 " + baseData.minLeftDaysToOpen + " 天后"
-            } else if (baseData.notOpenedBlindBoxCount > 0) {
-              blindBoxInfo = " | 🎁 有 " + baseData.notOpenedBlindBoxCount + " 个盲盒可领"
+    // 已签到但未通知 → 补发签到成功通知（独立于 autoSign 设置）
+    if (baseData.isSigned) {
+      const today = new Date().toISOString().slice(0, 10)
+      const lastSignNotifDate = getStorage("ninebot.signNotifiedDate")
+      if (lastSignNotifDate !== today) {
+        try {
+          let blindBoxInfo = ""
+          if (baseData.minLeftDaysToOpen !== null && baseData.minLeftDaysToOpen !== undefined && baseData.minLeftDaysToOpen > 0) {
+            blindBoxInfo = " | 🎁 下个盲盒 " + baseData.minLeftDaysToOpen + " 天后"
+          } else if (baseData.notOpenedBlindBoxCount > 0) {
+            blindBoxInfo = " | 🎁 有 " + baseData.notOpenedBlindBoxCount + " 个盲盒可领"
+          }
+
+          await Notification.schedule({
+            title: "✅ 签到成功",
+            subtitle: "九号电动车",
+            body: "🎉 已连续签到 " + baseData.consecutiveDays + " 天\n+" + baseData.experience + " 经验 | 等级 " + baseData.level + blindBoxInfo,
+            iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
+            threadIdentifier: "ninebot-sign",
+            customUI: true,
+            userInfo: {
+              type: "sign",
+              consecutiveDays: baseData.consecutiveDays,
+              experience: baseData.experience,
+              level: baseData.level,
+              nCoin: baseData.nCoin,
+              minLeftDaysToOpen: baseData.minLeftDaysToOpen,
+              notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
             }
-
-            await Notification.schedule({
-              title: "✅ 签到成功",
-              subtitle: "九号电动车",
-              body: "🎉 已连续签到 " + baseData.consecutiveDays + " 天\n+" + baseData.experience + " 经验 | 等级 " + baseData.level + blindBoxInfo,
-              iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
-              threadIdentifier: "ninebot-sign",
-              customUI: true,
-              userInfo: {
-                type: "sign",
-                consecutiveDays: baseData.consecutiveDays,
-                experience: baseData.experience,
-                level: baseData.level,
-                nCoin: baseData.nCoin,
-                minLeftDaysToOpen: baseData.minLeftDaysToOpen,
-                notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
-              }
-            })
-            setStorage("ninebot.signNotifiedDate", today)
-            console.log("📋 签到成功通知已补发")
-          } catch (e) { console.log("签到通知发送失败:", e) }
-        }
+          })
+          setStorage("ninebot.signNotifiedDate", today)
+          console.log("📋 签到成功通知已补发")
+        } catch (e) { console.log("签到通知发送失败:", e) }
       }
     }
 
