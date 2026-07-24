@@ -49,7 +49,7 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.1.8"
+const VERSION = "2.1.9"
 const BUILD_DATE = "2026-07-23"
 
 
@@ -1363,7 +1363,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
               <Image systemName="number" foregroundStyle="systemPurple" font={16} />
             </ZStack>
             <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
-              <Text fontWeight="bold">车架号 (wnumber)</Text>
+              <Text fontWeight="bold">设备序列号 (wnumber)</Text>
               <TextField value={achievementWnumberObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
             </VStack>
           </HStack>
