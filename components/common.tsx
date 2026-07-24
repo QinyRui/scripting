@@ -95,7 +95,7 @@ export function ForecastView({ future, widgetType }: { future: WeatherFuture[]; 
       {future.slice(0, 3).map((item, index) => (
         <VStack key={index} spacing={2} alignment="center">
           <SectionText text={item.week || "-"} font={labelFont} color="white" />
-          <Image systemName={item.ico} frame={{ width: iconSize, height: iconSize }} />
+          <Image systemName={item.ico} renderingMode="template" foregroundStyle="white" frame={{ width: iconSize, height: iconSize }} />
           <HStack spacing={1} alignment="center" frame={{ minWidth: 35 }}>
             <SectionText text={String(item.min)} font={tempFont} color="white" minScaleFactor={0.8} lineLimit={1} />
             <SectionText text="/" font={tempFont} color="white" minScaleFactor={0.8} lineLimit={1} />
@@ -381,7 +381,7 @@ export function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherI
     <VStack alignment="trailing" spacing={widgetType === "medium" ? 3 : 4} frame={{ minWidth: widgetType === "medium" ? 100 : 120, alignment: "trailing" }} {...offsetStyle(widgetType, "right")}>
       <HStack spacing={5} padding={{ bottom: widgetType === "medium" ? 1 : 2 }}>
         <Image systemName={wIco} renderingMode="template" foregroundStyle={getWeatherIconColor(wIco) as any} frame={{ width: iconSize, height: iconSize }} />
-        <Text font={temperatureFont} lineLimit={1}>{`${wTemp}°C`}</Text>
+        <Text font={temperatureFont} foregroundStyle="white" lineLimit={1}>{`${wTemp}°C`}</Text>
       </HStack>
       <VStack alignment="trailing" spacing={widgetType === "medium" ? 1 : 2}>
         <WeatherMetricLine label="风力" value={weatherInfo.windStr || "--"} />
