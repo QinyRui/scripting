@@ -36,6 +36,8 @@ export interface NinebotWidgetData {
       rewardId: string
     }
   }>
+  // 成就数据（来自排行 API）
+  achievement: AchievementInfo | null
 }
 
 // 盲盒信息
@@ -69,6 +71,26 @@ export interface TaskInfo {
 const APP_VERSION = "609113620"
 
 // 九号电动车接口地址
+// 成就信息接口
+export interface AchievementInfo {
+  avatar: string
+  co2: string            // 减碳量
+  continuous_days: string // 连续骑行天数
+  cost_saving: string    // 节省费用
+  mileage: string        // 今日里程(km)
+  odometer: string       // 总里程(km)
+  rank: string           // 排名
+  save_fuel: number      // 节省燃油
+  title: string          // 标题
+  total_days: string     // 累计骑行天数
+  uid: string
+  vehicle_name: string   // 车型名称
+  vehicle_type: string   // 车型编号
+  wnumber: string        // 车架号
+  nickname: string
+  username: string
+}
+
 const API_ENDPOINTS = {
   signStatus: `https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/status?t=${Date.now()}`, 
   sign: `https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/sign?t=${Date.now()}`,
@@ -78,6 +100,7 @@ const API_ENDPOINTS = {
   blindBoxList: `https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/list?t=${Date.now()}`,
   receiveBlindBox: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/receive',
   taskList: 'https://cn-cbu-gateway.ninebot.com/portal/api/task-center/task/v3/list',
+  myAchievement: 'https://api5-h5-app-bj.ninebot.com/web/rank/my-achievement',
 }
 
 // 使用抓包中获取的 User-Agent
@@ -247,6 +270,7 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       notOpenedBoxesDetail,
       openedBoxesDetail,
       calendarInfo,
+      achievement: null,
     }
     
     console.log("📊 最终解析结果:", JSON.stringify(result))
@@ -650,5 +674,81 @@ export async function getAllTasks(authorization: string, deviceId: string): Prom
     } catch { }
   }
   return allTasks
+}
+
+/** 获取个人成就数据（里程/排名/骑行天数等）
+ * POST请求，需要 body 参数
+ * uid 从 JWT token 解码获取，vehicle_type/wnumber 从 Storage 缓存获取
+ */
+export async function getMyAchievement(authorization: string, deviceId: string): Promise<AchievementInfo | null> {
+  try {
+    // 优先级：Settings手动输入 > Loon抓包自动获取 > JWT解码
+    let uid = Storage.get("ninebot.achievementUid") || Storage.get("ninebot.uid") || ""
+    if (!uid && authorization) {
+      try {
+        const parts = authorization.replace("Bearer ", "").split(".")
+        if (parts.length >= 2) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")))
+          uid = String(payload.sub || payload.uid || payload.userId || "")
+          if (uid) {
+            console.log("📊 从JWT解码uid:", uid)
+            Storage.set("ninebot.uid", uid)
+          }
+        }
+      } catch (e) { console.log("JWT解码失败:", e) }
+    }
+
+    // 优先级：Settings > Loon抓包 > 空
+    const vehicleType = Storage.get("ninebot.vehicleType") || Storage.get("ninebot.achievementVehicleType") || ""
+    const wnumber = Storage.get("ninebot.wnumber") || Storage.get("ninebot.achievementWnumber") || ""
+    const lat = Storage.get("ninebot.latitude") || "31.386363755490787"
+    const lng = Storage.get("ninebot.longitude") || "121.40895602493238"
+
+    if (!uid) {
+      console.log("成就数据: uid为空，跳过")
+      return null
+    }
+
+    const headers: Record<string, string> = {
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "zh-CN,zh-Hans;q=0.9",
+      "Authorization": authorization,
+      "Content-Type": "application/json",
+      "Origin": "https://api5-h5-app-bj.ninebot.com",
+      "Referer": "https://api5-h5-app-bj.ninebot.com/rankings/rankingdatashow.html",
+      "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Segway v6 C 610083803",
+    }
+    const body = {
+      device_id: deviceId,
+      lang: "zh",
+      language: "zh",
+      latitude: lat,
+      longitude: lng,
+      rank_source: 1,
+      rank_type: 1,
+      regionx: "h5",
+      uid: uid,
+      vehicle_type: vehicleType,
+      wnumber: wnumber,
+    }
+    console.log("📊 请求成就API(POST): uid=" + uid + " vehicleType=" + vehicleType + " wnumber=" + wnumber)
+    const resp: any = await httpPost(API_ENDPOINTS.myAchievement, body, { headers })
+    console.log("📊 成就API状态:", resp.status, "code:", resp.data?.code, "desc:", resp.data?.desc)
+    if (resp.data?.data) {
+      console.log("📊 成就数据:", resp.data.data.vehicle_name, "里程:", resp.data.data.odometer)
+      // 缓存从返回数据中获取的值
+      if (resp.data.data.uid) Storage.set("ninebot.uid", resp.data.data.uid)
+      if (resp.data.data.vehicle_type) Storage.set("ninebot.vehicleType", resp.data.data.vehicle_type)
+      if (resp.data.data.wnumber) Storage.set("ninebot.wnumber", resp.data.data.wnumber)
+    }
+    if (!resp.data || resp.data.code !== 1) {
+      console.log("成就数据获取失败:", resp.data?.desc || "code=" + resp.data?.code)
+      return null
+    }
+    return resp.data.data as AchievementInfo
+  } catch (e) {
+    console.log("成就数据请求异常:", e)
+    return null
+  }
 }
 
