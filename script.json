@@ -1,49 +1,49 @@
 {
-  "name" : "九号APP签到",
-  "runInApp" : true,
-  "color" : "rgba(0, 198, 165,1)",
-  "contributors" : [
-
-  ],
-  "permissions" : null,
-  "localizedDescriptions" : {
-    "en" : "",
-    "fr" : "",
-    "zh" : "",
-    "it" : "",
-    "ru" : "",
-    "de" : "",
-    "ja" : "",
-    "pt" : "",
-    "es" : ""
-  },
-  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变",
-  "remoteResource" : {
-    "hash" : "b55ade7f7095fe8b9e2f5299492b40b7",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip",
-    "autoUpdateInterval" : 600
-  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
   "entry" : "index.tsx",
   "intentInputTypes" : [
 
   ],
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "version" : "2.1.9",
-  "localizedNames" : {
-    "ru" : "",
-    "de" : "",
-    "ja" : "",
+  "permissions" : null,
+  "color" : "rgba(0, 198, 165,1)",
+  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变",
+  "localizedDescriptions" : {
     "es" : "",
-    "it" : "",
     "fr" : "",
+    "en" : "",
+    "it" : "",
     "zh" : "",
+    "ru" : "",
+    "ja" : "",
     "pt" : "",
-    "en" : ""
+    "de" : ""
   },
   "icon" : "scooter",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png"
+  "author" : {
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com"
+  },
+  "runInApp" : true,
+  "remoteResource" : {
+    "hash" : "889939e19328d89a5cff62979d3080e1",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+  },
+  "localizedNames" : {
+    "en" : "",
+    "es" : "",
+    "pt" : "",
+    "ja" : "",
+    "fr" : "",
+    "ru" : "",
+    "it" : "",
+    "zh" : "",
+    "de" : ""
+  },
+  "name" : "九号APP签到",
+  "contributors" : [
+
+  ],
+  "version" : "2.2.0"
 }
