@@ -339,8 +339,6 @@ const SmallWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 /** ——— 中号组件 ——— */
 const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
   const ach = info.achievement
-  const readyCount = info.notOpenedBoxesDetail.filter(b => b.leftDaysToOpen === 0).length
-  const totalBoxes = info.notOpenedBlindBoxCount
 
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
@@ -355,14 +353,8 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
               foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
               今日骑行
             </Text>
-            {/* 行内图标+数值（不换行，模拟大号 StatItem 图形风格）*/}
+            {/* 第一行：今日里程 + 连续天数 */}
             <HStack spacing={6} alignment="center" padding={{ top: 2 }}>
-              <HStack spacing={2} alignment="center">
-                <Image systemName="road.lanes" font={7}
-                  foregroundStyle={{ color: "#00E5FF" as Color, opacity: 0.85 }} />
-                <Text font={9} fontWeight="bold"
-                  foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
-              </HStack>
               <HStack spacing={2} alignment="center">
                 <Image systemName="location.fill" font={7}
                   foregroundStyle={{ color: "#34C759" as Color, opacity: 0.85 }} />
@@ -375,6 +367,13 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                 <Text font={9} fontWeight="bold"
                   foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.continuous_days + "天" : "--"}</Text>
               </HStack>
+            </HStack>
+            {/* 第二行：总里程 */}
+            <HStack spacing={2} alignment="center" padding={{ top: 1 }}>
+              <Image systemName="road.lanes" font={7}
+                foregroundStyle={{ color: "#00E5FF" as Color, opacity: 0.85 }} />
+              <Text font={9} fontWeight="bold"
+                foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
             </HStack>
           </VStack>
           <Spacer />
@@ -407,61 +406,31 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
         {/* ═══ 中部：左数据 + 右车型 ═══ */}
         <HStack alignment="bottom" spacing={0} padding={{ top: 4 }} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-          {/* 左侧：盲盒 — 大号同款模式 */}
+          {/* 左侧：仅7天倒计时进度条 */}
           <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
             {(() => {
               const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0)
-              const phase = (Date.now() / 1500) % 1
               return (
                 <>
-                  <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
-                    <Text font="largeTitle" fontWeight="bold"
-                      foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
-                      {totalBoxes}
-                    </Text>
-                    <Text font="footnote" padding={{ leading: 4 }}
-                      foregroundStyle={{ color: "#8E8E93" as Color, opacity: 1 }}>
-                      待开盲盒
-                    </Text>
-                    <Spacer />
-                    {readyCount > 0 ? (
-                      <HStack spacing={2} alignment="center" padding={{ horizontal: 5, vertical: 1 }}
-                        background={{ style: "#34C759" as Color, shape: { type: "rect", cornerRadius: 6 } }}>
-                        <Circle fill={"#FFFFFF" as Color} frame={{ width: 3, height: 3 }}
-                          opacity={0.5 + 0.5 * Math.abs(0.5 - phase) * 2} />
-                        <Text font="caption2" fontWeight="bold"
-                          foregroundStyle={{ color: "#FFFFFF" as Color, opacity: 1 }}>READY</Text>
-                      </HStack>
-                    ) : null}
-                  </HStack>
                   {pendingBoxes.length > 0 ? (
-                    <VStack spacing={4} padding={{ top: 4 }}>
+                    <VStack spacing={4} padding={{ top: 4, bottom: 8 }}>
                       {pendingBoxes.slice(0, 2).map((box, i) => {
-                        const isReady = box.leftDaysToOpen <= 0
                         const totalSeg = 7
                         const remaining = Math.max(0, Math.min(box.leftDaysToOpen, 7))
-                        const filledSeg = isReady ? totalSeg : totalSeg - remaining
+                        const filledSeg = totalSeg - remaining
                         return (
-                          <VStack spacing={1} key={"box-" + i}>
+                          <VStack spacing={1} key={"box-" + i} frame={{ maxWidth: "infinity" }}>
                             <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
-                              <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={8}
-                                foregroundStyle={{ color: isReady ? "#34C759" as Color : "#8E8E93" as Color, opacity: 1 }} />
+                              <Image systemName="shippingbox" font={8}
+                                foregroundStyle={{ color: "#34C759" as Color, opacity: 0.85 }} />
                               <Text font="caption2" fontWeight="semibold" padding={{ leading: 4 }}
                                 foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
                                 {box.awardDays}天盲盒
                               </Text>
-                              <Spacer />
-                              {isReady ? (
-                                <Text font="caption2" fontWeight="bold"
-                                  foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>READY</Text>
-                              ) : (
-                                <Text font="caption2"
-                                  foregroundStyle={{ color: "#34C759" as Color, opacity: 0.9 }}>⏳ {remaining}天</Text>
-                              )}
                             </HStack>
                             <HStack spacing={2} frame={{ maxWidth: "infinity" }}>
                               {Array.from({ length: totalSeg }, (_, segI) => (
-                                <ZStack frame={{ height: 4, maxWidth: "infinity" }} alignment="center" key={"seg-" + i + "-" + segI}>
+                                <ZStack frame={{ height: 5, maxWidth: "infinity" }} alignment="center" key={"seg-" + i + "-" + segI}>
                                   <Capsule fill={segI < filledSeg ? "#34C759" as Color : "#E5E5EA" as Color}
                                     opacity={segI < filledSeg ? 0.85 : 0.5} />
                                 </ZStack>
@@ -471,14 +440,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                         )
                       })}
                     </VStack>
-                  ) : (
-                    <HStack alignment="center" spacing={3} padding={{ top: 4 }}>
-                      <Image systemName="checkmark.circle.fill" font={10}
-                        foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }} />
-                      <Text font="caption2" fontWeight="medium"
-                        foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>全部已处理</Text>
-                    </HStack>
-                  )}
+                  ) : null}
                 </>
               )
             })()}
@@ -534,9 +496,9 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
         <TechCard padding={S(5)} glowColor={Theme.colors.cyan}>
           <VStack spacing={S(4)} frame={{ maxWidth: "infinity" }}>
             <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
-              <StatItem icon="road.lanes" label="总里程" value={ach ? ach.odometer + "km" : "--"} color={Theme.colors.cyan} />
               <StatItem icon="location.fill" label="今日" value={ach ? ach.mileage + "km" : "--"} color={Theme.colors.green} />
-              <StatItem icon="bicycle" label="骑行" value={ach ? ach.continuous_days + "天" : "--"} color={Theme.colors.yellow} />
+              <StatItem icon="bicycle" label="连续" value={ach ? ach.continuous_days + "天" : "--"} color={Theme.colors.yellow} />
+              <StatItem icon="road.lanes" label="总里程" value={ach ? ach.odometer + "km" : "--"} color={Theme.colors.cyan} />
             </HStack>
             <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
               <StatItem icon="trophy.fill" label="LV" value={info.level} color={Theme.colors.cyan} />
