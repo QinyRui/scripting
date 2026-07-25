@@ -1,49 +1,49 @@
 {
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "entry" : "index.tsx",
-  "intentInputTypes" : [
-
-  ],
-  "permissions" : null,
-  "color" : "rgba(0, 198, 165,1)",
-  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变",
-  "localizedDescriptions" : {
-    "es" : "",
-    "fr" : "",
-    "en" : "",
-    "it" : "",
-    "zh" : "",
-    "ru" : "",
-    "ja" : "",
-    "pt" : "",
-    "de" : ""
-  },
-  "icon" : "scooter",
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com"
-  },
-  "runInApp" : true,
-  "remoteResource" : {
-    "hash" : "889939e19328d89a5cff62979d3080e1",
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
-  },
-  "localizedNames" : {
-    "en" : "",
-    "es" : "",
-    "pt" : "",
-    "ja" : "",
-    "fr" : "",
-    "ru" : "",
-    "it" : "",
-    "zh" : "",
-    "de" : ""
-  },
-  "name" : "九号APP签到",
   "contributors" : [
 
   ],
-  "version" : "2.2.0"
+  "permissions" : null,
+  "localizedNames" : {
+    "ja" : "",
+    "pt" : "",
+    "fr" : "",
+    "zh" : "",
+    "en" : "",
+    "it" : "",
+    "es" : "",
+    "de" : "",
+    "ru" : ""
+  },
+  "name" : "九号APP签到",
+  "localizedDescriptions" : {
+    "zh" : "",
+    "es" : "",
+    "ru" : "",
+    "de" : "",
+    "en" : "",
+    "pt" : "",
+    "fr" : "",
+    "it" : "",
+    "ja" : ""
+  },
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "version" : "2.2.2",
+  "intentInputTypes" : [
+
+  ],
+  "color" : "rgba(0, 198, 165,1)",
+  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变\n④骑行数据顺序重排：今日里程→连续天数→总里程\n⑤总里程移至独立行+盲盒区简化为7天进度条",
+  "remoteResource" : {
+    "hash" : "d9a41784bc0ebb13d637adf84ac22f83",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+  },
+  "icon" : "scooter",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "runInApp" : true,
+  "entry" : "index.tsx"
 }
