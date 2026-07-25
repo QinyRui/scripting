@@ -50,8 +50,8 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.2.0"
-const BUILD_DATE = "2026-07-23"
+const VERSION = "2.2.1"
+const BUILD_DATE = "2026-07-25"
 
 
 // ==================== 存储键 ====================
