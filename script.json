@@ -1,49 +1,49 @@
 {
-  "localizedDescriptions" : {
-    "de" : "",
-    "ru" : "",
-    "zh" : "",
-    "ja" : "",
-    "en" : "",
-    "es" : "",
-    "fr" : "",
-    "it" : "",
-    "pt" : ""
-  },
-  "entry" : "index.tsx",
-  "remoteResource" : {
-    "hash" : "ba939b325074bd9a188e0d64df7aedc6",
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
-  },
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "color" : "rgba(0, 198, 165,1)",
-  "icon" : "scooter",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变\n④骑行数据顺序重排：今日里程→连续天数→总里程\n⑤总里程移至独立行+盲盒区简化为7天进度条",
   "version" : "2.2.3",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "permissions" : null,
+  "intentInputTypes" : [
+
+  ],
   "contributors" : [
 
   ],
+  "icon" : "scooter",
+  "name" : "九号APP签到",
   "localizedNames" : {
+    "it" : "",
     "es" : "",
+    "ru" : "",
+    "de" : "",
+    "ja" : "",
+    "en" : "",
     "zh" : "",
+    "pt" : "",
+    "fr" : ""
+  },
+  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变\n④骑行数据顺序重排：今日里程→连续天数→总里程\n⑤中号盲盒重新图形化设计：卡片式布局+图标+进度条+状态标签",
+  "entry" : "index.tsx",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
+  },
+  "remoteResource" : {
+    "hash" : "80dfce574f5d45c3f9cd0ddc3a71f2f6",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+  },
+  "localizedDescriptions" : {
     "en" : "",
     "ru" : "",
-    "it" : "",
-    "pt" : "",
+    "zh" : "",
     "de" : "",
+    "ja" : "",
     "fr" : "",
-    "ja" : ""
+    "es" : "",
+    "pt" : "",
+    "it" : ""
   },
-  "permissions" : null,
-  "name" : "九号APP签到",
-  "runInApp" : true,
-  "intentInputTypes" : [
-
-  ]
+  "color" : "rgba(0, 198, 165,1)",
+  "runInApp" : true
 }
