@@ -406,41 +406,66 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
         {/* ═══ 中部：左数据 + 右车型 ═══ */}
         <HStack alignment="bottom" spacing={0} padding={{ top: 4 }} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-          {/* 左侧：仅7天倒计时进度条 */}
-          <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+          {/* 左侧：图形化盲盒进度 */}
+          <VStack alignment="leading" spacing={S(3)} frame={{ maxWidth: "infinity" }} padding={{ top: 4, bottom: 6 }}>
             {(() => {
               const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0)
+              const phase = (Date.now() / 1500) % 1
               return (
                 <>
                   {pendingBoxes.length > 0 ? (
-                    <VStack spacing={4} padding={{ top: 4, bottom: 8 }}>
-                      {pendingBoxes.slice(0, 2).map((box, i) => {
-                        const totalSeg = 7
-                        const remaining = Math.max(0, Math.min(box.leftDaysToOpen, 7))
-                        const filledSeg = totalSeg - remaining
-                        return (
-                          <VStack spacing={1} key={"box-" + i} frame={{ maxWidth: "infinity" }}>
-                            <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
-                              <Image systemName="shippingbox" font={8}
-                                foregroundStyle={{ color: "#34C759" as Color, opacity: 0.85 }} />
-                              <Text font="caption2" fontWeight="semibold" padding={{ leading: 4 }}
-                                foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
-                                {box.awardDays}天盲盒
-                              </Text>
-                            </HStack>
-                            <HStack spacing={2} frame={{ maxWidth: "infinity" }}>
-                              {Array.from({ length: totalSeg }, (_, segI) => (
-                                <ZStack frame={{ height: 5, maxWidth: "infinity" }} alignment="center" key={"seg-" + i + "-" + segI}>
-                                  <Capsule fill={segI < filledSeg ? "#34C759" as Color : "#E5E5EA" as Color}
-                                    opacity={segI < filledSeg ? 0.85 : 0.5} />
-                                </ZStack>
-                              ))}
-                            </HStack>
-                          </VStack>
-                        )
-                      })}
-                    </VStack>
-                  ) : null}
+                    pendingBoxes.slice(0, 2).map((box, i) => {
+                      const isReady = box.leftDaysToOpen <= 0
+                      const totalSeg = 7
+                      const remaining = Math.max(0, Math.min(box.leftDaysToOpen, 7))
+                      const filledSeg = isReady ? totalSeg : totalSeg - remaining
+                      return (
+                        <VStack key={"box-" + i} spacing={S(2)} frame={{ maxWidth: "infinity" }}
+                          background={{ style: "rgba(255,255,255,0.05)" as Color, shape: { type: "rect", cornerRadius: 8 } }}
+                          padding={{ vertical: 4, horizontal: 6 }}>
+                          {/* 标题行 */}
+                          <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+                            <ZStack frame={{ width: fs(12), height: fs(12) }} alignment="center">
+                              {isReady ? (
+                                <Circle fill="#34C759" frame={{ width: fs(12), height: fs(12) }}
+                                  opacity={0.15 + 0.25 * Math.abs(0.5 - phase) * 2} />
+                              ) : null}
+                              <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={fs(8)}
+                                foregroundStyle={{ color: isReady ? "#34C759" as Color : "#8E8E93" as Color, opacity: 1 }} />
+                            </ZStack>
+                            <Text font={fs(8)} fontWeight="semibold"
+                              foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{box.awardDays}天盲盒</Text>
+                            <Spacer />
+                            {isReady ? (
+                              <HStack spacing={2} alignment="center" padding={{ horizontal: 4, vertical: 1 }}
+                                background={{ style: "#34C759" as Color, shape: { type: "rect", cornerRadius: 4 } }}>
+                                <Circle fill="white" frame={{ width: 3, height: 3 }}
+                                  opacity={0.5 + 0.5 * Math.abs(0.5 - phase) * 2} />
+                                <Text font={fs(6)} fontWeight="bold" foregroundStyle={{ color: "white" as Color, opacity: 1 }}>READY</Text>
+                              </HStack>
+                            ) : (
+                              <Text font={fs(7)} foregroundStyle={{ color: "#34C759" as Color, opacity: 0.9 }}>⏳ {remaining}天</Text>
+                            )}
+                          </HStack>
+                          {/* 7段胶囊进度条 */}
+                          <HStack spacing={1} frame={{ maxWidth: "infinity" }}>
+                            {Array.from({ length: totalSeg }, (_, segI) => (
+                              <ZStack frame={{ height: S(5), maxWidth: "infinity" }} alignment="center" key={"seg-" + i + "-" + segI}>
+                                <Capsule fill={segI < filledSeg ? "#34C759" as Color : "#E5E5EA" as Color}
+                                  opacity={segI < filledSeg ? 0.85 : 0.3} />
+                              </ZStack>
+                            ))}
+                          </HStack>
+                        </VStack>
+                      )
+                    })
+                  ) : (
+                    <HStack alignment="center" spacing={3} padding={{ vertical: 4 }}>
+                      <Image systemName="checkmark.circle.fill" font={fs(9)}
+                        foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }} />
+                      <Text font={fs(8)} foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>全部已处理</Text>
+                    </HStack>
+                  )}
                 </>
               )
             })()}
