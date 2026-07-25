@@ -222,17 +222,24 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
   </VStack>
 )
 
-/** 盲盒倒计时 — 分段胶囊（从左到右填充，全部亮起 = 可开启）*/
+/** 盲盒7天倒计时 — 固定7段胶囊，按 leftDaysToOpen 显示渐变（0天绿色→7天灰色）*/
 const BlindBoxRow = ({ box }: { box: { awardDays: number, leftDaysToOpen: number } }) => {
   const isReady = box.leftDaysToOpen <= 0
-  const daysPassed = box.awardDays - box.leftDaysToOpen
-  // 最多显示 7 段胶囊，每段代表 ≈ awardDays/7 天
-  const totalSeg = Math.min(box.awardDays, 7)
-  const filledSeg = isReady ? totalSeg : Math.floor((daysPassed / box.awardDays) * totalSeg)
-  const color = box.awardDays >= 100 ? Theme.colors.orange : box.awardDays >= 30 ? Theme.colors.purple : Theme.colors.cyan
+  // 始终固定 7 段，每段 = 1 天
+  const totalSeg = 7
+  const remaining = Math.max(0, Math.min(box.leftDaysToOpen, 7))
+  const filledSeg = isReady ? totalSeg : totalSeg - remaining
+  
+  // 渐变颜色：已填充=绿色，未填充=灰色（剩余天数越多越灰）
+  const getColor = (segIndex: number): Color => {
+    if (isReady) return Theme.colors.green
+    return segIndex < filledSeg ? Theme.colors.green : Theme.colors.text3
+  }
+  
   // 仪式感：仅就绪状态使用光晕环 + 呼吸（widget 不能 setInterval，靠时间戳算 phase）
   const phase = (Date.now() / 1500) % 1
   const ringOpacity = isReady ? (0.10 + 0.20 * Math.abs(0.5 - phase) * 2) : 0
+  
   return (
     <VStack spacing={S(2)}>
       {/* 标题行：图标 + 天数 + 倒计时 */}
@@ -242,7 +249,7 @@ const BlindBoxRow = ({ box }: { box: { awardDays: number, leftDaysToOpen: number
             <Circle fill={Theme.colors.green} frame={{ width: fs(13), height: fs(13) }} opacity={ringOpacity} />
           ) : null}
           <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={fs(9)}
-            foregroundStyle={{ color: isReady ? Theme.colors.green : color, opacity: 1 }} />
+            foregroundStyle={{ color: isReady ? Theme.colors.green : Theme.colors.text2, opacity: 1 }} />
         </ZStack>
         <Text font={fs(9)} fontWeight="semibold"
           foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{box.awardDays}天盲盒</Text>
@@ -255,17 +262,14 @@ const BlindBoxRow = ({ box }: { box: { awardDays: number, leftDaysToOpen: number
             <Text font={fs(7)} fontWeight="bold" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>READY</Text>
           </HStack>
         ) : (
-          <Text font={fs(8)} foregroundStyle={{ color, opacity: 0.9 }}>⏳ {box.leftDaysToOpen}天</Text>
+          <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 0.9 }}>⏳ {remaining}天</Text>
         )}
       </HStack>
-      {/* 分段胶囊横条 — 已等待天数从左填充 */}
+      {/* 7段胶囊横条 — 从左到右填充，已等待天数=绿色，剩余天数=灰色 */}
       <HStack spacing={S(2)} frame={{ maxWidth: "infinity" }}>
         {Array.from({ length: totalSeg }, (_, i) => (
           <ZStack frame={{ height: S(5), maxWidth: "infinity" }} alignment="center">
-            <Capsule fill={Theme.colors.cardStroke} />
-            {i < filledSeg && (
-              <Capsule fill={isReady ? Theme.colors.green : color} opacity={isReady ? 0.9 : 0.8} />
-            )}
+            <Capsule fill={i < filledSeg ? getColor(i) : Theme.colors.cardStroke} opacity={i < filledSeg ? 0.85 : 0.3} />
           </ZStack>
         ))}
       </HStack>
@@ -337,8 +341,6 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
   const ach = info.achievement
   const readyCount = info.notOpenedBoxesDetail.filter(b => b.leftDaysToOpen === 0).length
   const totalBoxes = info.notOpenedBlindBoxCount
-  const allBoxes = totalBoxes + info.openedBlindBoxCount
-  const boxProgress = allBoxes > 0 ? info.openedBlindBoxCount / allBoxes : 0
 
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
@@ -353,12 +355,27 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
               foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
               今日骑行
             </Text>
-            <Text font="caption" foregroundStyle={{ color: "#8E8E93" as Color, opacity: 1 }}>
-              {ach ? ach.mileage + "km \u00b7 " + ach.odometer + "km" : "加载中..."}
-            </Text>
-            <Text font="caption" foregroundStyle={{ color: "#8E8E93" as Color, opacity: 1 }}>
-              {ach ? "连骑 " + ach.continuous_days + " 天" : ""}
-            </Text>
+            {/* 行内图标+数值（不换行，模拟大号 StatItem 图形风格）*/}
+            <HStack spacing={6} alignment="center" padding={{ top: 2 }}>
+              <HStack spacing={2} alignment="center">
+                <Image systemName="road.lanes" font={7}
+                  foregroundStyle={{ color: "#00E5FF" as Color, opacity: 0.85 }} />
+                <Text font={9} fontWeight="bold"
+                  foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
+              </HStack>
+              <HStack spacing={2} alignment="center">
+                <Image systemName="location.fill" font={7}
+                  foregroundStyle={{ color: "#34C759" as Color, opacity: 0.85 }} />
+                <Text font={9} fontWeight="bold"
+                  foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
+              </HStack>
+              <HStack spacing={2} alignment="center">
+                <Image systemName="bicycle" font={7}
+                  foregroundStyle={{ color: "#FFD60A" as Color, opacity: 0.85 }} />
+                <Text font={9} fontWeight="bold"
+                  foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.continuous_days + "天" : "--"}</Text>
+              </HStack>
+            </HStack>
           </VStack>
           <Spacer />
           <VStack alignment="trailing" spacing={0}>
@@ -390,79 +407,81 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
         {/* ═══ 中部：左数据 + 右车型 ═══ */}
         <HStack alignment="bottom" spacing={0} padding={{ top: 4 }} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-          {/* 左侧：盲盒大数字 + 进度条 + 统计 */}
+          {/* 左侧：盲盒 — 大号同款模式 */}
           <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
-            <HStack alignment="firstTextBaseline" spacing={4}>
-              <Text font="largeTitle" fontWeight="bold"
-                foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
-                {totalBoxes}
-              </Text>
-              <Text font="footnote" foregroundStyle={{ color: "#8E8E93" as Color, opacity: 1 }}>
-                待开盲盒
-              </Text>
-            </HStack>
-            {/* 盲盒进度方块 - 按倒计时天数渐变色 */}
-            <HStack alignment="center" spacing={3} padding={{ top: 2 }}>
-              {(() => {
-                const sortedBoxes = (info.notOpenedBoxesDetail || [])
-                  .sort((a, b) => a.leftDaysToOpen - b.leftDaysToOpen)
-                  .slice(0, 7)
-                return Array.from({ length: sortedBoxes.length }, (_, i) => {
-                  const box = sortedBoxes[i]
-                  const days = box.leftDaysToOpen
-                  // 0天=全绿, 1天=较绿, 2天=更浅, 3天+=灰色
-                  let fillColor: string
-                  if (days <= 0) {
-                    fillColor = "#34C759"
-                  } else if (days === 1) {
-                    fillColor = "#8CE69A"
-                  } else if (days === 2) {
-                    fillColor = "#B8F0C4"
-                  } else if (days === 3) {
-                    fillColor = "#D4F5DC"
-                  } else {
-                    fillColor = "#E5E5EA"
-                  }
-                  return (
-                    <Rectangle
-                      key={"box-" + i}
-                      fill={fillColor as Color}
-                      frame={{ width: 14, height: 14 }}
-                    />
-                  )
-                })
-              })()}
-            </HStack>
-            <Text font="caption2" padding={{ top: 1 }}
-              foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>
-              {readyCount > 0 ? readyCount + "个可领取" : "全部已处理"}
-            </Text>
-            {/* 最近奖励 */}
-            <HStack alignment="center" spacing={4} padding={{ top: 2 }} frame={{ maxWidth: "infinity" }}>
-              {info.calendarInfo
-                .filter(d => d.rewardInfo && d.rewardInfo.receiveStatus === 2)
-                .slice(-3)
-                .map((d, i) => {
-                  const r = d.rewardInfo!
-                  const label = r.rewardType === 2 ? "+" + r.rewardValue + " N币" : "+" + r.rewardValue + " 经验"
-                  const color = r.rewardType === 2 ? "#FF9500" : "#BF5AF2"
-                  return (
-                    <VStack key={"rw" + i} alignment="center" spacing={0}>
-                      <Text font="caption2" fontWeight="bold"
-                        foregroundStyle={{ color: color as Color, opacity: 1 }}>
-                        {label}
-                      </Text>
-                      <Text font="caption2"
-                        foregroundStyle={{ color: "#8E8E93" as Color, opacity: 1 }}>
-                        {"\u7b2c" + r.days + "\u5929"}
-                      </Text>
+            {(() => {
+              const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0)
+              const phase = (Date.now() / 1500) % 1
+              return (
+                <>
+                  <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+                    <Text font="largeTitle" fontWeight="bold"
+                      foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
+                      {totalBoxes}
+                    </Text>
+                    <Text font="footnote" padding={{ leading: 4 }}
+                      foregroundStyle={{ color: "#8E8E93" as Color, opacity: 1 }}>
+                      待开盲盒
+                    </Text>
+                    <Spacer />
+                    {readyCount > 0 ? (
+                      <HStack spacing={2} alignment="center" padding={{ horizontal: 5, vertical: 1 }}
+                        background={{ style: "#34C759" as Color, shape: { type: "rect", cornerRadius: 6 } }}>
+                        <Circle fill={"#FFFFFF" as Color} frame={{ width: 3, height: 3 }}
+                          opacity={0.5 + 0.5 * Math.abs(0.5 - phase) * 2} />
+                        <Text font="caption2" fontWeight="bold"
+                          foregroundStyle={{ color: "#FFFFFF" as Color, opacity: 1 }}>READY</Text>
+                      </HStack>
+                    ) : null}
+                  </HStack>
+                  {pendingBoxes.length > 0 ? (
+                    <VStack spacing={4} padding={{ top: 4 }}>
+                      {pendingBoxes.slice(0, 2).map((box, i) => {
+                        const isReady = box.leftDaysToOpen <= 0
+                        const totalSeg = 7
+                        const remaining = Math.max(0, Math.min(box.leftDaysToOpen, 7))
+                        const filledSeg = isReady ? totalSeg : totalSeg - remaining
+                        return (
+                          <VStack spacing={1} key={"box-" + i}>
+                            <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
+                              <Image systemName={isReady ? "gift.fill" : "shippingbox"} font={8}
+                                foregroundStyle={{ color: isReady ? "#34C759" as Color : "#8E8E93" as Color, opacity: 1 }} />
+                              <Text font="caption2" fontWeight="semibold" padding={{ leading: 4 }}
+                                foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
+                                {box.awardDays}天盲盒
+                              </Text>
+                              <Spacer />
+                              {isReady ? (
+                                <Text font="caption2" fontWeight="bold"
+                                  foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>READY</Text>
+                              ) : (
+                                <Text font="caption2"
+                                  foregroundStyle={{ color: "#34C759" as Color, opacity: 0.9 }}>⏳ {remaining}天</Text>
+                              )}
+                            </HStack>
+                            <HStack spacing={2} frame={{ maxWidth: "infinity" }}>
+                              {Array.from({ length: totalSeg }, (_, segI) => (
+                                <ZStack frame={{ height: 4, maxWidth: "infinity" }} alignment="center" key={"seg-" + i + "-" + segI}>
+                                  <Capsule fill={segI < filledSeg ? "#34C759" as Color : "#E5E5EA" as Color}
+                                    opacity={segI < filledSeg ? 0.85 : 0.5} />
+                                </ZStack>
+                              ))}
+                            </HStack>
+                          </VStack>
+                        )
+                      })}
                     </VStack>
-                  )
-                })}
-              {info.calendarInfo.filter(d => d.rewardInfo && d.rewardInfo.receiveStatus === 2).length === 0 && (
-                <Text font="caption2" foregroundStyle={{ color: "#C7C7CC" as Color, opacity: 1 }}>暂无奖励</Text>
-              )}
-            </HStack>
+                  ) : (
+                    <HStack alignment="center" spacing={3} padding={{ top: 4 }}>
+                      <Image systemName="checkmark.circle.fill" font={10}
+                        foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }} />
+                      <Text font="caption2" fontWeight="medium"
+                        foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>全部已处理</Text>
+                    </HStack>
+                  )}
+                </>
+              )
+            })()}
           </VStack>
           {/* 右侧车型图 */}
           <Image filePath={VEHICLE_IMG_PATH} resizable={true}
