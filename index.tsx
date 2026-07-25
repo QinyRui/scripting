@@ -32,6 +32,7 @@ import {
 
 import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, receiveBlindBox, getAllTasks, getTaskList, TASK_CATEGORY_LABELS, type NinebotWidgetData, type TaskInfo } from "./api"
 import { BlindBoxCeremony, GuideGesture, CeremonyTitle, BB } from "./utils/BlindBoxVisuals"
+import { useReleaseNotesSheet } from "./components/what-is-new"
 
 declare const Storage: any
 declare const Dialog: any
@@ -49,7 +50,7 @@ const logoImage = UIImage.fromFile(LOGO_PATH)
 const HERO_LOGO_SIZE = 96
 
 // ==================== 版本信息 ====================
-const VERSION = "2.1.9"
+const VERSION = "2.2.0"
 const BUILD_DATE = "2026-07-23"
 
 
@@ -1519,9 +1520,10 @@ function getInitialView(): "settings" | "blindbox" {
 
 export default function App(_props: AppProps) {
   const [view, setView] = useState<"settings" | "blindbox">(getInitialView)
+  const releaseNotes = useReleaseNotesSheet()
 
   return (
-    <NavigationStack>
+    <NavigationStack sheet={releaseNotes.sheet}>
       {view === "blindbox" ? (
         <BlindBoxView onBack={() => setView("settings")} />
       ) : (
