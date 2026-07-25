@@ -1,49 +1,49 @@
 {
-  "contributors" : [
-
-  ],
-  "permissions" : null,
-  "localizedNames" : {
-    "ja" : "",
-    "pt" : "",
-    "fr" : "",
-    "zh" : "",
-    "en" : "",
-    "it" : "",
-    "es" : "",
-    "de" : "",
-    "ru" : ""
-  },
-  "name" : "九号APP签到",
   "localizedDescriptions" : {
-    "zh" : "",
-    "es" : "",
-    "ru" : "",
     "de" : "",
+    "ru" : "",
+    "zh" : "",
+    "ja" : "",
     "en" : "",
-    "pt" : "",
+    "es" : "",
     "fr" : "",
     "it" : "",
-    "ja" : ""
+    "pt" : ""
+  },
+  "entry" : "index.tsx",
+  "remoteResource" : {
+    "hash" : "ba939b325074bd9a188e0d64df7aedc6",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
   },
   "author" : {
     "name" : "QinyRui",
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
   },
-  "version" : "2.2.2",
-  "intentInputTypes" : [
-
-  ],
   "color" : "rgba(0, 198, 165,1)",
-  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变\n④骑行数据顺序重排：今日里程→连续天数→总里程\n⑤总里程移至独立行+盲盒区简化为7天进度条",
-  "remoteResource" : {
-    "hash" : "d9a41784bc0ebb13d637adf84ac22f83",
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
-  },
   "icon" : "scooter",
   "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变\n④骑行数据顺序重排：今日里程→连续天数→总里程\n⑤总里程移至独立行+盲盒区简化为7天进度条",
+  "version" : "2.2.3",
+  "contributors" : [
+
+  ],
+  "localizedNames" : {
+    "es" : "",
+    "zh" : "",
+    "en" : "",
+    "ru" : "",
+    "it" : "",
+    "pt" : "",
+    "de" : "",
+    "fr" : "",
+    "ja" : ""
+  },
+  "permissions" : null,
+  "name" : "九号APP签到",
   "runInApp" : true,
-  "entry" : "index.tsx"
+  "intentInputTypes" : [
+
+  ]
 }
