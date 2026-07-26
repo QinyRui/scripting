@@ -350,7 +350,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
         <HStack alignment="center" frame={{ maxWidth: "infinity" }}>
           <VStack alignment="leading" spacing={0}>
             <Text font="headline" fontWeight="bold"
-              foregroundStyle={{ color: "#1C1C1E" as Color, opacity: 1 }}>
+              foregroundStyle={{ color: "#FF3B30" as Color, opacity: 1 }}>
               今日骑行
             </Text>
             {/* 第一行：今日里程 + 连续天数 */}
