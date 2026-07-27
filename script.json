@@ -19,7 +19,7 @@
     "fr": "",
     "de": ""
   },
-  "version": "2.2.11",
+  "version": "2.2.12",
   "contributors": [],
   "icon": "scooter",
   "permissions": null,
@@ -40,6 +40,6 @@
     "es": "",
     "fr": ""
   },
-  "description": "中号组件背景同步为透明深色科幻风格，并修复文字颜色与微型盲盒在深色背景下的显示兼容性",
+  "description": "优化中号桌面组件：放大右侧车辆图形并向左调整，盲盒过滤精简为展示最新的7天倒计时，并优化组件文本对齐与间距排版",
   "iconImage": "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png"
 }
