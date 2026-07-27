@@ -787,7 +787,10 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
 
     // 已签到但未通知 → 补发签到成功通知（独立于 autoSign 设置）
     if (baseData.isSigned) {
-      const today = new Date().toISOString().slice(0, 10)
+      // 修复：使用本地时区计算 today 字符串，避免 0点到8点(UTC+8) toISOString 返回昨天日期导致未发通知
+      const d = new Date()
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      
       const lastSignNotifDate = getStorage("ninebot.signNotifiedDate")
       if (lastSignNotifDate !== today) {
         try {
