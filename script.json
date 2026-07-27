@@ -1,49 +1,45 @@
 {
-  "version" : "2.2.3",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "permissions" : null,
-  "intentInputTypes" : [
-
-  ],
-  "contributors" : [
-
-  ],
-  "icon" : "scooter",
-  "name" : "九号APP签到",
-  "localizedNames" : {
-    "it" : "",
-    "es" : "",
-    "ru" : "",
-    "de" : "",
-    "ja" : "",
-    "en" : "",
-    "zh" : "",
-    "pt" : "",
-    "fr" : ""
+  "author": {
+    "name": "QinyRui",
+    "email": "602839678@qq.com",
+    "homepage": "https://github.com/QinyRui/scripting"
   },
-  "description" : "①盲盒进度方块改为按倒计时天数的渐变色\n②签到通知独立于自动签到设置\n③桌面组件新增盲盒倒计时进度渐变\n④骑行数据顺序重排：今日里程→连续天数→总里程\n⑤中号盲盒重新图形化设计：卡片式布局+图标+进度条+状态标签",
-  "entry" : "index.tsx",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
+  "color": "rgba(0, 198, 165,1)",
+  "name": "九号APP签到",
+  "entry": "index.tsx",
+  "intentInputTypes": [],
+  "localizedDescriptions": {
+    "pt": "",
+    "ja": "",
+    "zh": "",
+    "es": "",
+    "it": "",
+    "ru": "",
+    "en": "",
+    "fr": "",
+    "de": ""
   },
-  "remoteResource" : {
-    "hash" : "80dfce574f5d45c3f9cd0ddc3a71f2f6",
-    "autoUpdateInterval" : 600,
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/archive\/refs\/heads\/九号.zip"
+  "version": "2.2.11",
+  "contributors": [],
+  "icon": "scooter",
+  "permissions": null,
+  "remoteResource": {
+    "hash": "6be82edd876361c9a5b7656e34d88bcf",
+    "autoUpdateInterval": 600,
+    "url": "https://github.com/QinyRui/scripting/archive/refs/heads/九号.zip"
   },
-  "localizedDescriptions" : {
-    "en" : "",
-    "ru" : "",
-    "zh" : "",
-    "de" : "",
-    "ja" : "",
-    "fr" : "",
-    "es" : "",
-    "pt" : "",
-    "it" : ""
+  "runInApp": true,
+  "localizedNames": {
+    "zh": "",
+    "pt": "",
+    "ja": "",
+    "de": "",
+    "it": "",
+    "en": "",
+    "ru": "",
+    "es": "",
+    "fr": ""
   },
-  "color" : "rgba(0, 198, 165,1)",
-  "runInApp" : true
+  "description": "中号组件背景同步为透明深色科幻风格，并修复文字颜色与微型盲盒在深色背景下的显示兼容性",
+  "iconImage": "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png"
 }
