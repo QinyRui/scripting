@@ -245,7 +245,7 @@ const BlindBoxRow = ({ box }: { box: any }) => {
     <HStack alignment="center" spacing={S(4)} frame={{ minWidth: 0, maxWidth: "infinity" }} padding={{ vertical: 2 }}>
       {/* 左侧大号方块图标区 */}
       <ZStack frame={{ width: S(34), height: S(34) }} alignment="center"
-        background={{ shape: { type: "rounded-rectangle", cornerRadius: S(8) }, style: isTransparent ? ("rgba(255,255,255,0.12)" as Color) : ("rgba(255,255,255,0.06)" as Color) }}>
+        background={{ shape: { type: "rect", cornerRadius: S(8) }, style: isTransparent ? ("rgba(255,255,255,0.12)" as Color) : ("rgba(255,255,255,0.06)" as Color) }}>
         
         {/* 背景大图形做装饰 */}
         <Image systemName="cube.fill" font={fs(22)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.15 }} />
@@ -354,7 +354,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
       widgetBackground={isTransparent ? "clear" : gradient("linear", { colors: ["#0A0E1A" as Color, "#050810" as Color], startPoint: "top", endPoint: "bottom" })}>
       
       {/* 背景上的装饰：脱离文档流的车图，位于右下角 */}
-      <HStack padding={{ bottom: 0, trailing: -10 }}>
+      <HStack padding={{ bottom: 0, trailing: 10 }}>
         <Image filePath={VEHICLE_IMG_PATH} resizable={true}
           frame={{ width: 135, height: 125 }} opacity={0.95} />
       </HStack>
@@ -446,6 +446,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
             })()}
           </VStack>
           <Spacer />
+        </HStack>
       </VStack>
     </ZStack>
   )
