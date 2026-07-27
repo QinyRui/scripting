@@ -19,7 +19,7 @@
     "fr": "",
     "de": ""
   },
-  "version": "2.2.12",
+  "version": "2.2.13",
   "contributors": [],
   "icon": "scooter",
   "permissions": null,
@@ -40,6 +40,6 @@
     "es": "",
     "fr": ""
   },
-  "description": "优化中号桌面组件：放大右侧车辆图形并向左调整，盲盒过滤精简为展示最新的7天倒计时，并优化组件文本对齐与间距排版",
+  "description": "修复因时区问题导致国内每天凌晨 (0点-8点) 自动或手动首次签到时没有发出桌面组件通知的 Bug",
   "iconImage": "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png"
 }
