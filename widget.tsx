@@ -218,17 +218,121 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
   </VStack>
 )
 
-/** 横向微型胶囊盲盒组件 */
-// @ts-ignore
-const BlindBoxRow = ({ box }: { box: any }) => {
+/** 圆形倒计时环盲盒组件 — 左环右文布局 */
+const BlindBoxRing = ({ box, vehicleName }: { box: any, vehicleName?: string }) => {
+  const isReady = box.leftDaysToOpen <= 0
+  const total = box.awardDays || 7
+  const left = box.leftDaysToOpen
+  const progress = isReady ? 1 : Math.max(0, Math.min(1, (total - left) / total))
+  const ringSize = S(42)
+  const ringWidth = Math.max(3, S(4))
+
+  // 颜色：可领取=绿色，冷却中=橙色
+  const accentColor = isReady ? Theme.colors.green : Theme.colors.orange
+  const glowColor = isReady ? Theme.colors.green : Theme.colors.orange
+  const bgRingColor = Widget.isTransparentBackground
+    ? ("rgba(255,255,255,0.15)" as Color)
+    : ("rgba(255,255,255,0.08)" as Color)
+
+  return (
+    // @ts-ignore
+    <HStack alignment="center" spacing={S(8)}>
+      {/* 左侧：发光倒计时环 */}
+      <ZStack frame={{ width: ringSize, height: ringSize }} alignment="center">
+        {/* 外层光晕 */}
+        <Circle fill={glowColor}
+          frame={{ width: ringSize + S(8), height: ringSize + S(8) }}
+          opacity={0.12} />
+        {/* 中层光晕 */}
+        <Circle fill={glowColor}
+          frame={{ width: ringSize + S(4), height: ringSize + S(4) }}
+          opacity={0.18} />
+        {/* 底环 */}
+        <Circle stroke={{ shapeStyle: bgRingColor, strokeStyle: { lineWidth: ringWidth } }}
+          frame={{ width: ringSize, height: ringSize }} />
+        {/* 进度环 */}
+        <Circle stroke={{ shapeStyle: accentColor, strokeStyle: { lineWidth: ringWidth } }}
+          frame={{ width: ringSize, height: ringSize }}
+          trim={{ from: 0, to: progress }}
+          rotationEffect={{ degrees: -90, anchor: "center" }} />
+        {/* 中心内容 */}
+        <VStack alignment="center" spacing={0}>
+          {isReady ? (
+            <>
+              {/* @ts-ignore */}
+              <Image systemName="gift.fill" font={fs(14)}
+                foregroundStyle={{ color: accentColor, opacity: 1 }} />
+              {/* @ts-ignore */}
+              <Text font={fs(7)} fontWeight="bold"
+                foregroundStyle={{ color: accentColor, opacity: 1 }}>可领</Text>
+            </>
+          ) : (
+            <>
+              {/* @ts-ignore */}
+              <Text font={fs(18)} fontWeight="bold"
+                foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{left}</Text>
+              {/* @ts-ignore */}
+              <Text font={fs(6)}
+                foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天后</Text>
+            </>
+          )}
+        </VStack>
+      </ZStack>
+      {/* 右侧：文字信息 + 迷你进度条 */}
+      <VStack alignment="leading" spacing={S(3)}>
+        {/* 标题 */}
+        {/* @ts-ignore */}
+        <Text font={fs(10)} fontWeight="bold" lineLimit={1}
+          foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>
+          {total === 7 ? "连续签到7天" : "连续签到" + total + "天"}
+        </Text>
+        {/* 副标题 */}
+        {/* @ts-ignore */}
+        <Text font={fs(8)} fontWeight="semibold"
+          foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>
+          {isReady ? "可开启!" : "还剩 " + left + " 天"}
+        </Text>
+        {/* 多彩方块渐变进度条 */}
+        <HStack spacing={S(1)} frame={{ height: S(4), width: S(80) }}
+          background={{ shape: { type: "rect", cornerRadius: S(1) }, style: bgRingColor }}>
+          {Array.from({ length: total }).map((_, i) => {
+            const segProgress = Math.min(1, Math.max(0, (total - left - i) / 1))
+            const isFilled = i < (total - left)
+            const barColors = ["#FF6B6B", "#FF8E53", "#FFC048", "#A8E063", "#78E08F", "#48DBFB", "#0ABDE3"]
+            const segColor = barColors[i % barColors.length]
+            return (
+              <ZStack key={i} frame={{ maxWidth: "infinity" }}>
+                {isFilled && (
+                  // @ts-ignore
+                  <Rectangle fill={segColor as Color} frame={{ height: S(4) }}
+                    background={{ shape: { type: "rect", cornerRadius: S(1) }, style: segColor as Color }} />
+                )}
+              </ZStack>
+            )
+          })}
+        </HStack>
+        {/* 车型名 */}
+        {vehicleName ? (
+          // @ts-ignore
+          <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.8 }}>
+            {vehicleName}
+          </Text>
+        ) : null}
+      </VStack>
+    </HStack>
+  )
+}
+
+/** 横向胶囊盲盒行（大号组件使用） */
+const BlindBoxRowLarge = ({ box }: { box: any }) => {
   const isReady = box.leftDaysToOpen <= 0;
   const isTransparent = Widget.isTransparentBackground;
   
   const total = box.awardDays || 7;
   const left = box.leftDaysToOpen;
   
-  const titleText = total === 7 ? "连续签到7天" : `连续签到${total}天`;
-  const subText = isReady ? "可开启!" : `还剩 ${left} 天`;
+  const titleText = total === 7 ? "连续签到7天" : "连续签到" + total + "天";
+  const subText = isReady ? "可开启!" : "还剩 " + left + " 天";
   
   const barColor = isReady ? Theme.colors.green : "#2B82F6" as Color;
   const bgBarColor = isTransparent ? ("rgba(255,255,255,0.15)" as Color) : ("rgba(255,255,255,0.1)" as Color);
@@ -236,22 +340,14 @@ const BlindBoxRow = ({ box }: { box: any }) => {
   const progressRatio = isReady ? 1 : Math.max(0, Math.min(1, (total - left) / total));
   const progressWidth = S(100); 
   
-  // @ts-ignore
   return (
     <HStack alignment="center" spacing={S(4)} frame={{ minWidth: 0, maxWidth: "infinity" }} padding={{ vertical: 2 }}>
-      {/* 左侧大号方块图标区 */}
       <ZStack frame={{ width: S(34), height: S(34) }} alignment="center"
         background={{ shape: { type: "rect", cornerRadius: S(8) }, style: isTransparent ? ("rgba(255,255,255,0.12)" as Color) : ("rgba(255,255,255,0.06)" as Color) }}>
-        
-        {/* 背景大图形做装饰 */}
         <Image systemName="cube.fill" font={fs(22)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.15 }} />
         <Text font={fs(total > 99 ? 12 : 14)} fontWeight="heavy" foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{total}</Text>
-        
       </ZStack>
-      
-      {/* 右侧进度区 */}
       <VStack alignment="leading" spacing={S(3.5)} frame={{ minWidth: 0, maxWidth: "infinity" }}>
-        
         <HStack alignment="center" spacing={S(4)}>
             <Text font={fs(10)} fontWeight="bold" lineLimit={1} foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>
             {titleText}
@@ -259,18 +355,14 @@ const BlindBoxRow = ({ box }: { box: any }) => {
             {total === 7 && <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>循环</Text>}
             <Spacer />
         </HStack>
-        
         <HStack alignment="center" spacing={S(4)}>
             <Text font={fs(9)} fontWeight="semibold" foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>
             {subText}
             </Text>
             <Spacer />
         </HStack>
-        
-        {/* 进度条槽：使用 HStack + Spacer 强制进度条居左对齐 */}
         <HStack frame={{ height: S(3.5), width: progressWidth }} alignment="center" spacing={0}
           background={{ shape: { type: "capsule", style: "continuous" }, style: bgBarColor }}>
-          
           {progressRatio > 0 && 
             <ZStack frame={{ height: S(3.5), width: progressWidth * progressRatio }} 
               background={{ shape: { type: "capsule", style: "continuous" }, style: barColor }} />
@@ -420,21 +512,21 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
         <Spacer />
         {/* ═══ 中部：左数据 + 右车型 ═══ */}
         <HStack alignment="bottom" spacing={0} frame={{ maxWidth: "infinity" }}>
-          {/* 左侧：图形化盲盒进度 */}
-          <VStack alignment="leading" spacing={S(2)} frame={{ minWidth: 0, maxWidth: "infinity" }} padding={{ top: 0, bottom: 4 }}>
+          {/* 左侧：圆形倒计时环盲盒 — 紧凑布局 */}
+          <VStack alignment="leading" spacing={S(2)} padding={{ top: 0, bottom: 4 }}>
             {(() => {
               const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0 || box.rewardStatus === 1)
-              const shownBoxes = pendingBoxes.filter(box => box.awardDays === 7).slice(0, 1) // 只显示7天的且限制为1个
+              const shownBoxes = pendingBoxes.filter(box => box.awardDays === 7).slice(0, 1)
               return (
-                <VStack spacing={S(6)} alignment="leading" frame={{ minWidth: 0, maxWidth: "infinity" }}>
+                <VStack spacing={S(4)} alignment="leading">
                   {shownBoxes.length > 0 ? (
                     shownBoxes.map((box, i) => (
-                      <BlindBoxRow key={"medium-box-" + i} box={box} />
+                      <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} />
                     ))
                   ) : (
                     <HStack alignment="center" spacing={S(4)} padding={{ vertical: 4 }}>
-                      <Image systemName="checkmark.circle.fill" font={fs(9)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
-                      <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部盲盒已领</Text>
+                      <Image systemName="checkmark.circle.fill" font={fs(14)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
+                      <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部盲盒已领</Text>
                     </HStack>
                   )}
                 </VStack>
@@ -553,7 +645,7 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                 </HStack>
                 {pendingBoxes.length > 0 ? (
                   <VStack spacing={S(2)}>
-                    {pendingBoxes.slice(0, 2).map((box, i) => <BlindBoxRow key={i} box={box} />)}
+                    {pendingBoxes.slice(0, 2).map((box, i) => <BlindBoxRowLarge key={i} box={box} />)}
                   </VStack>
                 ) : (
                   <HStack alignment="center" spacing={3}>
