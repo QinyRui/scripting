@@ -34,6 +34,7 @@ import { getNinebotInfo, autoOpenBlindBoxes, getOpenableBlindBoxes, receiveBlind
 import { BlindBoxCeremony, GuideGesture, CeremonyTitle, BB } from "./utils/BlindBoxVisuals"
 import { useReleaseNotesSheet } from "./components/what-is-new"
 
+
 declare const Storage: any
 declare const Dialog: any
 declare const Safari: any
