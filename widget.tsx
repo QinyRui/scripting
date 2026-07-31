@@ -1,15 +1,11 @@
 import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
-import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getTaskList, getMyAchievement, TASK_CATEGORY_LABELS, type NinebotWidgetData, type VehicleInfo, type TaskInfo, type AchievementInfo } from './api'
+import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getMyAchievement, type NinebotWidgetData, type VehicleInfo, type AchievementInfo } from './api'
 import { getStorage, setStorage } from './utils/storage'
 
-// CalendarNotificationTrigger / DateComponents 为全局类型，不需要从 scripting 导入
-declare const CalendarNotificationTrigger: any
-declare const DateComponents: any
+// 不再需要 CalendarNotificationTrigger / DateComponents（盲盒通知已移除）
 
-// ==================== 通知 ID 与盲盒去重存储 ====================
-const NOTIF_ID_BLIND_BOX_READY = "ninebot-blindbox-ready"
-const STORAGE_KEY_BOX_READY = "ninebot.lastNotifiedReadyBoxIds"
-const STORAGE_KEY_BOX_SCHEDULED = "ninebot.scheduledBoxIds"
+// ==================== 通知存储 key（仅保留签到通知）====================
+// 盲盒与任务通知已移除
 
 // ==================== 当前脚本名（用于 tapAction.runScript）====================
 const CURRENT_SCRIPT_NAME = "九号APP签到"
@@ -604,163 +600,8 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 // ========================
 
 // ========================
-// 通知辅助函数
+// 通知辅助函数（已全部移除：盲盒与任务通知）
 // ========================
-
-/**
- * 组合盲盒的稳定 ID（优先用 box.id，缺失时用 awardDays+leftDaysToOpen 拼凑）
- */
-const buildBoxKey = (box: any): string => {
-  if (box?.id) return String(box.id)
-  return `${box?.awardDays || 0}-${box?.leftDaysToOpen || 0}`
-}
-
-/**
- * 从存储中读取上轮已通知过的盲盒 ID 集合
- */
-const readNotifiedReadySet = (): Set<string> => {
-  try {
-    const raw = getStorage(STORAGE_KEY_BOX_READY)
-    if (Array.isArray(raw)) return new Set(raw.map(String))
-    if (typeof raw === "string" && raw) {
-      const arr = JSON.parse(raw)
-      if (Array.isArray(arr)) return new Set(arr.map(String))
-    }
-  } catch { }
-  return new Set()
-}
-
-/**
- * 持久化本次已通知的盲盒 ID
- */
-const writeNotifiedReadySet = (set: Set<string>) => {
-  try {
-    setStorage(STORAGE_KEY_BOX_READY, Array.from(set))
-  } catch (e) { console.log("写入盲盒已通知列表失败:", e) }
-}
-
-/**
- * 当存在可领取（leftDaysToOpen === 0）的盲盒时发送提醒通知。
- * 点击通知会重新拉起脚本，进入 index.tsx 的 BlindBoxView。
- */
-const notifyReadyBlindBoxes = async (data: NinebotWidgetData) => {
-  const readyBoxes = (data.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen === 0)
-  if (readyBoxes.length === 0) {
-    // 如果所有待领盲盒都已不在可用状态（比如被自动开或手动开），同时取消之前调度过的提醒
-    try { await Notification.removePendings([NOTIF_ID_BLIND_BOX_READY]) } catch { }
-    return
-  }
-
-  // 去重：避免每 15 分钟重复推送
-  const currentKeys = new Set(readyBoxes.map(buildBoxKey))
-  const notifiedSet = readNotifiedReadySet()
-  const isSameSet = notifiedSet.size === currentKeys.size && [...currentKeys].every(k => notifiedSet.has(k))
-  if (isSameSet) {
-    console.log("🎁 盲盒可领通知已发送过，跳过重复推送")
-    return
-  }
-
-  // 合成描述
-  const readyAwards = readyBoxes.map(b => `${b.awardDays}天`).join("、")
-  const readyCount = readyBoxes.length
-
-  await Notification.schedule({
-    title: "🎁 盲盒可以领取啦",
-    subtitle: "九号电动车",
-    body: `你有 ${readyCount} 个盲盒（${readyAwards}）可领取\n点击进入一键开启`,
-    iconImageData: { systemImage: "gift.fill", color: "#FF9500" },
-    threadIdentifier: "ninebot-blindbox-ready",
-    customUI: true,
-    // 点击通知后重新拉起本脚本，index.tsx 靠 Notification.current 路由到 BlindBoxView
-    tapAction: { type: "runScript", scriptName: CURRENT_SCRIPT_NAME },
-    userInfo: {
-      type: "blindbox_ready",
-      readyCount,
-      notOpenedBlindBoxCount: data.notOpenedBlindBoxCount,
-      minLeftDaysToOpen: data.minLeftDaysToOpen,
-      notOpenedBoxesDetail: data.notOpenedBoxesDetail,
-    },
-  })
-
-  // 记录已通知，避免后续重复推送
-  writeNotifiedReadySet(currentKeys)
-  console.log("🎁 盲盒可领提醒已发送:", readyCount, "个")
-}
-
-/**
- * 为冷却中的盲盒调度未来提醒（最多 7 天内到期的）。
- * 同一个盲盒只调度一次（依据 STORAGE_KEY_BOX_SCHEDULED）。
- */
-const scheduleFutureBlindBoxNotifications = async (data: NinebotWidgetData) => {
-  const waitingBoxes = (data.notOpenedBoxesDetail || []).filter(b => b.leftDaysToOpen > 0)
-  if (waitingBoxes.length === 0) return
-
-  // 读取已经调度过的盲盒 key
-  let scheduledSet: Set<string> = new Set()
-  try {
-    const raw = getStorage(STORAGE_KEY_BOX_SCHEDULED)
-    if (Array.isArray(raw)) scheduledSet = new Set(raw.map(String))
-  } catch { }
-
-  const now = new Date()
-  for (const box of waitingBoxes) {
-    if (box.leftDaysToOpen > 7) continue // 超过 7 天不值得调度（widget 每日会重跑）
-    const key = buildBoxKey(box)
-    if (scheduledSet.has(key)) continue
-
-    // 触发时间：到期日上午 8:00（贴近九号日常签到推送时间）
-    const triggerDate = new Date(now)
-    triggerDate.setDate(triggerDate.getDate() + box.leftDaysToOpen)
-    triggerDate.setHours(8, 0, 0, 0)
-
-    // 过期时间不调度
-    if (triggerDate.getTime() <= now.getTime()) continue
-
-    const dc = new DateComponents()
-    dc.year = triggerDate.getFullYear()
-    dc.month = triggerDate.getMonth() + 1
-    dc.day = triggerDate.getDate()
-    dc.hour = triggerDate.getHours()
-    dc.minute = triggerDate.getMinutes()
-
-    try {
-      const trigger = new CalendarNotificationTrigger({
-        dateMatching: dc,
-        repeats: false,
-      })
-
-      const notifId = `ninebot-blindbox-future-${key}`
-      await Notification.schedule({
-        title: "🎁 盲盒明天可领取",
-        subtitle: "九号电动车",
-        body: `你的 ${box.awardDays} 天签到盲盒已冷却完成\n点击进入一键开启`,
-        iconImageData: { systemImage: "gift.fill", color: "#FF9500" },
-        threadIdentifier: "ninebot-blindbox-ready",
-        customUI: true,
-        trigger,
-        tapAction: { type: "runScript", scriptName: CURRENT_SCRIPT_NAME },
-        userInfo: {
-          type: "blindbox_ready",
-          readyCount: 1,
-          notOpenedBlindBoxCount: data.notOpenedBlindBoxCount,
-          minLeftDaysToOpen: 0,
-          notOpenedBoxesDetail: [box],
-        },
-      })
-      scheduledSet.add(key)
-      console.log("📅 盲盒未来通知已调度:", notifId, triggerDate.toISOString())
-    } catch (e) {
-      console.log("调度未来通知失败:", e)
-    }
-  }
-
-  // 清理已不再等待中的 box（被开启或过期）
-  const currentKeys = new Set(waitingBoxes.map(buildBoxKey))
-  for (const k of [...scheduledSet]) {
-    if (!currentKeys.has(k)) scheduledSet.delete(k)
-  }
-  try { setStorage(STORAGE_KEY_BOX_SCHEDULED, Array.from(scheduledSet)) } catch { }
-}
 
 const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
   try {
@@ -824,100 +665,16 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
       }
     }
 
+    // 自动开启盲盒（功能保留，不发送盲盒通知）
     if (settings.autoOpenBlindBox && baseData.notOpenedBlindBoxCount > 0) {
-      const boxResult = await autoOpenBlindBoxes(auth, devId)
-      baseData = await getNinebotInfo(auth, devId)
-      // 发送盲盒领取结果通知
-      if (boxResult.total > 0) {
-        try {
-          // 构建盲盒剩余天数描述
-          let remainingInfo = ""
-          const boxes = baseData.notOpenedBoxesDetail || []
-          if (boxes.length > 0) {
-            const waitingBoxes = boxes.filter((b: any) => b.leftDaysToOpen > 0)
-            if (waitingBoxes.length > 0) {
-              const minDays = Math.min(...waitingBoxes.map((b: any) => b.leftDaysToOpen))
-              remainingInfo = `\n⏳ 下个盲盒还有 ${minDays} 天可领取`
-            }
-          }
-
-          // 构建奖励描述
-          let rewardDesc = ""
-          if (boxResult.rewards.length > 0) {
-            rewardDesc = boxResult.rewards.map((r: any) => {
-              const reward = r.reward
-              if (reward && reward.rewardType === 1) return `+${reward.rewardValue} 等级经验`
-              if (reward && reward.rewardType === 2) return `+${reward.rewardValue} N币`
-              return `+${reward.rewardValue} 奖励`
-            }).join("\n")
-          }
-
-          const bodyLines = [
-            `🎁 成功领取 ${boxResult.receiveSuccess} 个盲盒`,
-            rewardDesc,
-            remainingInfo,
-            boxResult.failed > 0 ? `\n⚠️ ${boxResult.failed} 个领取失败` : "",
-          ].filter(Boolean).join("\n")
-
-          await Notification.schedule({
-            title: boxResult.receiveSuccess > 0 ? "🎁 盲盒领取完成" : "⚠️ 盲盒领取异常",
-            subtitle: "九号电动车",
-            body: bodyLines,
-            iconImageData: { systemImage: boxResult.receiveSuccess > 0 ? "gift.fill" : "exclamationmark.triangle.fill", color: boxResult.receiveSuccess > 0 ? "#FF9500" : "#FF3B30" },
-            threadIdentifier: "ninebot-blindbox",
-            customUI: true,
-            userInfo: {
-              type: "blindbox",
-              total: boxResult.total,
-              receiveSuccess: boxResult.receiveSuccess,
-              failed: boxResult.failed,
-              rewards: boxResult.rewards,
-              errors: boxResult.errors,
-              minLeftDaysToOpen: baseData.minLeftDaysToOpen,
-              notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
-              notOpenedBoxesDetail: baseData.notOpenedBoxesDetail,
-            }
-          })
-        } catch (e) { console.log("盲盒通知发送失败:", e) }
-      }
-    } else {
-      // 未开启自动开盲盒 → 有可领的盲盒时发送提醒通知（点击打开 App 内的盲盒页面）
       try {
-        await notifyReadyBlindBoxes(baseData)
-      } catch (e) { console.log("盲盒提醒通知发送失败:", e) }
-    }
-
-    // 调度未来可领通知（对还在冷却中的盲盒）
-    try {
-      await scheduleFutureBlindBoxNotifications(baseData)
-    } catch (e) { console.log("盲盒未来通知调度失败:", e) }
-
-    // 每日任务提醒（每天只提醒一次）
-    try {
-      const today = new Date().toISOString().slice(0, 10)
-      const lastTaskNotifDate = getStorage("ninebot.taskNotifDate")
-      if (lastTaskNotifDate !== today) {
-        const tasks = await getTaskList(auth, devId, 1)
-        const incomplete = tasks.filter((t: TaskInfo) => t.rewardStatus !== 3)
-        if (incomplete.length > 0) {
-          const lines = incomplete.map((t: TaskInfo) => {
-            const cat = TASK_CATEGORY_LABELS[t.taskCategory] || "其他"
-            return "  " + cat + " · " + t.title + "（" + t.rewardDescription + "）"
-          })
-          await Notification.schedule({
-            title: "📋 今日任务提醒",
-            subtitle: "九号电动车",
-            body: "你还有 " + incomplete.length + " 个任务未完成：\n" + lines.join("\n"),
-            iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
-            threadIdentifier: "ninebot-task",
-            customUI: true,
-            userInfo: { type: "task_reminder", incompleteCount: incomplete.length },
-          })
-          setStorage("ninebot.taskNotifDate", today)
-          console.log("📋 任务提醒已发送:", incomplete.length, "个未完成")
+        const boxResult = await autoOpenBlindBoxes(auth, devId)
+        baseData = await getNinebotInfo(auth, devId)
+        if (boxResult.total > 0) {
+          console.log("🎁 自动盲盒已完成:", boxResult.receiveSuccess + "/" + boxResult.total)
         }
-      }
-    } catch (e) { console.log("任务提醒发送失败:", e) }
+      } catch (e) { console.log("自动盲盒失败:", e) }
+    }
 
     // 获取车辆监控数据（如果配置了设备服务密钥）
     let vehicle: VehicleInfo | null = null
