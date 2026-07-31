@@ -1,45 +1,49 @@
 {
-  "author": {
-    "name": "QinyRui",
-    "email": "602839678@qq.com",
-    "homepage": "https://github.com/QinyRui/scripting"
+  "intentInputTypes" : [
+
+  ],
+  "version" : "2.2.14",
+  "runInApp" : true,
+  "remoteResource" : {
+    "hash" : "4e899ce7bf30baa79ca26260c791d9b6",
+    "autoUpdateInterval" : 600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
   },
-  "color": "rgba(0, 198, 165,1)",
-  "name": "九号APP签到",
-  "entry": "index.tsx",
-  "intentInputTypes": [],
-  "localizedDescriptions": {
-    "pt": "",
-    "ja": "",
-    "zh": "",
-    "es": "",
-    "it": "",
-    "ru": "",
-    "en": "",
-    "fr": "",
-    "de": ""
+  "localizedDescriptions" : {
+    "pt" : "",
+    "ja" : "",
+    "de" : "",
+    "fr" : "",
+    "it" : "",
+    "zh" : "",
+    "ru" : "",
+    "es" : "",
+    "en" : ""
   },
-  "version": "2.2.13",
-  "contributors": [],
-  "icon": "scooter",
-  "permissions": null,
-  "remoteResource": {
-    "hash": "6be82edd876361c9a5b7656e34d88bcf",
-    "autoUpdateInterval": 600,
-    "url": "https://github.com/QinyRui/scripting/archive/refs/heads/九号.zip"
+  "contributors" : [
+
+  ],
+  "entry" : "index.tsx",
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui"
   },
-  "runInApp": true,
-  "localizedNames": {
-    "zh": "",
-    "pt": "",
-    "ja": "",
-    "de": "",
-    "it": "",
-    "en": "",
-    "ru": "",
-    "es": "",
-    "fr": ""
+  "localizedNames" : {
+    "pt" : "",
+    "ru" : "",
+    "it" : "",
+    "ja" : "",
+    "en" : "",
+    "zh" : "",
+    "de" : "",
+    "fr" : "",
+    "es" : ""
   },
-  "description": "修复因时区问题导致国内每天凌晨 (0点-8点) 自动或手动首次签到时没有发出桌面组件通知的 Bug",
-  "iconImage": "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png"
+  "name" : "九号APP签到",
+  "color" : "rgba(0, 198, 165,1)",
+  "permissions" : null,
+  "icon" : "scooter",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "description" : "清理通知：移除了盲盒通知和任务通知，只保留签到通知"
 }
