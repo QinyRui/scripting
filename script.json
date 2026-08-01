@@ -1,49 +1,49 @@
 {
-  "contributors" : [
-
-  ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "name" : "九号APP签到",
-  "color" : "rgba(0, 198, 165,1)",
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com"
-  },
-  "localizedNames" : {
-    "fr" : "",
-    "ru" : "",
-    "en" : "",
-    "es" : "",
-    "pt" : "",
-    "zh" : "",
-    "ja" : "",
-    "it" : "",
-    "de" : ""
-  },
-  "localizedDescriptions" : {
-    "ru" : "",
-    "fr" : "",
-    "ja" : "",
-    "zh" : "",
-    "it" : "",
-    "es" : "",
-    "de" : "",
-    "pt" : "",
-    "en" : ""
-  },
+  "runInApp" : true,
   "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
     "autoUpdateInterval" : 600,
-    "hash" : "b48afd3113bd7e7dd2eaf63f3d24f9bc"
+    "hash" : "2a99bd6b242dc282f67af6d3f282dc07",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
   },
-  "description" : "首页UI大圆环设计+更新内容Sheet+后续规划",
   "entry" : "index.tsx",
   "permissions" : null,
+  "name" : "九号APP签到",
   "icon" : "scooter",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "description" : "首页UI大圆环设计+更新内容Sheet+后续规划",
+  "localizedDescriptions" : {
+    "zh" : "",
+    "fr" : "",
+    "es" : "",
+    "en" : "",
+    "pt" : "",
+    "ja" : "",
+    "de" : "",
+    "it" : "",
+    "ru" : ""
+  },
+  "color" : "rgba(0, 198, 165,1)",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "localizedNames" : {
+    "ru" : "",
+    "es" : "",
+    "fr" : "",
+    "it" : "",
+    "de" : "",
+    "pt" : "",
+    "zh" : "",
+    "en" : "",
+    "ja" : ""
+  },
   "intentInputTypes" : [
 
   ],
-  "version" : "2.2.18",
-  "runInApp" : true
+  "contributors" : [
+
+  ],
+  "version" : "2.2.19"
 }
