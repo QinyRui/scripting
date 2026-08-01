@@ -458,29 +458,32 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
               今日骑行
             </Text>
             {/* 骑行数据垂直排列 */}
-            <VStack alignment="leading" spacing={S(0)} frame={{ minWidth: 0, maxWidth: "infinity" }}>
+            <HStack alignment="top" spacing={S(8)} frame={{ minWidth: 0, maxWidth: "infinity" }}>
               {/* 今日里程 */}
-              <HStack spacing={S(2)} alignment="center">
+              <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="location.fill" font={fs(9)}
                   foregroundStyle={{ color: "#34C759" as Color, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
                   foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
-              </HStack>
+                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>今日</Text>
+              </VStack>
               {/* 连续天数 */}
-              <HStack spacing={S(2)} alignment="center">
+              <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="bicycle" font={fs(9)}
                   foregroundStyle={{ color: "#FFD60A" as Color, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
                   foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.continuous_days + "天" : "--"}</Text>
-              </HStack>
+                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续</Text>
+              </VStack>
               {/* 总里程 */}
-              <HStack spacing={S(2)} alignment="center">
+              <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="road.lanes" font={fs(9)}
                   foregroundStyle={{ color: "#00E5FF" as Color, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
                   foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
-              </HStack>
-            </VStack>
+                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总里程</Text>
+              </VStack>
+            </HStack>
           </VStack>
           <Spacer />
           <VStack alignment="trailing" spacing={0}>
