@@ -61,7 +61,7 @@ const FULLSCREEN_KEY = "ninebotSettingsFullscreen"
 
 // ==================== 九号的 BoxJs / 模块链接 ====================
 const NINEBOT_BOXJS_JSON_URL =
-  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/2.9.boxjs.json"
+  "https://raw.githubusercontent.com/QinyRui/QYR-/jiuhao/Ninebot.boxjs.json"
 
 const NINEBOT_BOXJS_SUB_URL =
   `http://boxjs.com/#/sub/add/${encodeURIComponent(NINEBOT_BOXJS_JSON_URL)}`
@@ -235,9 +235,9 @@ function AboutView() {
   
   const openTelegram = async () => {
     try {
-      await Safari.openURL("https://t.me/JiuHaoAPP")
+      await Safari.openURL("https://t.me/scriptingappchat")
     } catch (error) {
-      await Pasteboard.setString("https://t.me/JiuHaoAPP")
+      await Pasteboard.setString("https://t.me/scriptingappchat")
       await Dialog.alert({
         title: "已复制链接",
         message: "Telegram 链接已复制到剪贴板",
