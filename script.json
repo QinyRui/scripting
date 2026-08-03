@@ -1,49 +1,10 @@
 {
-  "runInApp" : true,
-  "remoteResource" : {
-    "autoUpdateInterval" : 600,
-    "hash" : "2a99bd6b242dc282f67af6d3f282dc07",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
-  },
-  "entry" : "index.tsx",
-  "permissions" : null,
-  "name" : "九号APP签到",
   "icon" : "scooter",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "description" : "首页UI大圆环设计+更新内容Sheet+后续规划",
-  "localizedDescriptions" : {
-    "zh" : "",
-    "fr" : "",
-    "es" : "",
-    "en" : "",
-    "pt" : "",
-    "ja" : "",
-    "de" : "",
-    "it" : "",
-    "ru" : ""
-  },
+  "description" : "盲盒进度条科技感改造+宝箱图标+7天满格倒计时",
+  "iconImage" : "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png",
   "color" : "rgba(0, 198, 165,1)",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "localizedNames" : {
-    "ru" : "",
-    "es" : "",
-    "fr" : "",
-    "it" : "",
-    "de" : "",
-    "pt" : "",
-    "zh" : "",
-    "en" : "",
-    "ja" : ""
-  },
-  "intentInputTypes" : [
-
-  ],
-  "contributors" : [
-
-  ],
-  "version" : "2.2.19"
+  "entry" : "index.tsx",
+  "runInApp" : true,
+  "version" : "2.2.20",
+  "name" : "九号APP签到"
 }
