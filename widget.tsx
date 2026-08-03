@@ -314,7 +314,7 @@ const BlindBoxRing = ({ box, vehicleName }: { box: any, vehicleName?: string }) 
         {/* 车型名 */}
         {vehicleName ? (
           // @ts-ignore
-          <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.8 }}>
+          <Text font={fs(12)} foregroundStyle={{ color: Theme.colors.text3, opacity: 0.8 }}>
             {vehicleName}
           </Text>
         ) : null}
@@ -473,7 +473,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                   foregroundStyle={{ color: "#FFD60A" as Color, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
                   foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.continuous_days + "天" : "--"}</Text>
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续</Text>
+                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续骑行</Text>
               </VStack>
               {/* 总里程 */}
               <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
