@@ -218,14 +218,13 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
   </VStack>
 )
 
-/** 圆形倒计时环盲盒组件 — 左环右文布局 */
+/** 宝箱盲盒组件 — 左宝箱右文布局，进度条从右往左逐渐减少 */
 const BlindBoxRing = ({ box, vehicleName }: { box: any, vehicleName?: string }) => {
   const isReady = box.leftDaysToOpen <= 0
   const total = box.awardDays || 7
   const left = box.leftDaysToOpen
   const progress = isReady ? 1 : Math.max(0, Math.min(1, (total - left) / total))
-  const ringSize = S(42)
-  const ringWidth = Math.max(3, S(4))
+  const boxSize = S(42)
 
   // 颜色：可领取=绿色，冷却中=橙色
   const accentColor = isReady ? Theme.colors.green : Theme.colors.orange
@@ -237,48 +236,45 @@ const BlindBoxRing = ({ box, vehicleName }: { box: any, vehicleName?: string }) 
   return (
     // @ts-ignore
     <HStack alignment="center" spacing={S(8)}>
-      {/* 左侧：发光倒计时环 */}
-      <ZStack frame={{ width: ringSize, height: ringSize }} alignment="center">
+      {/* 左侧：宝箱图标 */}
+      <ZStack frame={{ width: boxSize, height: boxSize }} alignment="center">
         {/* 外层光晕 */}
         <Circle fill={glowColor}
-          frame={{ width: ringSize + S(8), height: ringSize + S(8) }}
-          opacity={0.12} />
+          frame={{ width: boxSize + S(10), height: boxSize + S(10) }}
+          opacity={0.10} />
         {/* 中层光晕 */}
         <Circle fill={glowColor}
-          frame={{ width: ringSize + S(4), height: ringSize + S(4) }}
-          opacity={0.18} />
-        {/* 底环 */}
-        <Circle stroke={{ shapeStyle: bgRingColor, strokeStyle: { lineWidth: ringWidth } }}
-          frame={{ width: ringSize, height: ringSize }} />
-        {/* 进度环 */}
-        <Circle stroke={{ shapeStyle: accentColor, strokeStyle: { lineWidth: ringWidth } }}
-          frame={{ width: ringSize, height: ringSize }}
-          trim={{ from: 0, to: progress }}
-          rotationEffect={{ degrees: -90, anchor: "center" }} />
-        {/* 中心内容 */}
+          frame={{ width: boxSize + S(5), height: boxSize + S(5) }}
+          opacity={0.16} />
+        {/* 宝箱底座光底板 */}
+        <Circle fill={Widget.isTransparentBackground
+          ? ("rgba(255,255,255,0.12)" as Color)
+          : ("rgba(191,90,242,0.08)" as Color)}
+          frame={{ width: boxSize, height: boxSize }} />
+        {/* 宝箱图标 */}
         <VStack alignment="center" spacing={0}>
           {isReady ? (
             <>
               {/* @ts-ignore */}
-              <Image systemName="gift.fill" font={fs(14)}
+              <Image systemName="gift.fill" font={fs(22)}
                 foregroundStyle={{ color: accentColor, opacity: 1 }} />
               {/* @ts-ignore */}
-              <Text font={fs(7)} fontWeight="bold"
+              <Text font={fs(6)} fontWeight="bold"
                 foregroundStyle={{ color: accentColor, opacity: 1 }}>可领</Text>
             </>
           ) : (
             <>
               {/* @ts-ignore */}
-              <Text font={fs(18)} fontWeight="bold"
-                foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{left}</Text>
+              <Image systemName="shippingbox.fill" font={fs(22)}
+                foregroundStyle={{ color: accentColor, opacity: 0.9 }} />
               {/* @ts-ignore */}
-              <Text font={fs(6)}
-                foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天后</Text>
+              <Text font={fs(8)} fontWeight="bold"
+                foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{left}天</Text>
             </>
           )}
         </VStack>
       </ZStack>
-      {/* 右侧：文字信息 + 迷你进度条 */}
+      {/* 右侧：文字信息 + 从右往左减少的进度条 */}
       <VStack alignment="leading" spacing={S(3)}>
         {/* 标题 */}
         {/* @ts-ignore */}
@@ -292,20 +288,29 @@ const BlindBoxRing = ({ box, vehicleName }: { box: any, vehicleName?: string }) 
           foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>
           {isReady ? "可开启!" : "还剩 " + left + " 天"}
         </Text>
-        {/* 多彩方块渐变进度条 */}
-        <HStack spacing={S(1)} frame={{ height: S(4), width: S(80) }}
-          background={{ shape: { type: "rect", cornerRadius: S(1) }, style: bgRingColor }}>
+        {/* 倒计时进度条 - 7天满格，左边剩余彩色，右边已过灰色 */}
+        <HStack spacing={S(1.5)} frame={{ height: S(5), width: S(80) }}>
           {Array.from({ length: total }).map((_, i) => {
-            const segProgress = Math.min(1, Math.max(0, (total - left - i) / 1))
-            const isFilled = i < (total - left)
-            const barColors = ["#FF6B6B", "#FF8E53", "#FFC048", "#A8E063", "#78E08F", "#48DBFB", "#0ABDE3"]
-            const segColor = barColors[i % barColors.length]
+            // i < left = 剩余天数(左边) → 彩色；i >= left = 已过天数(右边) → 灰色
+            const isColored = i < left
+            // 赛博渐变色：蓝(左) → 青 → 绿 → 黄 → 橙 → 金(右)
+            const cyberColors = ["#5B6ABF", "#0ABDE3", "#48DBFB", "#78E08F", "#FFC048", "#FF8E53", "#FFD60A"]
+            const segColor = cyberColors[i % cyberColors.length]
             return (
               <ZStack key={i} frame={{ maxWidth: "infinity" }}>
-                {isFilled && (
-                  // @ts-ignore
-                  <Rectangle fill={segColor as Color} frame={{ height: S(4) }}
-                    background={{ shape: { type: "rect", cornerRadius: S(1) }, style: segColor as Color }} />
+                {isColored ? (
+                  /* 剩余天数 - 彩色发光格 */
+                  <ZStack frame={{ height: S(5) }} alignment="center">
+                    <Rectangle fill={segColor as Color} frame={{ height: S(5) }}
+                      background={{ shape: { type: "rect", cornerRadius: S(1.5) }, style: segColor as Color }} />
+                    {/* 顶部高光 */}
+                    <Rectangle fill="#FFFFFF" frame={{ height: S(1), maxWidth: "infinity" }}
+                      offset={{ x: 0, y: -S(1.2) }} opacity={0.25} />
+                  </ZStack>
+                ) : (
+                  /* 已过天数 - 灰色半透明格 */
+                  <Rectangle fill="rgba(255,255,255,0.12)" frame={{ height: S(5) }}
+                    background={{ shape: { type: "rect", cornerRadius: S(1.5) }, style: "rgba(255,255,255,0.12)" as Color }} />
                 )}
               </ZStack>
             )
