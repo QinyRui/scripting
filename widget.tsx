@@ -310,7 +310,7 @@ const BlindBoxRing = ({ box, vehicleName, lastReward }: { box: any, vehicleName?
         {/* @ts-ignore */}
         <Text font={fs(10)} fontWeight="bold" lineLimit={1}
           foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>
-          {total === 7 ? "连续签到7天" : "连续签到" + total + "天"}
+          {total === 7 ? "惊喜盲盒赚不停" : "连续签到" + total + "天"}
         </Text>
         {/* 副标题 */}
         {/* @ts-ignore */}
@@ -357,7 +357,7 @@ const BlindBoxRowLarge = ({ box }: { box: any }) => {
   const total = box.awardDays || 7;
   const left = box.leftDaysToOpen;
   
-  const titleText = total === 7 ? "连续签到7天" : "连续签到" + total + "天";
+  const titleText = total === 7 ? "惊喜盲盒赚不停" : "连续签到" + total + "天";
   const subText = isReady ? "可开启!" : "还剩 " + left + " 天";
   
   const barColor = isReady ? Theme.colors.green : "#2B82F6" as Color;
