@@ -1,10 +1,45 @@
 {
-  "icon" : "scooter",
-  "description" : "盲盒进度条科技感改造+宝箱图标+7天满格倒计时",
-  "iconImage" : "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png",
-  "color" : "rgba(0, 198, 165,1)",
-  "entry" : "index.tsx",
+  "name" : "九号APP签到",
   "runInApp" : true,
-  "version" : "2.2.20",
-  "name" : "九号APP签到"
+  "contributors" : [
+
+  ],
+  "intentInputTypes" : [
+
+  ],
+  "description" : "科幻HUD圆环仪表+科技进度条+盲盒领取通知",
+  "entry" : "index.tsx",
+  "localizedNames" : {
+    "de" : "",
+    "it" : "",
+    "pt" : "",
+    "es" : "",
+    "ru" : "",
+    "zh" : "",
+    "fr" : "",
+    "en" : "",
+    "ja" : ""
+  },
+  "icon" : "scooter",
+  "remoteResource" : null,
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
+  "permissions" : null,
+  "localizedDescriptions" : {
+    "de" : "",
+    "it" : "",
+    "pt" : "",
+    "es" : "",
+    "ru" : "",
+    "zh" : "",
+    "fr" : "",
+    "en" : "",
+    "ja" : ""
+  },
+  "version" : "2.4.3",
+  "color" : "rgba(0, 198, 165,1)"
 }
