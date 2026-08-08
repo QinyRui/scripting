@@ -493,13 +493,13 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                   foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
                 <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>今日</Text>
               </VStack>
-              {/* 连续天数 */}
+              {/* 总骑行天数 */}
               <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="bicycle" font={fs(9)}
                   foregroundStyle={{ color: "#FFD60A" as Color, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.continuous_days + "天" : "--"}</Text>
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>连续骑行</Text>
+                  foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.total_days + "天" : "--"}</Text>
+                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总骑行天数</Text>
               </VStack>
               {/* 总里程 */}
               <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
@@ -616,7 +616,7 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           <VStack spacing={S(4)} frame={{ maxWidth: "infinity" }}>
             <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
               <StatItem icon="location.fill" label="今日" value={ach ? ach.mileage + "km" : "--"} color={Theme.colors.green} />
-              <StatItem icon="bicycle" label="连续" value={ach ? ach.continuous_days + "天" : "--"} color={Theme.colors.yellow} />
+              <StatItem icon="bicycle" label="总骑行" value={ach ? ach.total_days + "天" : "--"} color={Theme.colors.yellow} />
               <StatItem icon="road.lanes" label="总里程" value={ach ? ach.odometer + "km" : "--"} color={Theme.colors.cyan} />
             </HStack>
             <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
