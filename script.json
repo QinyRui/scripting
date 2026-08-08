@@ -1,49 +1,49 @@
 {
-  "icon" : "scooter",
-  "description" : "盲盒圈显示上次奖励+自动识别经验N币",
-  "contributors" : [
-
-  ],
   "localizedDescriptions" : {
-    "it" : "",
-    "ru" : "",
-    "en" : "",
-    "fr" : "",
-    "pt" : "",
     "zh" : "",
+    "it" : "",
     "ja" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "pt" : "",
     "de" : "",
-    "es" : ""
+    "fr" : ""
   },
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "color" : "rgba(0, 198, 165,1)",
+  "description" : "连续骑行改为总骑行天数+盲盒圈显示上次奖励",
+  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
-  "entry" : "index.tsx",
-  "runInApp" : true,
-  "permissions" : null,
   "remoteResource" : {
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "autoUpdateInterval" : 600,
-    "hash" : "a3d31a02f6db1edeaa83ad8b9bafff41"
+    "hash" : "9ac528f427ad5b037ce313bae3ab34f6",
+    "autoUpdateInterval" : 600
   },
-  "version" : "2.2.20",
+  "version" : "2.2.21",
+  "author" : {
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui"
+  },
+  "entry" : "index.tsx",
+  "permissions" : null,
   "name" : "九号APP签到",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
   "localizedNames" : {
-    "ja" : "",
-    "pt" : "",
-    "zh" : "",
-    "en" : "",
-    "it" : "",
-    "es" : "",
-    "de" : "",
+    "ru" : "",
     "fr" : "",
-    "ru" : ""
-  }
+    "it" : "",
+    "pt" : "",
+    "en" : "",
+    "es" : "",
+    "ja" : "",
+    "de" : "",
+    "zh" : ""
+  },
+  "icon" : "scooter",
+  "color" : "rgba(0, 198, 165,1)",
+  "contributors" : [
+
+  ]
 }
