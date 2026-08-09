@@ -546,6 +546,25 @@ async function performLogin(): Promise<boolean> {
   }
 }
 
+/** 自动刷新 Cookie（静默方式）：加载页面 → 等待浏览器自动认证 → 提取新 Cookie
+ * 注意：不使用 present()，避免弹出 WebView 界面 */
+async function tryRefreshCookies(): Promise<boolean> {
+  let vc: WebViewController | null = null
+  try {
+    vc = new WebViewController()
+    await vc.loadURL(MIMO_CONSOLE)
+    await vc.waitForLoad()
+    // 等待页面完全加载，浏览器会自动携带已有 Cookie 重新认证
+    await new Promise<void>(function(resolve) { setTimeout(function() { resolve() }, 5000) })
+    const cookieStr = await extractAndSaveCookies(vc)
+    return cookieStr.length > 0
+  } catch (e) {
+    return false
+  } finally {
+    if (vc) { try { vc.dispose() } catch {} }
+  }
+}
+
 // ============================================================
 // 子组件
 // ============================================================
@@ -1061,12 +1080,27 @@ export default function DashboardView() {
     setSyncStatus("正在验证登录状态...")
 
     // 先验证 Cookie 是否有效
-    const cookieValid = await checkCookieValid()
+    let cookieValid = await checkCookieValid()
     if (!cookieValid) {
-      setSyncing(false)
-      setIsLoggedIn(false)
-      setSyncStatus("⚠️ 登录已过期，请重新登录")
-      return
+      // Cookie 过期，尝试自动刷新
+      setSyncStatus("Cookie 过期，正在自动刷新...")
+      const refreshed = await tryRefreshCookies()
+      if (!refreshed) {
+        setSyncing(false)
+        setIsLoggedIn(false)
+        setSyncStatus("⚠️ 自动刷新失败，请手动重新登录")
+        return
+      }
+      // 刷新成功，再次验证
+      setSyncStatus("Cookie 已刷新，验证中...")
+      cookieValid = await checkCookieValid()
+      if (!cookieValid) {
+        setSyncing(false)
+        setIsLoggedIn(false)
+        setSyncStatus("⚠️ 刷新后仍无效，请手动重新登录")
+        return
+      }
+      setSyncStatus("✅ Cookie 已自动刷新")
     }
 
     setSyncStatus("正在拉取实时数据...")
@@ -1137,12 +1171,25 @@ export default function DashboardView() {
         // 后台验证 Cookie 是否有效
         const cookieValid = await checkCookieValid()
         if (!cookieValid) {
-          setIsLoggedIn(false)
-          setSyncStatus("⚠️ 登录已过期，请重新登录")
-        } else {
-          // Cookie 有效，自动拉取最新数据
-          handleSync()
+          // Cookie 过期，尝试自动刷新
+          setSyncStatus("Cookie 过期，尝试自动刷新...")
+          const refreshed = await tryRefreshCookies()
+          if (!refreshed) {
+            setIsLoggedIn(false)
+            setSyncStatus("⚠️ 自动刷新失败，请手动重新登录")
+            return
+          }
+          // 刷新成功，再次验证
+          const refreshedValid = await checkCookieValid()
+          if (!refreshedValid) {
+            setIsLoggedIn(false)
+            setSyncStatus("⚠️ 刷新后仍无效，请手动重新登录")
+            return
+          }
+          setSyncStatus("✅ Cookie 已自动刷新")
         }
+        // Cookie 有效，自动拉取最新数据
+        handleSync()
       } else {
         setSyncStatus("")
       }
