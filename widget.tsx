@@ -2,10 +2,12 @@ import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle,
 import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getMyAchievement, type NinebotWidgetData, type VehicleInfo, type AchievementInfo } from './api'
 import { getStorage, setStorage } from './utils/storage'
 
-// 不再需要 CalendarNotificationTrigger / DateComponents（盲盒通知已移除）
+// 不再需要 CalendarNotificationTrigger / DateComponents
 
-// ==================== 通知存储 key（仅保留签到通知）====================
-// 盲盒与任务通知已移除
+// ==================== 通知存储 key =====================
+// ninebot.signNotifiedDate — 签到成功通知去重日期
+// ninebot.blindBoxRewardNotifiedDate — 盲盒奖励通知去重日期
+// blindBoxRewardData — 盲盒奖励数据（供签到通知 UI 展示）
 
 // ==================== 当前脚本名（用于 tapAction.runScript）====================
 const CURRENT_SCRIPT_NAME = "九号APP签到"
@@ -760,17 +762,10 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
       const lastSignNotifDate = getStorage("ninebot.signNotifiedDate")
       if (lastSignNotifDate !== today) {
         try {
-          let blindBoxInfo = ""
-          if (baseData.minLeftDaysToOpen !== null && baseData.minLeftDaysToOpen !== undefined && baseData.minLeftDaysToOpen > 0) {
-            blindBoxInfo = " | 🎁 下个盲盒 " + baseData.minLeftDaysToOpen + " 天后"
-          } else if (baseData.notOpenedBlindBoxCount > 0) {
-            blindBoxInfo = " | 🎁 有 " + baseData.notOpenedBlindBoxCount + " 个盲盒可领"
-          }
-
           await Notification.schedule({
             title: "✅ 签到成功",
             subtitle: "九号电动车",
-            body: "🎉 已连续签到 " + baseData.consecutiveDays + " 天\n+" + baseData.experience + " 经验 | 等级 " + baseData.level + blindBoxInfo,
+            body: "🎉 已连续签到 " + baseData.consecutiveDays + " 天\n+" + baseData.experience + " 经验 | 等级 " + baseData.level,
             iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
             threadIdentifier: "ninebot-sign",
             customUI: true,
@@ -780,8 +775,7 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
               experience: baseData.experience,
               level: baseData.level,
               nCoin: baseData.nCoin,
-              minLeftDaysToOpen: baseData.minLeftDaysToOpen,
-              notOpenedBlindBoxCount: baseData.notOpenedBlindBoxCount,
+              blindBoxRewards: null,
             }
           })
           setStorage("ninebot.signNotifiedDate", today)
@@ -790,13 +784,59 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
       }
     }
 
-    // 自动开启盲盒（功能保留，不发送盲盒通知）
+    // 自动开启盲盒 + 发送奖励通知
     if (settings.autoOpenBlindBox && baseData.notOpenedBlindBoxCount > 0) {
       try {
         const boxResult = await autoOpenBlindBoxes(auth, devId)
         baseData = await getNinebotInfo(auth, devId)
         if (boxResult.total > 0) {
           console.log("🎁 自动盲盒已完成:", boxResult.receiveSuccess + "/" + boxResult.total)
+        }
+        // 有领取成功的奖励 → 发送通知（合并到签到通知 thread）
+        if (boxResult.rewards && boxResult.rewards.length > 0) {
+          try {
+            const d = new Date()
+            const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0')
+            const lastBlindNotifDate = getStorage("ninebot.blindBoxRewardNotifiedDate")
+            if (lastBlindNotifDate !== today) {
+              // 提取奖励明细
+              const rewardDetails: Array<{ awardDays: number, rewardType: number, rewardValue: number }> = []
+              for (const r of boxResult.rewards) {
+                if (r.reward) {
+                  rewardDetails.push({
+                    awardDays: r.awardDays || 0,
+                    rewardType: r.reward.rewardType || 1,
+                    rewardValue: r.reward.rewardValue || 0
+                  })
+                }
+              }
+              if (rewardDetails.length > 0) {
+                // 构造摘要文字
+                const rewardSummary = rewardDetails.map(function(r) {
+                  return "+" + r.rewardValue + " " + (r.rewardType === 1 ? "经验" : "N币")
+                }).join(" · ")
+
+                await Notification.schedule({
+                  title: "🎁 盲盒奖励已领取",
+                  subtitle: "九号电动车",
+                  body: "🎉 " + rewardDetails.length + " 个盲盒奖励: " + rewardSummary,
+                  iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
+                  threadIdentifier: "ninebot-sign",
+                  customUI: true,
+                  userInfo: {
+                    type: "sign",
+                    consecutiveDays: baseData.consecutiveDays,
+                    experience: baseData.experience,
+                    level: baseData.level,
+                    nCoin: baseData.nCoin,
+                    blindBoxRewards: rewardDetails,
+                  }
+                })
+                setStorage("ninebot.blindBoxRewardNotifiedDate", today)
+                console.log("🎁 盲盒奖励通知已发送")
+              }
+            }
+          } catch (e) { console.log("盲盒奖励通知发送失败:", e) }
         }
       } catch (e) { console.log("自动盲盒失败:", e) }
     }
