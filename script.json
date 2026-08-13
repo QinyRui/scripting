@@ -1,49 +1,49 @@
 {
   "localizedDescriptions" : {
-    "zh" : "",
-    "it" : "",
-    "ja" : "",
-    "en" : "",
-    "es" : "",
-    "ru" : "",
-    "pt" : "",
     "de" : "",
-    "fr" : ""
+    "ru" : "",
+    "es" : "",
+    "zh" : "",
+    "pt" : "",
+    "it" : "",
+    "fr" : "",
+    "ja" : "",
+    "en" : ""
   },
-  "description" : "连续骑行改为总骑行天数+盲盒圈显示上次奖励",
-  "runInApp" : true,
-  "intentInputTypes" : [
-
-  ],
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "hash" : "9ac528f427ad5b037ce313bae3ab34f6",
-    "autoUpdateInterval" : 600
-  },
-  "version" : "2.2.21",
-  "author" : {
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui"
-  },
-  "entry" : "index.tsx",
-  "permissions" : null,
-  "name" : "九号APP签到",
   "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
   "localizedNames" : {
     "ru" : "",
-    "fr" : "",
-    "it" : "",
-    "pt" : "",
-    "en" : "",
-    "es" : "",
     "ja" : "",
-    "de" : "",
-    "zh" : ""
+    "fr" : "",
+    "en" : "",
+    "pt" : "",
+    "it" : "",
+    "zh" : "",
+    "es" : "",
+    "de" : ""
   },
+  "entry" : "index.tsx",
+  "intentInputTypes" : [
+
+  ],
   "icon" : "scooter",
-  "color" : "rgba(0, 198, 165,1)",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
   "contributors" : [
 
-  ]
+  ],
+  "version" : "2.2.22",
+  "color" : "rgba(0, 198, 165,1)",
+  "remoteResource" : {
+    "autoUpdateInterval" : 600,
+    "hash" : "36f000856c01f9b9502219e25373539a",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
+  },
+  "permissions" : null,
+  "runInApp" : true,
+  "name" : "九号APP签到",
+  "description" : "盲盒奖励通知合并到签到通知"
 }
