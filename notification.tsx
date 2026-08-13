@@ -1,6 +1,5 @@
 /**
- * 九号电动车 - 富通知 UI（仅保留签到通知）
- * 盲盒通知和任务通知已移除
+ * 九号电动车 - 富通知 UI（签到通知 + 盲盒奖励）
  */
 
 import { Notification, VStack, HStack, Text, Image, Divider, Color, ZStack, Circle } from "scripting"
@@ -41,14 +40,13 @@ function StatCard({ value, label, color }: {
   )
 }
 
-// ===== 签到成功通知 UI =====
-function SignInNotification({ consecutiveDays = 0, experience = 0, level = 0, nCoin = 0, minLeftDaysToOpen, notOpenedBlindBoxCount = 0 }: {
+// ===== 签到成功通知 UI（含盲盒奖励）=====
+function SignInNotification({ consecutiveDays = 0, experience = 0, level = 0, nCoin = 0, blindBoxRewards }: {
   consecutiveDays?: number
   experience?: number
   level?: number
   nCoin?: number
-  minLeftDaysToOpen?: number
-  notOpenedBlindBoxCount?: number
+  blindBoxRewards?: Array<{ awardDays: number, rewardType: number, rewardValue: number }>
 }) {
 
   return (
@@ -112,39 +110,28 @@ function SignInNotification({ consecutiveDays = 0, experience = 0, level = 0, nC
           foregroundStyle={{ color: C.green, opacity: 1 }}>已获得</Text>
       </HStack>
 
-      {/* 盲盒信息简洁提示（仅显示数量，不发送盲盒通知） */}
-      {notOpenedBlindBoxCount > 0 && (
+      {/* 盲盒奖励卡片（金色 · 自动开启后显示） */}
+      {blindBoxRewards && blindBoxRewards.length > 0 && (
         // @ts-ignore
         <HStack alignment="center" spacing={10} background="#2A1F0A" as Color cornerRadius={12} padding={12}>
           <ZStack frame={{ width: 36, height: 36 }} alignment="center">
-            <Circle fill={C.orange} frame={{ width: 36, height: 36 }} opacity={0.18} />
+            <Circle fill={C.gold} frame={{ width: 36, height: 36 }} opacity={0.18} />
             {/* @ts-ignore */}
             <Image systemName="gift.fill" font={18}
-              foregroundStyle={{ color: C.orange, opacity: 1 }} />
+              foregroundStyle={{ color: C.gold, opacity: 1 }} />
           </ZStack>
           <VStack spacing={1} frame={{ maxWidth: "infinity" }}>
             {/* @ts-ignore */}
             <Text font={13} fontWeight="semibold"
-              foregroundStyle={{ color: C.text1, opacity: 1 }}>盲盒待领取</Text>
+              foregroundStyle={{ color: C.text1, opacity: 1 }}>盲盒奖励已领取</Text>
             {/* @ts-ignore */}
             <Text font={11}
-              foregroundStyle={{ color: C.text2, opacity: 1 }}>
-              {notOpenedBlindBoxCount + " 个盲盒可领取"}
+              foregroundStyle={{ color: C.gold, opacity: 1 }}>
+              {blindBoxRewards.map(function(r) {
+                return "+" + r.rewardValue + " " + (r.rewardType === 1 ? "经验" : "N币")
+              }).join(" · ")}
             </Text>
           </VStack>
-          {minLeftDaysToOpen !== null && minLeftDaysToOpen !== undefined && minLeftDaysToOpen > 0 ? (
-            /* @ts-ignore */
-            <Text font={12}
-              foregroundStyle={{ color: C.orange, opacity: 1 }}>⏳ {minLeftDaysToOpen}天</Text>
-          ) : (
-            /* @ts-ignore */
-            <HStack padding={{ horizontal: 8, vertical: 4 }}
-              background={{ style: C.green, shape: { type: "rect", cornerRadius: 6 } }}>
-              {/* @ts-ignore */}
-              <Text font={11} fontWeight="bold"
-                foregroundStyle={{ color: C.text1, opacity: 1 }}>可领取</Text>
-            </HStack>
-          )}
         </HStack>
       )}
     </VStack>
@@ -160,7 +147,6 @@ if (data) {
     experience={userInfo.experience}
     level={userInfo.level}
     nCoin={userInfo.nCoin}
-    minLeftDaysToOpen={userInfo.minLeftDaysToOpen}
-    notOpenedBlindBoxCount={userInfo.notOpenedBlindBoxCount}
+    blindBoxRewards={userInfo.blindBoxRewards}
   />)
 }
