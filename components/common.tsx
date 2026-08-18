@@ -41,7 +41,9 @@ import {
 import { zodiacAnimals } from "../utils/constants"
 
 // ─── 通用文本组件 ───
-export function SectionText(props: { text: string | string[]; font?: number; color?: string; lineLimit?: number; opacity?: number; minScaleFactor?: number; fixedSize?: boolean | { horizontal?: boolean; vertical?: boolean }; layoutPriority?: number }) {
+export function SectionText(props: { text: string | string[]; font?: number; color?: string; lineLimit?: number; opacity?: number; minScaleFactor?: number; fixedSize?: boolean | { horizontal?: boolean; vertical?: boolean }; layoutPriority?: number; shadow?: boolean }) {
+  // 透明/模糊模式下自动为白色系文字添加阴影确保可读性
+  const autoShadow = props.shadow !== false ? getReadabilityShadow() : undefined
   return (
     <Text
       styledText={{
@@ -52,16 +54,32 @@ export function SectionText(props: { text: string | string[]; font?: number; col
       lineLimit={props.lineLimit}
       opacity={props.opacity}
       minScaleFactor={props.minScaleFactor}
+      shadow={autoShadow}
       {...(props.fixedSize !== undefined ? { fixedSize: props.fixedSize as any } : {})}
       {...(props.layoutPriority !== undefined ? { layoutPriority: props.layoutPriority } : {})}
     />
   )
 }
 
+// ─── 透明/模糊模式检测 ───
+/** 当前是否处于系统透明或模糊背景模式（不绘制任何自定义背景） */
+export function isSystemTransparentMode(): boolean {
+  return Widget.isTransparentMode || Widget.isBlurMode || Widget.isTransparentBackground
+}
+
+// ─── 透明模式文字阴影 ───
+/** 透明/模糊模式下为白色文字添加阴影，确保在浅色壁纸上可读 */
+const TRANSPARENT_SHADOW = { color: "rgba(0,0,0,0.55)", radius: 3, x: 0, y: 1 }
+
+/** 根据是否透明模式返回阴影配置 */
+export function getReadabilityShadow(): { color: string; radius: number; x: number; y: number } | undefined {
+  return isSystemTransparentMode() ? TRANSPARENT_SHADOW : undefined
+}
+
 // ─── 背景层 ───
 export function BackgroundLayer({ family, skycon }: { family: string; skycon?: string }) {
-  // 透明背景模式：当用户在 Scripting 中开启透明背景时，不渲染任何背景
-  if (Widget.isTransparentBackground) {
+  // 透明背景/模糊背景模式：系统已绘制背景层，不渲染任何自定义背景
+  if (isSystemTransparentMode()) {
     return <></>
   }
   const backgroundPath = getBackgroundPath(family)
@@ -381,7 +399,7 @@ export function WeatherSide({ weatherInfo, widgetType }: { weatherInfo: WeatherI
     <VStack alignment="trailing" spacing={widgetType === "medium" ? 3 : 4} frame={{ minWidth: widgetType === "medium" ? 100 : 120, alignment: "trailing" }} {...offsetStyle(widgetType, "right")}>
       <HStack spacing={5} padding={{ bottom: widgetType === "medium" ? 1 : 2 }}>
         <Image systemName={wIco} renderingMode="template" foregroundStyle={getWeatherIconColor(wIco) as any} frame={{ width: iconSize, height: iconSize }} />
-        <Text font={temperatureFont} foregroundStyle="white" lineLimit={1}>{`${wTemp}°C`}</Text>
+        <Text font={temperatureFont} foregroundStyle="white" lineLimit={1} shadow={getReadabilityShadow()}>{`${wTemp}°C`}</Text>
       </HStack>
       <VStack alignment="trailing" spacing={widgetType === "medium" ? 1 : 2}>
         <WeatherMetricLine label="风力" value={weatherInfo.windStr || "--"} />
