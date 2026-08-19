@@ -117,7 +117,7 @@ const ScanBeam = ({ width, color = Theme.colors.green }: { width: number, color?
 
 /** 中心图标路径 */
 const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/LOUGO.png"
-const VEHICLE_IMG_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/ninebot-vehicle-transparent.png"
+const VEHICLE_IMG_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/ninebot-scooter-lineart.png"
 
 /** 签到核心仪表盘 — 彩色渐变环（基于时间旋转）+ 光晕 + 九号logo */
 const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }) => {
