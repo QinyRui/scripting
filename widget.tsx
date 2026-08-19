@@ -16,6 +16,7 @@ interface ExtendedNinebotData extends NinebotWidgetData {
   waitingBoxDesc: string
   stats: { signStreakMax: number }
   vehicle: VehicleInfo | null
+  tokenExpired: boolean
 }
 
 // ========================
@@ -541,6 +542,21 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           </VStack>
         </HStack>
         <Spacer />
+        {/* Token 过期警告 */}
+        {info.tokenExpired ? (
+          <HStack alignment="center" spacing={S(6)}
+            background={{ shape: { type: "rect", cornerRadius: S(8) }, style: "rgba(255,149,0,0.15)" as Color }}
+            padding={{ horizontal: S(8), vertical: S(4) }} frame={{ maxWidth: "infinity" }}>
+            <Image systemName="exclamationmark.triangle.fill" font={fs(11)}
+              foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }} />
+            <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
+              <Text font={fs(8)} fontWeight="semibold"
+                foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }}>Token 已过期</Text>
+              <Text font={fs(6)}
+                foregroundStyle={{ color: Theme.colors.text3, opacity: 0.8 }}>请在九号APP中重新登录获取</Text>
+            </VStack>
+          </HStack>
+        ) : null}
         {/* ═══ 中部：左数据 + 右车型 ═══ */}
         <HStack alignment="bottom" spacing={0} frame={{ maxWidth: "infinity" }}>
           {/* 左侧：圆形倒计时环盲盒 — 紧凑布局 */}
@@ -612,6 +628,22 @@ const LargeWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
             </VStack>
           </HStack>
         </TechCard>
+
+        {/* Token 过期警告 */}
+        {info.tokenExpired ? (
+          <TechCard padding={S(4)} glowColor={Theme.colors.orange}>
+            <HStack alignment="center" spacing={S(6)} frame={{ maxWidth: "infinity" }}>
+              <Image systemName="exclamationmark.triangle.fill" font={fs(12)}
+                foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }} />
+              <VStack spacing={0} frame={{ maxWidth: "infinity" }}>
+                <Text font={fs(9)} fontWeight="semibold"
+                  foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }}>Token 已过期 · 经验/成就数据不可用</Text>
+                <Text font={fs(7)}
+                  foregroundStyle={{ color: Theme.colors.text3, opacity: 0.8 }}>请在九号出行 APP 中重新登录后刷新</Text>
+              </VStack>
+            </HStack>
+          </TechCard>
+        ) : null}
 
         {/* 成就数据网格（2x3）*/}
         <TechCard padding={S(5)} glowColor={Theme.colors.cyan}>
