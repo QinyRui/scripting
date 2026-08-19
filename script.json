@@ -1,49 +1,49 @@
 {
-  "localizedDescriptions" : {
-    "de" : "",
-    "ru" : "",
-    "es" : "",
-    "zh" : "",
-    "pt" : "",
-    "it" : "",
-    "fr" : "",
-    "ja" : "",
-    "en" : ""
-  },
+  "version" : "2.2.23",
   "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "localizedNames" : {
-    "ru" : "",
-    "ja" : "",
-    "fr" : "",
-    "en" : "",
-    "pt" : "",
-    "it" : "",
-    "zh" : "",
-    "es" : "",
-    "de" : ""
-  },
-  "entry" : "index.tsx",
-  "intentInputTypes" : [
-
-  ],
-  "icon" : "scooter",
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
+  "color" : "rgba(0, 198, 165,1)",
+  "runInApp" : true,
   "contributors" : [
 
   ],
-  "version" : "2.2.22",
-  "color" : "rgba(0, 198, 165,1)",
+  "description" : "Token过期时显示橙色警告提示",
   "remoteResource" : {
-    "autoUpdateInterval" : 600,
-    "hash" : "36f000856c01f9b9502219e25373539a",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "0a53e768b8f5cec3f942e7c11a526480",
+    "autoUpdateInterval" : 600
   },
-  "permissions" : null,
-  "runInApp" : true,
+  "localizedDescriptions" : {
+    "ru" : "",
+    "fr" : "",
+    "es" : "",
+    "it" : "",
+    "de" : "",
+    "zh" : "",
+    "ja" : "",
+    "en" : "",
+    "pt" : ""
+  },
   "name" : "九号APP签到",
-  "description" : "盲盒奖励通知合并到签到通知"
+  "intentInputTypes" : [
+
+  ],
+  "permissions" : null,
+  "localizedNames" : {
+    "it" : "",
+    "zh" : "",
+    "pt" : "",
+    "fr" : "",
+    "en" : "",
+    "ru" : "",
+    "es" : "",
+    "de" : "",
+    "ja" : ""
+  },
+  "entry" : "index.tsx",
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui"
+  },
+  "icon" : "scooter"
 }
