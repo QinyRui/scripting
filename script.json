@@ -1,49 +1,49 @@
 {
-  "version" : "2.2.23",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "color" : "rgba(0, 198, 165,1)",
-  "runInApp" : true,
-  "contributors" : [
-
-  ],
-  "description" : "Token过期时显示橙色警告提示",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "hash" : "0a53e768b8f5cec3f942e7c11a526480",
-    "autoUpdateInterval" : 600
-  },
   "localizedDescriptions" : {
-    "ru" : "",
+    "zh" : "",
     "fr" : "",
+    "en" : "",
+    "ru" : "",
+    "ja" : "",
     "es" : "",
     "it" : "",
-    "de" : "",
-    "zh" : "",
-    "ja" : "",
-    "en" : "",
-    "pt" : ""
+    "pt" : "",
+    "de" : ""
   },
-  "name" : "九号APP签到",
   "intentInputTypes" : [
 
   ],
-  "permissions" : null,
-  "localizedNames" : {
-    "it" : "",
-    "zh" : "",
-    "pt" : "",
-    "fr" : "",
-    "en" : "",
-    "ru" : "",
-    "es" : "",
-    "de" : "",
-    "ja" : ""
+  "name" : "九号APP签到",
+  "runInApp" : true,
+  "version" : "2.2.24",
+  "description" : "电动车图片替换为线稿风格",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "f39257d0299ffc50fa8e89ea0f12c5cd",
+    "autoUpdateInterval" : 600
   },
-  "entry" : "index.tsx",
+  "localizedNames" : {
+    "pt" : "",
+    "es" : "",
+    "fr" : "",
+    "de" : "",
+    "ru" : "",
+    "ja" : "",
+    "en" : "",
+    "it" : "",
+    "zh" : ""
+  },
+  "color" : "rgba(0, 198, 165,1)",
+  "contributors" : [
+
+  ],
   "author" : {
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui"
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
   },
-  "icon" : "scooter"
+  "icon" : "scooter",
+  "permissions" : null,
+  "entry" : "index.tsx"
 }
