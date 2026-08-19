@@ -38,6 +38,8 @@ export interface NinebotWidgetData {
   }>
   // 成就数据（来自排行 API）
   achievement: AchievementInfo | null
+  // token 过期标记（经验/成就 API 返回 401903 时设置）
+  tokenExpired: boolean
 }
 
 // 盲盒信息
@@ -200,13 +202,20 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
     
     let level = 0
     let experience = 0
+    let tokenExpired = false
     
     if (creditResp.data && creditResp.data.code === 1 && creditResp.data.data) {
       level = creditResp.data.data.level || 0
       experience = creditResp.data.data.credit || 0
       console.log("✅ 经验等级解析成功:", { level, experience })
     } else {
-      console.warn("⚠️ 经验等级 API 返回错误:", creditResp.data?.msg || creditResp.data?.message || JSON.stringify(creditResp.data))
+      const errCode = creditResp.data?.code
+      const errMsg = creditResp.data?.desc || creditResp.data?.msg || creditResp.data?.message || JSON.stringify(creditResp.data)
+      console.warn("⚠️ 经验等级 API 返回错误:", errMsg)
+      if (errCode === 401903) {
+        tokenExpired = true
+        console.warn("🔑 检测到 token 过期 (401903)")
+      }
     }
 
     // 请求盲盒数据
@@ -271,6 +280,7 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       openedBoxesDetail,
       calendarInfo,
       achievement: null,
+      tokenExpired,
     }
     
     console.log("📊 最终解析结果:", JSON.stringify(result))
