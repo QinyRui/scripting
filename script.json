@@ -1,49 +1,49 @@
 {
+  "permissions" : null,
+  "color" : "rgba(0, 198, 165,1)",
+  "icon" : "scooter",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "version" : "2.2.26",
+  "localizedNames" : {
+    "fr" : "",
+    "de" : "",
+    "pt" : "",
+    "en" : "",
+    "ru" : "",
+    "it" : "",
+    "ja" : "",
+    "es" : "",
+    "zh" : ""
+  },
+  "name" : "九号APP签到",
+  "runInApp" : true,
+  "entry" : "index.tsx",
+  "contributors" : [
+
+  ],
+  "description" : "断签检测自动发送补签提醒通知",
+  "author" : {
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com",
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
+  },
   "remoteResource" : {
-    "hash" : "f61e3f1d6170a3e73a8b3aa260f04fc2",
     "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "76a7e6497d03aee7483f6ca8633d720a",
     "autoUpdateInterval" : 600
   },
   "intentInputTypes" : [
 
   ],
-  "contributors" : [
-
-  ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "icon" : "scooter",
-  "name" : "九号APP签到",
-  "author" : {
-    "name" : "QinyRui",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com"
-  },
-  "entry" : "index.tsx",
-  "description" : "电动车图片替换为线稿风格",
-  "color" : "rgba(0, 198, 165,1)",
-  "localizedNames" : {
-    "en" : "",
+  "localizedDescriptions" : {
     "ru" : "",
+    "zh" : "",
     "de" : "",
     "fr" : "",
-    "it" : "",
-    "pt" : "",
-    "zh" : "",
-    "es" : "",
-    "ja" : ""
-  },
-  "localizedDescriptions" : {
     "en" : "",
     "ja" : "",
-    "fr" : "",
-    "pt" : "",
-    "ru" : "",
     "it" : "",
-    "zh" : "",
     "es" : "",
-    "de" : ""
-  },
-  "permissions" : null,
-  "runInApp" : true,
-  "version" : "2.2.24"
+    "pt" : ""
+  }
 }
