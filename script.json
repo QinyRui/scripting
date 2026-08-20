@@ -1,49 +1,49 @@
 {
-  "permissions" : null,
-  "color" : "rgba(0, 198, 165,1)",
-  "icon" : "scooter",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "version" : "2.2.26",
-  "localizedNames" : {
-    "fr" : "",
-    "de" : "",
-    "pt" : "",
-    "en" : "",
-    "ru" : "",
-    "it" : "",
-    "ja" : "",
-    "es" : "",
-    "zh" : ""
-  },
-  "name" : "九号APP签到",
-  "runInApp" : true,
   "entry" : "index.tsx",
+  "color" : "rgba(0, 198, 165,1)",
+  "name" : "九号APP签到",
   "contributors" : [
 
   ],
-  "description" : "断签检测自动发送补签提醒通知",
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting"
-  },
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "hash" : "76a7e6497d03aee7483f6ca8633d720a",
-    "autoUpdateInterval" : 600
-  },
+  "version" : "2.2.27",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "runInApp" : true,
   "intentInputTypes" : [
 
   ],
+  "description" : "透明模式使用iOS系统自适应颜色",
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "autoUpdateInterval" : 600,
+    "hash" : "6e1f7dbe6744bf89d487b3e3e2a51533"
+  },
+  "icon" : "scooter",
+  "permissions" : null,
   "localizedDescriptions" : {
-    "ru" : "",
     "zh" : "",
-    "de" : "",
+    "es" : "",
+    "it" : "",
+    "pt" : "",
+    "ja" : "",
     "fr" : "",
     "en" : "",
-    "ja" : "",
-    "it" : "",
+    "ru" : "",
+    "de" : ""
+  },
+  "localizedNames" : {
     "es" : "",
-    "pt" : ""
+    "de" : "",
+    "pt" : "",
+    "it" : "",
+    "ru" : "",
+    "en" : "",
+    "ja" : "",
+    "zh" : "",
+    "fr" : ""
+  },
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "name" : "QinyRui",
+    "email" : "602839678@qq.com"
   }
 }
