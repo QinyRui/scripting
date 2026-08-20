@@ -24,49 +24,29 @@ interface ExtendedNinebotData extends NinebotWidgetData {
 // ========================
 
 const isTransparent = Widget.isTransparentBackground
-const isLightMode = Device.colorScheme === "light"
 
 const Theme = {
   transparent: isTransparent,
-  colors: isTransparent ? (isLightMode ? {
-    // 透明模式 + 浅色外观 → 深色文字
+  colors: isTransparent ? {
+    // 透明模式 → 使用 iOS 系统自适应颜色（自动适配浅色/深色壁纸）
     bg: "clear" as Color,
-    card: "rgba(0,0,0,0.06)" as Color,
-    cardStroke: "rgba(0,0,0,0.1)" as Color,
-    text1: "#1C1C1E" as Color,
-    text2: "rgba(0,0,0,0.55)" as Color,
-    text3: "rgba(0,0,0,0.3)" as Color,
-    cyan: "#0A84FF" as Color,
-    cyanGlow: "rgba(10,132,255,0.15)" as Color,
-    green: "#30B54C" as Color,
-    greenGlow: "rgba(48,181,76,0.15)" as Color,
-    orange: "#E8850C" as Color,
-    red: "#E8382E" as Color,
-    redGlow: "rgba(232,56,46,0.15)" as Color,
-    purple: "#AF52DE" as Color,
-    purpleGlow: "rgba(175,82,222,0.15)" as Color,
-    yellow: "#D4A608" as Color,
-    yellowGlow: "rgba(212,166,8,0.12)" as Color,
-  } : {
-    // 透明模式 + 深色外观 → 浅色文字
-    bg: "clear" as Color,
-    card: "rgba(255,255,255,0.08)" as Color,
-    cardStroke: "rgba(255,255,255,0.15)" as Color,
-    text1: "#FFFFFF" as Color,
-    text2: "rgba(255,255,255,0.7)" as Color,
-    text3: "rgba(255,255,255,0.4)" as Color,
-    cyan: "#00E5FF" as Color,
+    card: "tertiarySystemBackground" as Color,
+    cardStroke: "separator" as Color,
+    text1: "label" as Color,
+    text2: "secondaryLabel" as Color,
+    text3: "tertiaryLabel" as Color,
+    cyan: "systemTeal" as Color,
     cyanGlow: "rgba(0,229,255,0.2)" as Color,
-    green: "#34C759" as Color,
+    green: "systemGreen" as Color,
     greenGlow: "rgba(52,199,89,0.25)" as Color,
-    orange: "#FF9500" as Color,
-    red: "#FF3B30" as Color,
+    orange: "systemOrange" as Color,
+    red: "systemRed" as Color,
     redGlow: "rgba(255,59,48,0.2)" as Color,
-    purple: "#BF5AF2" as Color,
+    purple: "systemPurple" as Color,
     purpleGlow: "rgba(191,90,242,0.2)" as Color,
-    yellow: "#FFD60A" as Color,
+    yellow: "systemYellow" as Color,
     yellowGlow: "rgba(255,214,10,0.15)" as Color,
-  }) : {
+  } : {
     bg: "#000000" as Color,
     card: "#141822" as Color,
     cardStroke: "#1E2640" as Color,
