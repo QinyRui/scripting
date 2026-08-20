@@ -24,10 +24,31 @@ interface ExtendedNinebotData extends NinebotWidgetData {
 // ========================
 
 const isTransparent = Widget.isTransparentBackground
+const isLightMode = Device.colorScheme === "light"
 
 const Theme = {
   transparent: isTransparent,
-  colors: isTransparent ? {
+  colors: isTransparent ? (isLightMode ? {
+    // 透明模式 + 浅色外观 → 深色文字
+    bg: "clear" as Color,
+    card: "rgba(0,0,0,0.06)" as Color,
+    cardStroke: "rgba(0,0,0,0.1)" as Color,
+    text1: "#1C1C1E" as Color,
+    text2: "rgba(0,0,0,0.55)" as Color,
+    text3: "rgba(0,0,0,0.3)" as Color,
+    cyan: "#0A84FF" as Color,
+    cyanGlow: "rgba(10,132,255,0.15)" as Color,
+    green: "#30B54C" as Color,
+    greenGlow: "rgba(48,181,76,0.15)" as Color,
+    orange: "#E8850C" as Color,
+    red: "#E8382E" as Color,
+    redGlow: "rgba(232,56,46,0.15)" as Color,
+    purple: "#AF52DE" as Color,
+    purpleGlow: "rgba(175,82,222,0.15)" as Color,
+    yellow: "#D4A608" as Color,
+    yellowGlow: "rgba(212,166,8,0.12)" as Color,
+  } : {
+    // 透明模式 + 深色外观 → 浅色文字
     bg: "clear" as Color,
     card: "rgba(255,255,255,0.08)" as Color,
     cardStroke: "rgba(255,255,255,0.15)" as Color,
@@ -45,7 +66,7 @@ const Theme = {
     purpleGlow: "rgba(191,90,242,0.2)" as Color,
     yellow: "#FFD60A" as Color,
     yellowGlow: "rgba(255,214,10,0.15)" as Color,
-  } : {
+  }) : {
     bg: "#000000" as Color,
     card: "#141822" as Color,
     cardStroke: "#1E2640" as Color,
@@ -491,25 +512,25 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
               {/* 今日里程 */}
               <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="location.fill" font={fs(9)}
-                  foregroundStyle={{ color: "#34C759" as Color, opacity: 0.85 }} />
+                  foregroundStyle={{ color: Theme.colors.green, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
+                  foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
                 <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>今日</Text>
               </VStack>
               {/* 总骑行天数 */}
               <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="bicycle" font={fs(9)}
-                  foregroundStyle={{ color: "#FFD60A" as Color, opacity: 0.85 }} />
+                  foregroundStyle={{ color: Theme.colors.yellow, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: "#FFD60A" as Color, opacity: 1 }}>{ach ? ach.total_days + "天" : "--"}</Text>
+                  foregroundStyle={{ color: Theme.colors.yellow, opacity: 1 }}>{ach ? ach.total_days + "天" : "--"}</Text>
                 <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总骑行天数</Text>
               </VStack>
               {/* 总里程 */}
               <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
                 <Image systemName="road.lanes" font={fs(9)}
-                  foregroundStyle={{ color: "#00E5FF" as Color, opacity: 0.85 }} />
+                  foregroundStyle={{ color: Theme.colors.cyan, opacity: 0.85 }} />
                 <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: "#00E5FF" as Color, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
+                  foregroundStyle={{ color: Theme.colors.cyan, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
                 <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总里程</Text>
               </VStack>
             </HStack>
@@ -517,13 +538,13 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
           <Spacer />
           <VStack alignment="trailing" spacing={0}>
             <HStack alignment="center" spacing={2}>
-              <Circle fill={info.isSigned ? "#34C759" : "#FF3B30"}
+              <Circle fill={info.isSigned ? Theme.colors.green : Theme.colors.red}
                 frame={{ width: 5, height: 5 }} />
               <Text font="caption" fontWeight="bold"
-                foregroundStyle={{ color: info.isSigned ? "#34C759" : "#FF3B30", opacity: 1 }}>
+                foregroundStyle={{ color: info.isSigned ? Theme.colors.green : Theme.colors.red, opacity: 1 }}>
                 {info.isSigned ? "已签" : "未签"}
               </Text>
-              <Text font="caption" foregroundStyle={{ color: "#C7C7CC" as Color, opacity: 1 }}>
+              <Text font="caption" foregroundStyle={{ color: Theme.colors.text2, opacity: 1 }}>
                 {formatTime(new Date())}
               </Text>
             </HStack>
@@ -534,10 +555,10 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                 foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{info.nCoin}</Text>
               <Text font="caption2" foregroundStyle={{ color: Theme.colors.text2, opacity: 1 }}>今日</Text>
               <Text font="caption2" fontWeight="bold"
-                foregroundStyle={{ color: "#34C759" as Color, opacity: 1 }}>+{info.nCoin > 0 ? 1 : 0}</Text>
+                foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>+{info.nCoin > 0 ? 1 : 0}</Text>
               <Text font="caption2" foregroundStyle={{ color: Theme.colors.text2, opacity: 1 }}>连签</Text>
               <Text font="caption2" fontWeight="bold"
-                foregroundStyle={{ color: "#FF9500" as Color, opacity: 1 }}>{info.consecutiveDays}天</Text>
+                foregroundStyle={{ color: Theme.colors.orange, opacity: 1 }}>{info.consecutiveDays}天</Text>
             </HStack>
           </VStack>
         </HStack>
@@ -815,6 +836,44 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
         } catch (e) { console.log("签到通知发送失败:", e) }
       }
     }
+
+    // 断签检测：今日未签 + 连续天数比上次记录少 → 发送断签提醒
+    if (!baseData.isSigned) {
+      try {
+        const d = new Date()
+        const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0')
+        const lastConsecutiveDays = Number(getStorage("ninebot.lastConsecutiveDays") || "0")
+        const lastNotifiedBreakDate = getStorage("ninebot.breakNotifiedDate") || ""
+
+        // 只有当连续天数减少且今天还没通知过断签时才触发
+        if (lastConsecutiveDays > 0 && baseData.consecutiveDays < lastConsecutiveDays && lastNotifiedBreakDate !== today) {
+          const missedDays = lastConsecutiveDays - baseData.consecutiveDays
+          await Notification.schedule({
+            title: "⚠️ 签到中断提醒",
+            subtitle: "九号电动车",
+            body: "💔 连续签到已中断！之前连续 " + lastConsecutiveDays + " 天\n当前连续 " + baseData.consecutiveDays + " 天，请尽快补签",
+            iconImageData: { filePath: "photos/ninebot-logo-new.jpg" } as any,
+            threadIdentifier: "ninebot-sign",
+            customUI: true,
+            userInfo: {
+              type: "sign",
+              consecutiveDays: baseData.consecutiveDays,
+              experience: baseData.experience,
+              level: baseData.level,
+              nCoin: baseData.nCoin,
+              blindBoxRewards: null,
+            }
+          })
+          setStorage("ninebot.breakNotifiedDate", today)
+          console.log("⚠️ 断签通知已发送，之前连续", lastConsecutiveDays, "天，当前", baseData.consecutiveDays, "天")
+        }
+      } catch (e) { console.log("断签通知发送失败:", e) }
+    }
+
+    // 记录当前连续天数（供下次断签检测用）
+    try {
+      setStorage("ninebot.lastConsecutiveDays", String(baseData.consecutiveDays))
+    } catch { }
 
     // 自动开启盲盒 + 发送奖励通知
     if (settings.autoOpenBlindBox && baseData.notOpenedBlindBoxCount > 0) {
