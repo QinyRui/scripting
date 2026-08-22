@@ -72,7 +72,7 @@ export function isSystemTransparentMode(): boolean {
 const TRANSPARENT_SHADOW = { color: "rgba(0,0,0,0.55)", radius: 3, x: 0, y: 1 }
 
 /** 根据是否透明模式返回阴影配置 */
-export function getReadabilityShadow(): { color: string; radius: number; x: number; y: number } | undefined {
+export function getReadabilityShadow(): any {
   return isSystemTransparentMode() ? TRANSPARENT_SHADOW : undefined
 }
 
