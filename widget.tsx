@@ -35,14 +35,14 @@ function SmallWidgetView(props: { weatherInfo: WeatherInfo }) {
     <VStack alignment="leading" spacing={0} padding={{ top: 12, leading: 14, trailing: 14, bottom: 10 }}>
       {/* 顶部：位置 + 天气图标 */}
       <HStack alignment="center" spacing={3}>
-        <Image systemName="paperplane.fill" font={9} renderingMode="template" foregroundStyle="rgba(255,255,255,0.85)" frame={{ width: 10, height: 10 }} />
-        <Text font={11} foregroundStyle="rgba(255,255,255,0.85)" lineLimit={1} minScaleFactor={0.7} shadow={shadow}>{cityName}</Text>
+        <Image systemName="paperplane.fill" font={9} renderingMode="template" foregroundStyle={"rgba(255,255,255,0.85)" as any} frame={{ width: 10, height: 10 }} />
+        <Text font={11} foregroundStyle={"rgba(255,255,255,0.85)" as any} lineLimit={1} minScaleFactor={0.7} shadow={shadow}>{cityName}</Text>
         <Spacer />
         <Image systemName={wIco} renderingMode="template" foregroundStyle={getWeatherIconColor(wIco)} frame={{ width: 20, height: 20 }} />
       </HStack>
 
       {/* 天气描述 */}
-      <Text font={11} foregroundStyle="rgba(255,255,255,0.95)" lineLimit={1} minScaleFactor={0.6} padding={{ top: 1 }} shadow={shadow}>{wDesc}</Text>
+      <Text font={11} foregroundStyle={"rgba(255,255,255,0.95)" as any} lineLimit={1} minScaleFactor={0.6} padding={{ top: 1 }} shadow={shadow}>{wDesc}</Text>
 
       {/* 分隔线 */}
       <VStack frame={{ maxWidth: "infinity", height: 1 }} padding={{ top: 10, bottom: 8 }}>
@@ -64,21 +64,21 @@ function SmallWidgetView(props: { weatherInfo: WeatherInfo }) {
             </HStack>
           </ZStack>
           <HStack padding={{ top: 2 }}>
-            <Text font={8} foregroundStyle="rgba(255,255,255,0.45)" shadow={shadow}>现在</Text>
+            <Text font={8} foregroundStyle={"rgba(255,255,255,0.45)" as any} shadow={shadow}>现在</Text>
             <Spacer />
-            <Text font={8} foregroundStyle="rgba(255,255,255,0.45)" shadow={shadow}>60分钟</Text>
+            <Text font={8} foregroundStyle={"rgba(255,255,255,0.45)" as any} shadow={shadow}>60分钟</Text>
           </HStack>
         </VStack>
       ) : future.length >= 3 ? (
         <HStack spacing={0} alignment="center" frame={{ maxWidth: "infinity" }}>
           {future.slice(0, 3).map((item, index) => (
             <VStack key={index} spacing={2} alignment="center" frame={{ maxWidth: "infinity" }}>
-              <Text font={9} foregroundStyle="rgba(255,255,255,0.65)" lineLimit={1} shadow={shadow}>{item.week || "--"}</Text>
+              <Text font={9} foregroundStyle={"rgba(255,255,255,0.65)" as any} lineLimit={1} shadow={shadow}>{item.week || "--"}</Text>
               <Image systemName={item.ico} renderingMode="template" foregroundStyle="white" frame={{ width: 16, height: 16 }} />
               <HStack spacing={1} alignment="center">
-                <Text font={9} foregroundStyle="rgba(255,255,255,0.95)" lineLimit={1} shadow={shadow}>{item.min + "°"}</Text>
-                <Text font={9} foregroundStyle="rgba(255,255,255,0.45)" lineLimit={1} shadow={shadow}>/</Text>
-                <Text font={9} foregroundStyle="rgba(255,255,255,0.95)" lineLimit={1} shadow={shadow}>{item.max + "°"}</Text>
+                <Text font={9} foregroundStyle={"rgba(255,255,255,0.95)" as any} lineLimit={1} shadow={shadow}>{item.min + "°"}</Text>
+                <Text font={9} foregroundStyle={"rgba(255,255,255,0.45)" as any} lineLimit={1} shadow={shadow}>/</Text>
+                <Text font={9} foregroundStyle={"rgba(255,255,255,0.95)" as any} lineLimit={1} shadow={shadow}>{item.max + "°"}</Text>
               </HStack>
             </VStack>
           ))}
@@ -86,7 +86,7 @@ function SmallWidgetView(props: { weatherInfo: WeatherInfo }) {
       ) : (
         <VStack alignment="center" spacing={0} frame={{ maxWidth: "infinity", minHeight: 40 }}>
           <Spacer />
-          <Text font={10} foregroundStyle="rgba(255,255,255,0.5)" shadow={shadow}>暂无降水</Text>
+          <Text font={10} foregroundStyle={"rgba(255,255,255,0.5)" as any} shadow={shadow}>暂无降水</Text>
           <Spacer />
         </VStack>
       )}
