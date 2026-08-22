@@ -232,8 +232,8 @@ export function TyphoonMap(props: { typhoons: TyphoonPath[]; height?: number }) 
         <HStack frame={{ maxWidth: "infinity" }}>
           <Spacer />
           <VStack padding={{ top: 8, trailing: 8 }}>
-            <HStack spacing={6} padding={{ horizontal: 10, vertical: 6 }} background={["systemBackground"] as any} cornerRadius={8} opacity={0.9}>
-              <Circle fill={color} opacity={0.3} frame={{ width: 16, height: 16 }} />
+            <HStack spacing={6} padding={{ horizontal: 10, vertical: 6 }} background={"systemBackground" as any} opacity={0.9}>
+              <Circle fill={{ color: color, opacity: 0.3 } as any} frame={{ width: 16, height: 16 }} />
               <VStack alignment="leading" spacing={0}>
                 <Text font="caption2" fontWeight="bold" foregroundStyle="label">{main.name}</Text>
                 <Text font="caption2" foregroundStyle="secondaryLabel">{level}</Text>
@@ -263,8 +263,8 @@ export function TyphoonAlertCard(props: { typhoons: TyphoonPath[] }) {
       <TyphoonMap typhoons={typhoons} height={180} />
       <HStack spacing={8} padding={{ horizontal: 12, vertical: 10 }} background={["secondarySystemBackground"] as any}>
         <ZStack frame={{ width: 28, height: 28 }}>
-          <Circle fill={color} opacity={0.15} />
-          <Image systemName="hurricane" font={14} foregroundStyle={color} />
+          <Circle fill={{ color: color, opacity: 0.15 } as any} />
+          <Image systemName="hurricane" font={14} foregroundStyle={color as any} />
         </ZStack>
         <VStack alignment="leading" spacing={1} frame={{ maxWidth: "infinity" }}>
           <Text font="caption" fontWeight="bold" foregroundStyle="label">{main.name + " · " + level}</Text>
