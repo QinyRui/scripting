@@ -1,60 +1,10 @@
 {
-  "localizedDescriptions" : {
-    "en" : "",
-    "ru" : "",
-    "ja" : "",
-    "de" : "",
-    "zh" : "",
-    "es" : "",
-    "it" : "",
-    "pt" : "",
-    "fr" : ""
-  },
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "email" : "602839678@qq.com",
-    "name" : "QinyRui"
-  },
-  "iconImage" : "",
-  "description" : "7-15:新增5项通知功能：变温、空气污染、大风、台风、地震\n7-20:修复bug，主应用界面天气动画变化效果\n7-24:通知设置页标题垂直对齐，台风监控加载居中，首页天气轮播动画，大风提醒阈值提升至8级\n8-01:删除主页台风组件，简化主页UI",
   "name" : "彩云天气",
-  "version" : "6.3.9",
-  "intentInputTypes" : [
-
-  ],
-  "contributors" : [
-
-  ],
-  "remoteResource" : {
-    "hash" : "f3c657e6f1f887968a0d4ad240b87d22",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/彩云天气",
-    "autoUpdateInterval" : 300
-  },
   "entry" : "index.tsx",
+  "version" : "6.3.9",
   "icon" : "cloud.sun.rain.fill",
-  "permissions" : [
-    "calendar",
-    "reminders",
-    "alarms",
-    "contacts",
-    "location",
-    "homeKit",
-    "photos",
-    "health",
-    "clipboard",
-    "fileSystem"
-  ],
-  "localizedNames" : {
-    "de" : "",
-    "ja" : "",
-    "ru" : "",
-    "pt" : "",
-    "zh" : "",
-    "en" : "",
-    "it" : "",
-    "es" : "",
-    "fr" : ""
-  },
-  "runInApp" : true,
-  "color" : "rgba(143, 168, 149,1)"
+  "iconImage" : "",
+  "color" : "rgba(143, 168, 149,1)",
+  "description" : "7-15:新增5项通知功能：变温、空气污染、大风、台风、地震\n7-20:修复bug，主应用界面天气动画变化效果\n7-24:通知设置页标题垂直对齐，台风监控加载居中，首页天气轮播动画，大风提醒阈值提升至8级\n8-01:删除主页台风组件，简化主页UI",
+  "runInApp" : true
 }
