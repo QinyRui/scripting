@@ -1,5 +1,5 @@
 import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
-import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getMyAchievement, type NinebotWidgetData, type VehicleInfo, type AchievementInfo } from './api'
+import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getMyAchievement, getDailyShareTaskStatus, claimDailyShareReward, type NinebotWidgetData, type VehicleInfo, type AchievementInfo } from './api'
 import { getStorage, setStorage } from './utils/storage'
 
 // 不再需要 CalendarNotificationTrigger / DateComponents
@@ -326,7 +326,6 @@ const BlindBoxRing = ({ box, vehicleName, lastReward }: { box: any, vehicleName?
         <HStack spacing={S(1)} frame={{ height: S(4), width: S(80) }}
           background={{ shape: { type: "rect", cornerRadius: S(1) }, style: bgRingColor }}>
           {Array.from({ length: total }).map((_, i) => {
-            const segProgress = Math.min(1, Math.max(0, (total - left - i) / 1))
             const isFilled = i < (total - left)
             const barColors = ["#FF6B6B", "#FF8E53", "#FFC048", "#A8E063", "#78E08F", "#48DBFB", "#0ABDE3"]
             const segColor = barColors[i % barColors.length]
@@ -816,6 +815,22 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
         } catch (e) { console.log("签到通知发送失败:", e) }
       }
     }
+
+    // 自动领取每日分享任务奖励（rewardStatus=1 表示可领取）
+    try {
+      const shareTask = await getDailyShareTaskStatus(auth, devId)
+      if (shareTask && shareTask.rewardStatus === 1) {
+        console.log('🎁 每日分享任务可领取，自动领取中...')
+        const claimResult = await claimDailyShareReward(auth, devId)
+        if (claimResult.success) {
+          console.log('✅ 每日分享奖励已领取: +1 N币')
+          // 重新获取数据以更新 N币余额
+          baseData = await getNinebotInfo(auth, devId)
+        }
+      } else if (shareTask && shareTask.rewardStatus === 3) {
+        console.log('ℹ️ 每日分享任务今日已领取或不可参与')
+      }
+    } catch (e) { console.log('每日分享任务查询/领取失败:', e) }
 
     // 断签检测：今日未签 + 连续天数比上次记录少 → 发送断签提醒
     if (!baseData.isSigned) {
