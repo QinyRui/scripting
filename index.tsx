@@ -48,6 +48,10 @@ declare class WebViewController {
   dispose(): void
 }
 
+// 定时器全局 API（Scripting 运行时支持，TS 类型未声明）
+declare function setInterval(callback: () => void, ms: number): number
+declare function clearInterval(id: number): void
+
 // 系统语义颜色，自动跟随系统明暗模式
 // "label"=主文字 "secondaryLabel"=副文字 "tertiaryLabel"=辅助文字
 const COLORS: any = {
@@ -125,7 +129,8 @@ function saveTimeRange(range: TimeRange) {
 }
 
 // --- 自动刷新配置 ---
-const AUTO_REFRESH_MS = 15 * 60 * 1000  // 15 分钟
+const AUTO_REFRESH_MS = 15 * 60 * 1000  // Widget 刷新间隔：15 分钟
+const APP_REFRESH_MS = 5 * 60 * 1000    // 主应用刷新间隔：5 分钟
 const AUTO_REFRESH_KEY = "tokei_auto_refresh"
 
 // --- 默认空数据（首次加载用） ---
@@ -1134,6 +1139,35 @@ export default function DashboardView() {
     }
   }
 
+  // --- 主应用自动刷新定时器（每 5 分钟静默拉取最新数据） ---
+  useEffect(function() {
+    if (!autoRefresh || !isLoggedIn) return
+
+    const timer = setInterval(async function() {
+      // 静默拉取：验证 Cookie → 拉取数据 → 更新 UI
+      try {
+        if (!hasCookies()) return
+        const cookieValid = await checkCookieValid()
+        if (!cookieValid) {
+          // Cookie 过期，尝试自动刷新一次
+          const refreshed = await tryRefreshCookies()
+          if (!refreshed) return
+        }
+        const newData = await fetchAllData()
+        if (newData) {
+          saveData(newData)
+          setData(newData)
+          setSyncStatus("🔄 已自动更新 · " + new Date().toLocaleTimeString("zh-CN"))
+          try { Widget.reloadAll() } catch (e) {}
+        }
+      } catch (e) {
+        // 静默失败，不打扰用户
+      }
+    }, APP_REFRESH_MS)
+
+    return function() { clearInterval(timer) }
+  }, [autoRefresh, isLoggedIn])
+
   // 退出登录
   const handleLogout = () => {
     Storage.remove(STORAGE_COOKIES)
@@ -1302,7 +1336,7 @@ export default function DashboardView() {
                     fontSize={10}
                     foregroundStyle={COLORS.accent}
                   >
-                    Widget 每 15 分钟自动拉取最新数据
+                    主应用每 5 分钟 · Widget 每 15 分钟自动刷新
                   </Text>
                 ) : null}
               </>
@@ -1470,7 +1504,7 @@ export default function DashboardView() {
                 foregroundStyle={COLORS.textTertiary}
               >
                 套餐有效期至 {data.validUntil} · 上次更新 {lastUpdated}
-                {autoRefresh ? " · 自动刷新 15 分钟" : ""}
+                {autoRefresh ? " · 自动刷新 5 分钟" : ""}
               </Text>
             </VStack>
           </VStack>
