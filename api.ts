@@ -102,6 +102,7 @@ const API_ENDPOINTS = {
   blindBoxList: `https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/list?t=${Date.now()}`,
   receiveBlindBox: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/receive',
   taskList: 'https://cn-cbu-gateway.ninebot.com/portal/api/task-center/task/v3/list',
+  taskReward: 'https://cn-cbu-gateway.ninebot.com/portal/self-service/task/reward',
   myAchievement: 'https://api5-h5-app-bj.ninebot.com/web/rank/my-achievement',
 }
 
@@ -521,6 +522,71 @@ export async function refreshVehicleData(deviceServiceKey: string): Promise<Vehi
   } catch (error) {
     console.error("❌ 刷新车辆数据失败:", error)
     return null
+  }
+}
+
+// ==================== 每日分享任务奖励 ====================
+
+/** 每日分享任务 ID（九号 APP 固定） */
+const DAILY_SHARE_TASK_ID = '1823622692036079618'
+
+/** 每日分享奖励状态 */
+export interface DailyShareTaskStatus {
+  taskId: string
+  title: string
+  rewardQuantity: number
+  rewardStatus: number  // 1=待领取, 2=已领取, 3=不可参与
+  rewardDescription: string
+}
+
+/** 查询每日分享任务状态（通过任务列表 API） */
+export async function getDailyShareTaskStatus(
+  authorization: string, deviceId: string
+): Promise<DailyShareTaskStatus | null> {
+  try {
+    const tasks = await getTaskList(authorization, deviceId, 2)
+    const shareTask = tasks.find((t: any) => t.taskId === DAILY_SHARE_TASK_ID)
+    if (!shareTask) {
+      console.log('ℹ️ 未找到每日分享任务')
+      return null
+    }
+    const result: DailyShareTaskStatus = {
+      taskId: shareTask.taskId,
+      title: shareTask.title || '每日分享',
+      rewardQuantity: shareTask.rewardQuantity || 1,
+      rewardStatus: shareTask.rewardStatus || 3,
+      rewardDescription: shareTask.rewardDescription || '',
+    }
+    console.log('✅ 每日分享任务状态:', result.title, 'status=' + result.rewardStatus, 'reward=' + result.rewardQuantity + 'N币')
+    return result
+  } catch (e) {
+    console.error('❌ 查询每日分享任务失败:', e)
+    return null
+  }
+}
+
+/** 领取每日分享任务奖励 */
+export async function claimDailyShareReward(
+  authorization: string, deviceId: string
+): Promise<{ success: boolean; reward?: number; message?: string }> {
+  try {
+    const headers = getAuthHeaders(authorization, deviceId)
+    const url = API_ENDPOINTS.taskReward + '?t=' + Date.now()
+    const body = { taskId: DAILY_SHARE_TASK_ID }
+    console.log('🎁 领取每日分享奖励, taskId=' + DAILY_SHARE_TASK_ID)
+    const resp: any = await httpPost(url, body, { headers })
+    console.log('📦 每日分享领取返回:', JSON.stringify(resp.data))
+    if (resp.data && resp.data.code === 0) {
+      console.log('✅ 每日分享奖励领取成功')
+      return { success: true, reward: 1, message: '领取成功' }
+    } else {
+      const msg = resp.data?.msg || resp.data?.message || '领取失败'
+      console.warn('⚠️ 每日分享奖励领取失败:', msg)
+      return { success: false, message: msg }
+    }
+  } catch (e) {
+    console.error('❌ 领取每日分享奖励异常:', e)
+    return { success: false, message: (e as Error).message }
   }
 }
 
