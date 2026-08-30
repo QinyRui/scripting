@@ -1,49 +1,10 @@
 {
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
-  "icon" : "scooter",
-  "localizedNames" : {
-    "zh" : "",
-    "ru" : "",
-    "en" : "",
-    "de" : "",
-    "fr" : "",
-    "ja" : "",
-    "it" : "",
-    "pt" : "",
-    "es" : ""
-  },
-  "localizedDescriptions" : {
-    "ja" : "",
-    "es" : "",
-    "pt" : "",
-    "en" : "",
-    "fr" : "",
-    "zh" : "",
-    "de" : "",
-    "ru" : "",
-    "it" : ""
-  },
-  "version" : "2.2.29",
-  "color" : "rgba(0, 198, 165,1)",
-  "intentInputTypes" : [
-
-  ],
-  "runInApp" : true,
-  "remoteResource" : {
-    "hash" : "91dd3a0afc4eea17733013f492c1388b",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "autoUpdateInterval" : 600
-  },
-  "permissions" : null,
-  "entry" : "index.tsx",
   "name" : "九号APP签到",
+  "entry" : "index.tsx",
+  "version" : "2.2.29",
+  "icon" : "scooter",
+  "iconImage" : "https://raw.githubusercontent.com/QinyRui/scripting/九号/photos/LOUGO.png",
+  "color" : "rgba(0, 198, 165,1)",
   "description" : "自动领取每日分享任务奖励+1N币",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "contributors" : [
-
-  ]
+  "runInApp" : true
 }
