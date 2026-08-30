@@ -308,7 +308,7 @@ const BlindBoxRing = ({ box, vehicleName, lastReward }: { box: any, vehicleName?
           )}
         </VStack>
       </ZStack>
-      {/* 右侧：文字信息 + 迷你进度条 */}
+      {/* 右侧：文字信息 */}
       <VStack alignment="leading" spacing={S(3)}>
         {/* 标题 */}
         {/* @ts-ignore */}
@@ -322,24 +322,6 @@ const BlindBoxRing = ({ box, vehicleName, lastReward }: { box: any, vehicleName?
           foregroundStyle={{ color: Theme.colors.text3, opacity: 1 }}>
           {isReady ? "可开启!" : "还剩 " + left + " 天"}
         </Text>
-        {/* 多彩方块渐变进度条 */}
-        <HStack spacing={S(1)} frame={{ height: S(4), width: S(80) }}
-          background={{ shape: { type: "rect", cornerRadius: S(1) }, style: bgRingColor }}>
-          {Array.from({ length: total }).map((_, i) => {
-            const isFilled = i < (total - left)
-            const barColors = ["#FF6B6B", "#FF8E53", "#FFC048", "#A8E063", "#78E08F", "#48DBFB", "#0ABDE3"]
-            const segColor = barColors[i % barColors.length]
-            return (
-              <ZStack key={i} frame={{ maxWidth: "infinity" }}>
-                {isFilled && (
-                  // @ts-ignore
-                  <Rectangle fill={segColor as Color} frame={{ height: S(4) }}
-                    background={{ shape: { type: "rect", cornerRadius: S(1) }, style: segColor as Color }} />
-                )}
-              </ZStack>
-            )
-          })}
-        </HStack>
         {/* 车型名 */}
         {vehicleName ? (
           // @ts-ignore
@@ -557,35 +539,66 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
             </VStack>
           </HStack>
         ) : null}
-        {/* ═══ 中部：左数据 + 右车型 ═══ */}
-        <HStack alignment="bottom" spacing={0} frame={{ maxWidth: "infinity" }}>
-          {/* 左侧：圆形倒计时环盲盒 — 紧凑布局 */}
-          <VStack alignment="leading" spacing={S(2)} padding={{ top: 0, bottom: 4 }}>
-            {(() => {
-              const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0 || box.rewardStatus === 1)
-              const shownBoxes = pendingBoxes.filter(box => box.awardDays === 7).slice(0, 1)
-              // 提取上一次已领取的盲盒奖励（自动识别经验/N币）
-              const lastReceivedReward = (info.calendarInfo || [])
-                .filter(c => c.rewardInfo && c.rewardInfo.receiveStatus === 2)
-                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0]?.rewardInfo || null
-              return (
-                <VStack spacing={S(4)} alignment="leading">
-                  {shownBoxes.length > 0 ? (
-                    shownBoxes.map((box, i) => (
-                      <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} lastReward={lastReceivedReward} />
-                    ))
-                  ) : (
-                    <HStack alignment="center" spacing={S(4)} padding={{ vertical: 4 }}>
-                      <Image systemName="checkmark.circle.fill" font={fs(14)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
-                      <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部盲盒已领</Text>
-                    </HStack>
-                  )}
-                </VStack>
-              )
-            })()}
-          </VStack>
-          <Spacer />
-        </HStack>
+        {/* ═══ 中部：左盲盒 + 右车型 ═══ */}
+        <VStack alignment="leading" spacing={S(3)} frame={{ maxWidth: "infinity" }}>
+          <HStack alignment="bottom" spacing={0} frame={{ maxWidth: "infinity" }}>
+            {/* 左侧：圆形倒计时环盲盒 — 紧凑布局 */}
+            <VStack alignment="leading" spacing={S(2)} padding={{ top: 0, bottom: 4 }}>
+              {(() => {
+                const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0 || box.rewardStatus === 1)
+                const shownBoxes = pendingBoxes.filter(box => box.awardDays === 7).slice(0, 1)
+                // 提取上一次已领取的盲盒奖励（自动识别经验/N币）
+                const lastReceivedReward = (info.calendarInfo || [])
+                  .filter(c => c.rewardInfo && c.rewardInfo.receiveStatus === 2)
+                  .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0]?.rewardInfo || null
+                return (
+                  <VStack spacing={S(4)} alignment="leading">
+                    {shownBoxes.length > 0 ? (
+                      shownBoxes.map((box, i) => (
+                        <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} lastReward={lastReceivedReward} />
+                      ))
+                    ) : (
+                      <HStack alignment="center" spacing={S(4)} padding={{ vertical: 4 }}>
+                        <Image systemName="checkmark.circle.fill" font={fs(14)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }} />
+                        <Text font={fs(7)} foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>全部盲盒已领</Text>
+                      </HStack>
+                    )}
+                  </VStack>
+                )
+              })()}
+            </VStack>
+            <Spacer />
+          </HStack>
+          {/* 盲盒倒计时彩色进度条（全宽，7格满→每过一天从右减少一格） */}
+          {(() => {
+            const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0 || box.rewardStatus === 1)
+            const shownBox = pendingBoxes.filter(box => box.awardDays === 7).slice(0, 1)[0]
+            if (!shownBox) return null
+            const total = 7
+            const left = Math.min(shownBox.leftDaysToOpen, total)
+            const bgBarColor = Widget.isTransparentBackground
+              ? ("rgba(255,255,255,0.15)" as Color)
+              : ("rgba(255,255,255,0.08)" as Color)
+            const barColors = ["#FF6B6B", "#FF8E53", "#FFC048", "#A8E063", "#78E08F", "#48DBFB", "#0ABDE3"]
+            return (
+              <HStack spacing={S(1)} frame={{ height: S(4), maxWidth: "infinity" }}
+                background={{ shape: { type: "rect", cornerRadius: S(2) }, style: bgBarColor }}>
+                {Array.from({ length: total }).map((_, i) => {
+                  // 左边 left 格亮色（剩余天数），右边 (total-left) 格暗色（已过天数）
+                  const isActive = i < left
+                  const segColor = isActive ? barColors[i] : "rgba(255,255,255,0.06)"
+                  return (
+                    <ZStack key={"bar-" + i} frame={{ maxWidth: "infinity" }}>
+                      {/* @ts-ignore */}
+                      <Rectangle fill={segColor as Color} frame={{ height: S(4) }}
+                        background={{ shape: { type: "rect", cornerRadius: S(1) }, style: segColor as Color }} />
+                    </ZStack>
+                  )
+                })}
+              </HStack>
+            )
+          })()}
+        </VStack>
       </VStack>
     </ZStack>
   )
