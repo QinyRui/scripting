@@ -1,53 +1,10 @@
 {
-  "localizedNames" : {
-    "ru" : "",
-    "de" : "",
-    "it" : "",
-    "ja" : "",
-    "en" : "",
-    "es" : "",
-    "pt" : "",
-    "fr" : "",
-    "zh" : ""
-  },
-  "localizedDescriptions" : {
-    "de" : "",
-    "zh" : "",
-    "fr" : "",
-    "it" : "",
-    "ja" : "",
-    "en" : "",
-    "pt" : "",
-    "es" : "",
-    "ru" : ""
-  },
-  "name" : "IP 定位",
-  "permissions" : null,
-  "intentInputTypes" : [
-
-  ],
-  "icon" : "network",
-  "iconImage" : "",
-  "color" : "rgba(102, 196, 235,1)",
-  "runInApp" : false,
-  "entry" : "index.tsx",
-  "contributors" : [
-    {
-      "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-      "name" : "QinyRui",
-      "email" : "602839678@qq.com"
-    }
-  ],
-  "author" : {
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com",
-    "homepage" : "https:\/\/github.com\/QinyRui\/QYR-"
-  },
-  "description" : "VNP实时定位",
-  "version" : "1.0.1",
-  "remoteResource" : {
-    "hash" : "8560e703d141f585fb5dd2f87b66682b",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/IP",
-    "autoUpdateInterval" : 300
-  }
+  "name": "IP 定位",
+  "entry": "index.tsx",
+  "version": "1.0.2",
+  "icon": "network",
+  "iconImage": "",
+  "color": "rgba(28, 140, 255, 1)",
+  "description": "实时IP定位与风险检测",
+  "runInApp": true
 }
