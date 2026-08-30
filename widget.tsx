@@ -61,37 +61,12 @@ function ErrorView() {
 const WALLPAPER_MEDIUM_KEY = 'ippure.wallpaper.medium';
 const WALLPAPER_LARGE_KEY = 'ippure.wallpaper.large';
 
-function IPWidgetView({ data, locationZh, mapImage }: { data: any, locationZh: string, mapImage: any }) {
+function IPWidgetView({ data, locationZh, mapImage, pinPoint, widgetSize }: { data: any, locationZh: string, mapImage: any, pinPoint: any, widgetSize: any }) {
   if (!data) return <ErrorView />;
   const family = Widget.family;
-
-  // 小号组件：全屏地图，无需壁纸叠加
-  if (family === 'systemSmall') {
-    return <SmallWidget data={data} locationZh={locationZh} mapImage={mapImage} />;
-  }
-
-  const wallpaperKey = family === 'systemLarge' ? WALLPAPER_LARGE_KEY : WALLPAPER_MEDIUM_KEY;
-  const wallpaperData = Storage.getData(wallpaperKey);
-  const wallpaperImage = wallpaperData ? UIImage.fromData(wallpaperData) : null;
-
-  const isPreview = Widget.family === undefined;
-
-  const widgetView = family === 'systemLarge' ? (
-    <LargeWidget data={data} locationZh={locationZh} mapImage={mapImage} hasWallpaper={!!wallpaperImage} />
-  ) : (
-    <MediumWidget data={data} locationZh={locationZh} mapImage={mapImage} hasWallpaper={!!wallpaperImage} />
-  );
-
-  if (wallpaperImage) {
-    return (
-      <ZStack alignment="center" frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
-        <Image image={wallpaperImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
-        {widgetView}
-      </ZStack>
-    );
-  }
-
-  return widgetView;
+  if (family === 'systemSmall') return <SmallWidget data={data} locationZh={locationZh} mapImage={mapImage} pinPoint={pinPoint} widgetSize={widgetSize} />;
+  if (family === 'systemLarge') return <LargeWidget data={data} locationZh={locationZh} mapImage={mapImage} pinPoint={pinPoint} widgetSize={widgetSize} />;
+  return <MediumWidget data={data} locationZh={locationZh} mapImage={mapImage} pinPoint={pinPoint} widgetSize={widgetSize} />;
 }
 
 function getCountryMapZoom(data: any, compact = false) {
@@ -132,12 +107,33 @@ function useIPMeta(data: any, locationZh: string) {
   return { locationStr, mapLocationName, asnStr, fraudScore, purityScore, riskColor, riskLabel, purityLabel, riskText: `${fraudScore}% ${riskLabel}`, tags, ipRange, domain, coord, lat, lon, hasCoord, mapZoom, country: data.country, region: data.region, city: data.city, countryCode };
 }
 
-function buildStaticMapUrl(lat: number, lon: number, width: number, height: number, zoom = 4): string {
-  const safeLat = Math.max(-85, Math.min(85, lat));
-  const safeLon = Math.max(-180, Math.min(180, lon));
-  const safeZoom = Math.max(2, Math.min(17, zoom));
-  // Yandex 浅色矢量地图 + 中文标注，替代卫星影像
-  return `https://static-maps.yandex.ru/1.x/?lang=zh-CN&ll=${safeLon},${safeLat}&z=${safeZoom}&l=map&size=${width},${height}`;
+// ─── 苹果地图原生快照 ─────────────────────────────────────
+function regionSpan(family: string | undefined) {
+  switch (family) {
+    case 'systemSmall': return { latitudeDelta: 0.45, longitudeDelta: 0.55 };
+    case 'systemLarge': return { latitudeDelta: 0.24, longitudeDelta: 0.32 };
+    default: return { latitudeDelta: 0.34, longitudeDelta: 0.44 };
+  }
+}
+
+async function takeAppleMapSnapshot(
+  lat: number, lon: number,
+  width: number, height: number,
+  family: string | undefined
+) {
+  const span = regionSpan(family);
+  const center = { latitude: lat, longitude: lon - span.longitudeDelta * 0.54 };
+  try {
+    const snap = await MapSnapshotter.take({
+      region: { center, span },
+      size: { width: Math.round(width), height: Math.round(height) },
+      mapStyle: { style: 'standard', showsTraffic: false },
+    });
+    if (snap?.image) return snap;
+  } catch (e) {
+    console.error('MapSnapshotter failed:', e);
+  }
+  return null;
 }
 
 const COUNTRY_ZH: Record<string, string> = {
@@ -211,135 +207,177 @@ function lonLatToTile(lat: number, lon: number, zoom: number) {
   };
 }
 
-function buildOSMTileUrlForTile(zoom: number, x: number, y: number) {
-  const scale = Math.pow(2, zoom);
-  const wrappedX = ((x % scale) + scale) % scale;
-  const clampedY = Math.max(0, Math.min(scale - 1, y));
-  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${zoom}/${clampedY}/${wrappedX}`;
-}
 
-function getCenteredMapTiles(lat: number, lon: number, zoom: number, width: number, height: number) {
-  const safeLat = clampLat(lat);
-  const safeLon = Math.max(-180, Math.min(180, lon));
-  const scale = Math.pow(2, zoom);
-  const tileSize = 256;
-  const latRad = safeLat * Math.PI / 180;
-  const centerX = (safeLon + 180) / 360 * scale * tileSize;
-  const centerY = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * scale * tileSize;
-  const originX = centerX - width / 2;
-  const originY = centerY - height / 2;
-  const startX = Math.floor(originX / tileSize);
-  const startY = Math.floor(originY / tileSize);
-  const endX = Math.floor((originX + width) / tileSize);
-  const endY = Math.floor((originY + height) / tileSize);
-  const tiles: any[] = [];
 
-  for (let y = startY - 1; y <= endY + 1; y++) {
-    for (let x = startX - 1; x <= endX + 1; x++) {
-      tiles.push({
-        key: `${zoom}-${x}-${y}`,
-        url: buildOSMTileUrlForTile(zoom, x, y),
-        offsetX: x * tileSize - originX,
-        offsetY: y * tileSize - originY,
-      });
-    }
-  }
-
-  return tiles;
-}
-
-function buildOSMTileUrl(lat: number, lon: number, zoom: number) {
-  const tile = lonLatToTile(lat, lon, zoom);
-  return `https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`;
-}
-
-function getTilePinOffset(lat: number, lon: number, zoom: number, width: number, height: number) {
-  const tile = lonLatToTile(lat, lon, zoom);
-  return {
-    x: tile.pinXRatio * width,
-    y: tile.pinYRatio * height,
-  };
-}
-
-function MediumWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any, locationZh: string, mapImage: any, hasWallpaper?: boolean }) {
+function MediumWidget({ data, locationZh, mapImage, pinPoint, widgetSize }: { data: any, locationZh: string, mapImage: any, pinPoint: any, widgetSize: any }) {
   const meta = useIPMeta(data, locationZh);
-  const ipInfoSelected = FEATURES[0]; // 固定使用 IP 定位信息
-  return (
-    <VStack
-      cornerRadius={22}
-      padding={{ top: 14, bottom: 12, leading: 14, trailing: 14 }}
-      spacing={6}
-      alignment="leading"
-      background={hasWallpaper ? undefined : widgetBg()}
-      widgetURL={Script.createRunSingleURLScheme(Script.name)}
-    >
-      <HStack alignment="center" spacing={6}>
-        <Text styledText={{ content: 'VPN连接状态', foregroundColor: '#1F7A3A', font: 13, bold: true }} lineLimit={1} />
-        <Spacer />
-      </HStack>
+  const size = widgetSize || { width: 329, height: 154 };
+  const revealStart = 0.43;
+  const revealMid = 0.58;
+  const revealEnd = 0.76;
+  const pin = pinPoint ? {
+    x: Math.max(14, Math.min(size.width - 14, pinPoint.x)),
+    y: Math.max(18, Math.min(size.height - 18, pinPoint.y)),
+  } : null;
 
-      <HStack alignment="center" spacing={8}>
-        <VStack alignment="leading" spacing={4} layoutPriority={1}>
-          <Row icon="📍" label="位置" value={meta.locationStr} />
-          <Row icon="💻" label="IP" value={data.ip || 'N/A'} />
-          <Row icon="🏢" label="ASN" value={meta.asnStr} />
-          <RiskGaugeBar fraudScore={meta.fraudScore} riskColor={meta.riskColor} riskLabel={meta.riskLabel} tags={meta.tags} />
+  return (
+    <ZStack alignment="topLeading" clipped={true} cornerRadius={22}
+      background={widgetBg()}
+      widgetURL={Script.createRunSingleURLScheme(Script.name)}>
+
+      {/* 苹果地图原生快照背景 */}
+      {mapImage ? (
+        <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
+      ) : (
+        <VStack alignment="center" spacing={6} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background={tertiaryBg()}>
+          <Image systemName="globe.asia.australia" resizable={{}} frame={{ width: 36, height: 36 }} modifiers={modifiers().foregroundStyle(SECONDARY_TEXT)} />
+          <Text styledText={{ content: '获取地图中...', foregroundColor: SECONDARY_TEXT, font: 11 }} />
         </VStack>
-        <LocationMapPanel data={data} meta={meta} selected={ipInfoSelected} compact={true} title="定位地图" mapImage={mapImage} />
-      </HStack>
-    </VStack>
+      )}
+
+      {/* 左→右 渐变遮罩：左侧深色保文字可读，右侧透明露地图 */}
+      <ZStack alignment="center" frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
+        <RoundedRectangle cornerRadius={22} fill={{
+          gradient: [
+            { color: 'rgba(28,28,30,1.00)', location: 0.00 },
+            { color: 'rgba(28,28,30,0.99)', location: revealStart },
+            { color: 'rgba(28,28,30,0.78)', location: revealMid },
+            { color: 'rgba(28,28,30,0.24)', location: revealEnd },
+            { color: 'rgba(28,28,30,0.04)', location: 1.00 },
+          ],
+          startPoint: { x: 0, y: 0.5 },
+          endPoint: { x: 1, y: 0.5 },
+        }} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
+      </ZStack>
+
+      {/* 定位标记 */}
+      {pin ? (
+        <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: 17, height: 17 }}
+          foregroundStyle="#FF3B30" widgetAccentedRenderingMode="fullColor"
+          position={{ x: pin.x, y: pin.y - 6 }} />
+      ) : null}
+
+      {/* 左侧信息内容 */}
+      <VStack alignment="leading" spacing={5}
+        frame={{ width: Math.round(size.width * 0.62) }}
+        position={{ x: 12 + Math.round(size.width * 0.62) / 2, y: size.height / 2 }}>
+        <Text styledText={{ content: 'IP 信息概览', foregroundColor: '#166534', font: 14, bold: true }} />
+        <HStack spacing={5} alignment="center">
+          <Image systemName="mappin.and.ellipse" resizable={{}} frame={{ width: 13, height: 13 }} modifiers={modifiers().foregroundStyle('#A1A1A6')} />
+          <Text styledText={{ content: '位置', foregroundColor: '#A1A1A6', font: 9 }} />
+          <Text styledText={{ content: meta.locationStr, foregroundColor: '#F5F5F7', font: 11, bold: true }} lineLimit={1} minScaleFactor={0.64} frame={{ maxWidth: 'infinity', alignment: 'leading' }} />
+        </HStack>
+        <HStack spacing={5} alignment="center">
+          <Image systemName="network" resizable={{}} frame={{ width: 13, height: 13 }} modifiers={modifiers().foregroundStyle('#A1A1A6')} />
+          <Text styledText={{ content: 'IP', foregroundColor: '#A1A1A6', font: 9 }} />
+          <Text styledText={{ content: data.ip || 'N/A', foregroundColor: '#F5F5F7', font: 11, bold: true }} lineLimit={1} minScaleFactor={0.64} frame={{ maxWidth: 'infinity', alignment: 'leading' }} />
+        </HStack>
+        <HStack spacing={5} alignment="center">
+          <Image systemName="building.2" resizable={{}} frame={{ width: 13, height: 13 }} modifiers={modifiers().foregroundStyle('#A1A1A6')} />
+          <Text styledText={{ content: 'ASN', foregroundColor: '#A1A1A6', font: 9 }} />
+          <Text styledText={{ content: meta.asnStr, foregroundColor: '#F5F5F7', font: 11, bold: true }} lineLimit={1} minScaleFactor={0.64} frame={{ maxWidth: 'infinity', alignment: 'leading' }} />
+        </HStack>
+        <RiskGaugeBar fraudScore={meta.fraudScore} riskColor={meta.riskColor} riskLabel={meta.riskLabel} tags={meta.tags} />
+        <HStack spacing={5} alignment="center">
+          <Image systemName="shield.lefthalf.filled" resizable={{}} frame={{ width: 13, height: 13 }} modifiers={modifiers().foregroundStyle('#D95D85')} />
+          <Text styledText={{ content: meta.tags.slice(0, 2).join(' / ') + ' · 风险 ' + meta.fraudScore + '%', foregroundColor: '#D95D85', font: 10, bold: true }} lineLimit={1} />
+        </HStack>
+      </VStack>
+    </ZStack>
   );
 }
 
-function LargeWidget({ data, locationZh, mapImage, hasWallpaper }: { data: any, locationZh: string, mapImage: any, hasWallpaper?: boolean }) {
+function LargeWidget({ data, locationZh, mapImage, pinPoint, widgetSize }: { data: any, locationZh: string, mapImage: any, pinPoint: any, widgetSize: any }) {
   const meta = useIPMeta(data, locationZh);
-  const ipInfoSelected = FEATURES[0]; // 固定使用 IP 定位信息
+  const size = widgetSize || { width: 329, height: 345 };
+  const revealStart = 0.48;
+  const revealMid = 0.61;
+  const revealEnd = 0.80;
+  const pin = pinPoint ? {
+    x: Math.max(14, Math.min(size.width - 14, pinPoint.x)),
+    y: Math.max(18, Math.min(size.height - 18, pinPoint.y)),
+  } : null;
+
   return (
-    <VStack
-      cornerRadius={24}
-      padding={{ top: 16, bottom: 14, leading: 16, trailing: 16 }}
-      spacing={10}
-      alignment="leading"
-      background={hasWallpaper ? undefined : widgetBg()}
-    >
-      <HStack alignment="center">
-        <VStack alignment="leading" spacing={2}>
-          <Text styledText={{ content: 'VPN连接状态', foregroundColor: '#166534', font: 18, bold: true }} />
+    <ZStack alignment="topLeading" clipped={true} cornerRadius={24} background={widgetBg()}>
+      {mapImage ? (
+        <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
+      ) : (
+        <VStack alignment="center" spacing={6} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} background={tertiaryBg()}>
+          <Image systemName="globe.asia.australia" resizable={{}} frame={{ width: 42, height: 42 }} modifiers={modifiers().foregroundStyle(SECONDARY_TEXT)} />
+          <Text styledText={{ content: '获取地图中...', foregroundColor: SECONDARY_TEXT, font: 12 }} />
         </VStack>
-      </HStack>
+      )}
 
-      <HStack alignment="center" spacing={10}>
-        <VStack alignment="leading" spacing={4} layoutPriority={1} frame={{ maxWidth: 160 }}>
-          <InfoCard title="当前 IP" value={data.ip || 'N/A'} icon="💻" color="#2563EB" />
-          <InfoCard title="位置" value={meta.locationStr} icon="📍" color="#16A34A" />
-          <InfoCard title="ASN / 组织" value={meta.asnStr} icon="🏢" color="#9333EA" />
+      {/* 左→右 渐变遮罩 */}
+      <RoundedRectangle cornerRadius={24} fill={{
+        gradient: [
+          { color: 'rgba(28,28,30,1.00)', location: 0.00 },
+          { color: 'rgba(28,28,30,0.99)', location: revealStart },
+          { color: 'rgba(28,28,30,0.78)', location: revealMid },
+          { color: 'rgba(28,28,30,0.24)', location: revealEnd },
+          { color: 'rgba(28,28,30,0.04)', location: 1.00 },
+        ],
+        startPoint: { x: 0, y: 0.5 },
+        endPoint: { x: 1, y: 0.5 },
+      }} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
+
+      {pin ? (
+        <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: 20, height: 20 }}
+          foregroundStyle="#FF3B30" widgetAccentedRenderingMode="fullColor"
+          position={{ x: pin.x, y: pin.y - 6 }} />
+      ) : null}
+
+      {/* 左侧信息 */}
+      <VStack alignment="leading" spacing={10}
+        frame={{ width: Math.round(size.width * 0.64) }}
+        position={{ x: 16 + Math.round(size.width * 0.64) / 2, y: size.height / 2 }}>
+        <Text styledText={{ content: 'IP 信息概览', foregroundColor: '#166534', font: 16, bold: true }} />
+        <VStack alignment="leading" spacing={3}>
+          <HStack spacing={6} alignment="center">
+            <Image systemName="mappin.and.ellipse" resizable={{}} frame={{ width: 16, height: 16 }} modifiers={modifiers().foregroundStyle('#A1A1A6')} />
+            <Text styledText={{ content: '位置', foregroundColor: '#A1A1A6', font: 10 }} />
+            <Text styledText={{ content: meta.locationStr, foregroundColor: '#F5F5F7', font: 12, bold: true }} lineLimit={1} minScaleFactor={0.64} frame={{ maxWidth: 'infinity', alignment: 'leading' }} />
+          </HStack>
+          <HStack spacing={6} alignment="center">
+            <Image systemName="network" resizable={{}} frame={{ width: 16, height: 16 }} modifiers={modifiers().foregroundStyle('#A1A1A6')} />
+            <Text styledText={{ content: 'IP', foregroundColor: '#A1A1A6', font: 10 }} />
+            <Text styledText={{ content: data.ip || 'N/A', foregroundColor: '#F5F5F7', font: 12, bold: true }} lineLimit={1} minScaleFactor={0.64} frame={{ maxWidth: 'infinity', alignment: 'leading' }} />
+          </HStack>
+          <HStack spacing={6} alignment="center">
+            <Image systemName="building.2" resizable={{}} frame={{ width: 16, height: 16 }} modifiers={modifiers().foregroundStyle('#A1A1A6')} />
+            <Text styledText={{ content: 'ASN', foregroundColor: '#A1A1A6', font: 10 }} />
+            <Text styledText={{ content: meta.asnStr, foregroundColor: '#F5F5F7', font: 12, bold: true }} lineLimit={1} minScaleFactor={0.64} frame={{ maxWidth: 'infinity', alignment: 'leading' }} />
+          </HStack>
         </VStack>
-        <LocationMapPanel data={data} meta={meta} selected={ipInfoSelected} compact={false} title="定位地图" mapImage={mapImage} />
-      </HStack>
-
-      <HStack spacing={6} alignment="center">
-        <Text styledText={{ content: '🔰 ' + meta.riskText, foregroundColor: meta.riskColor, font: 11, bold: true }} background="rgba(255,255,255,0.08)" cornerRadius={8} padding={{ top: 4, bottom: 4, leading: 7, trailing: 7 }} modifiers={modifiers().overlay(<RoundedRectangle cornerRadius={8} stroke={meta.riskColor} strokeWidth={1} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />)} />
-        {meta.tags.slice(0, 2).map(tag => <Text styledText={{ content: tag, foregroundColor: '#EE7799', font: 10, bold: true }} background="rgba(255,255,255,0.08)" cornerRadius={8} padding={{ top: 3, bottom: 3, leading: 6, trailing: 6 }} modifiers={modifiers().overlay(<RoundedRectangle cornerRadius={8} stroke="#EE7799" strokeWidth={1} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />)} />)}
-        <Spacer />
-      </HStack>
-    </VStack>
+        <RiskGaugeBar fraudScore={meta.fraudScore} riskColor={meta.riskColor} riskLabel={meta.riskLabel} tags={meta.tags} />
+        <HStack spacing={6} alignment="center">
+          <Image systemName="shield.lefthalf.filled" resizable={{}} frame={{ width: 16, height: 16 }} modifiers={modifiers().foregroundStyle('#D95D85')} />
+          <Text styledText={{ content: meta.tags.slice(0, 2).join(' / ') + ' · 风险 ' + meta.fraudScore + '%', foregroundColor: '#D95D85', font: 11, bold: true }} lineLimit={1} />
+        </HStack>
+      </VStack>
+    </ZStack>
   );
 }
 
 // ─── 小号组件：全屏地图 + 定位标记 ─────────────────────────
-function SmallWidget({ data, locationZh, mapImage }: { data: any, locationZh: string, mapImage: any }) {
+function SmallWidget({ data, locationZh, mapImage, pinPoint, widgetSize }: { data: any, locationZh: string, mapImage: any, pinPoint: any, widgetSize: any }) {
   const meta = useIPMeta(data, locationZh);
-  const locationTitle = [meta.city, meta.region].filter(Boolean).join(' · ');
+  const locationTitle = [meta.city, meta.region].filter(Boolean).join(' \u00b7 ');
   const briefLocation = locationTitle || meta.mapLocationName || '定位中';
   const countryName = meta.country || '';
-  const flag = FLAG_MAP[meta.countryCode] || '🌐';
+  const flag = FLAG_MAP[meta.countryCode] || '\u{1F310}';
+  const size = widgetSize || { width: 155, height: 155 };
+  const pin = pinPoint ? {
+    x: Math.max(14, Math.min(size.width - 14, pinPoint.x)),
+    y: Math.max(18, Math.min(size.height - 18, pinPoint.y)),
+  } : null;
 
   return (
-    <ZStack alignment="center" cornerRadius={22} padding={0} clipped={true}
+    <ZStack alignment="topLeading" cornerRadius={22} padding={0} clipped={true}
       background={widgetBg()}
       widgetURL={Script.createRunSingleURLScheme(Script.name)}
     >
-      {/* 全屏地图背景 */}
       {mapImage ? (
         <Image image={mapImage} resizable={true} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }} />
       ) : (
@@ -349,23 +387,11 @@ function SmallWidget({ data, locationZh, mapImage }: { data: any, locationZh: st
         </VStack>
       )}
 
-      {/* 中心定位标记 */}
-      {meta.hasCoord && (
-        <VStack alignment="center" spacing={0} offset={{ x: 0, y: -22 }}>
-          <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: 26, height: 26 }}
-            modifiers={modifiers().foregroundStyle('#FF3B30')} />
-        </VStack>
-      )}
-
-      {/* 右上角风险状态指示灯 */}
-      <VStack alignment="trailing" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
-        <HStack alignment="center" spacing={0}>
-          <Spacer />
-          <Circle fill={meta.riskColor} frame={{ width: 10, height: 10 }}
-            background="rgba(0,0,0,0.4)" />
-          <Text styledText={{ content: '  ', font: 1 }} />
-        </HStack>
-      </VStack>
+      {pin ? (
+        <Image systemName="mappin.circle.fill" resizable={{}} frame={{ width: 14, height: 14 }}
+          foregroundStyle="#FF3B30" widgetAccentedRenderingMode="fullColor"
+          position={{ x: pin.x, y: pin.y - 4 }} />
+      ) : null}
 
       {/* 底部信息浮层 */}
       <VStack alignment="leading" spacing={0} frame={{ maxWidth: 'infinity', maxHeight: 'infinity' }}>
@@ -374,7 +400,7 @@ function SmallWidget({ data, locationZh, mapImage }: { data: any, locationZh: st
           background="rgba(0,0,0,0.6)"
           padding={{ top: 8, bottom: 10, leading: 12, trailing: 12 }}
           frame={{ maxWidth: 'infinity' }}>
-          <Text styledText={{ content: `${flag} ${briefLocation}${countryName ? ' · ' + countryName : ''}`, foregroundColor: 'white', font: 12, bold: true }} lineLimit={1} />
+          <Text styledText={{ content: flag + ' ' + briefLocation + (countryName ? ' \u00b7 ' + countryName : ''), foregroundColor: 'white', font: 12, bold: true }} lineLimit={1} />
           <Text styledText={{ content: data.ip || 'N/A', foregroundColor: 'rgba(255,255,255,0.5)', font: 10 }} lineLimit={1} />
         </VStack>
       </VStack>
@@ -632,8 +658,6 @@ function RiskGaugeBar({ fraudScore, riskColor, riskLabel, tags }: { fraudScore: 
           return <Text key={tick} styledText={{ content: String(tick), foregroundColor: tickColors[tick] || '#FFFFFF', font: 7 }} offset={{ x: offsetX, y: 8 }} />;
         })}
       </ZStack>
-      {/* 风险标签 */}
-      <Text styledText={{ content: tags.slice(0, 2).join(' \u00b7 '), foregroundColor: '#EE7799', font: 9, bold: true }} lineLimit={1} />
     </>
   );
 }
@@ -745,10 +769,8 @@ async function runWidget() {
   try {
     const data = await fetchIPData();
     
-    // 1) Use country-name mapping as quick baseline
     let locationZh = toChineseName(data);
 
-    // 2) Try reverseGeocode with zh-CN locale for accurate Chinese place names
     if (data.latitude && data.longitude) {
       try {
         const placemarks = await reverseGeocode({
@@ -762,31 +784,26 @@ async function runWidget() {
           if (pm.country) parts.push(pm.country);
           if (pm.administrativeArea) parts.push(pm.administrativeArea);
           if (pm.locality) parts.push(pm.locality);
-          if (parts.length >= 2) {
-            locationZh = parts.join(' ');
-          }
+          if (parts.length >= 2) locationZh = parts.join(' ');
         }
-      } catch (_e) {
-        // reverseGeocode failed, fall back to mapped name
-      }
+      } catch (_e) {}
     }
 
-    let mapImage = null;
+    let mapImage: any = null;
+    let pinPoint: any = null;
+    const widgetSize = Widget.displaySize || { width: 329, height: 154 };
+
     if (data.latitude && data.longitude) {
       const safeLat = Math.max(-85, Math.min(85, data.latitude));
       const safeLon = Math.max(-180, Math.min(180, data.longitude));
-      // 浅色矢量地图 + 中文标注（Apple Maps 风格）
-      const mapZoom = getCountryMapZoom(data);
-      const url = buildStaticMapUrl(safeLat, safeLon, 312, 312, mapZoom);
-      try {
-        mapImage = await UIImage.fromURL(url);
-      } catch (e) {
-        console.error("Failed to load map image:", e);
+      const snap = await takeAppleMapSnapshot(safeLat, safeLon, widgetSize.width, widgetSize.height, Widget.family);
+      if (snap) {
+        mapImage = snap.image;
+        pinPoint = snap.point({ latitude: safeLat, longitude: safeLon });
       }
     }
 
-    // 每 5 分钟自动刷新，实时同步 IPPure 风险分数
-    Widget.present(<IPWidgetView data={data} locationZh={locationZh} mapImage={mapImage} />, {
+    Widget.present(<IPWidgetView data={data} locationZh={locationZh} mapImage={mapImage} pinPoint={pinPoint} widgetSize={widgetSize} />, {
       policy: 'after',
       date: new Date(Date.now() + 1000 * 60 * 5)
     });
