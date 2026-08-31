@@ -40,6 +40,8 @@ export interface NinebotWidgetData {
   achievement: AchievementInfo | null
   // token 过期标记（经验/成就 API 返回 401903 时设置）
   tokenExpired: boolean
+  // 每日分享任务领取状态（true=今日已领, false=待领取, null=未知）
+  shareTaskRewardClaimed: boolean | null
 }
 
 // 盲盒信息
@@ -61,8 +63,8 @@ export interface TaskInfo {
   subTitle: string
   rewardDescription: string
   rewardQuantity: number
-  rewardStatus: number  // 1=未完成, 3=已完成
-  taskCategory: number  // 1=完善资料, 3=车辆激活, 7=内容点赞
+  rewardStatus: number  // 1=未完成, 2=已领取, 3=已完成
+  taskCategory: number  // 1=完善资料, 3=车辆激活, 6=每日分享, 7=内容点赞
   bannerUrl: string
   url: string
   startTime: number
@@ -266,6 +268,35 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       console.warn("⚠️ 盲盒 API 返回错误:", blindBoxResp.data?.msg || blindBoxResp.data?.message || JSON.stringify(blindBoxResp.data))
     }
 
+    // 自动领取每日分享奖励（半自动：用户分享一次后，脚本自动领取N币）
+    let shareTaskRewardClaimed: boolean | null = null
+    try {
+      console.log("🎁 检查每日分享任务状态...")
+      const shareTask = await getDailyShareTaskStatus(authorization, deviceId)
+      if (shareTask) {
+        if (shareTask.rewardStatus === 1) {
+          // rewardStatus=1 表示待领取，自动调用领取接口
+          console.log("📤 分享任务待领取，尝试自动领取奖励...")
+          const claimResult = await claimDailyShareReward(authorization, deviceId)
+          if (claimResult.success) {
+            shareTaskRewardClaimed = true
+            console.log("🎉 每日分享奖励领取成功！+" + (claimResult.reward || 1) + " N币")
+          } else {
+            shareTaskRewardClaimed = false
+            console.warn("⚠️ 分享奖励领取失败:", claimResult.message)
+          }
+        } else if (shareTask.rewardStatus === 2) {
+          shareTaskRewardClaimed = true
+          console.log("✅ 每日分享奖励已领取过")
+        } else {
+          shareTaskRewardClaimed = false
+          console.log("ℹ️ 分享任务状态:", shareTask.rewardStatus, "(需先在APP中分享)")
+        }
+      }
+    } catch (e) {
+      console.warn("⚠️ 分享任务检查失败:", e)
+    }
+
     const result = { 
       isSigned, 
       nCoin, 
@@ -282,6 +313,7 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       calendarInfo,
       achievement: null,
       tokenExpired,
+      shareTaskRewardClaimed,
     }
     
     console.log("📊 最终解析结果:", JSON.stringify(result))
