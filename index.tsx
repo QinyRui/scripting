@@ -85,6 +85,7 @@ export interface NinebotSettings {
   refreshInterval: number
   autoSign: boolean
   autoSignTime: string
+  autoSupplement: boolean
   autoOpenBlindBox: boolean
   titleDayColor: Color
   titleNightColor: Color
@@ -106,6 +107,7 @@ const defaultSettings: NinebotSettings = {
   refreshInterval: 15,
   autoSign: false,
   autoSignTime: "00:30",
+  autoSupplement: true,
   autoOpenBlindBox: false,
   titleDayColor: "#333333" as unknown as Color,
   titleNightColor: "#FFFFFF" as unknown as Color,
@@ -831,6 +833,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [refreshInterval, setRefreshInterval] = useState(initial.refreshInterval ?? 15)
   const [autoSign, setAutoSign] = useState(initial.autoSign ?? false)
   const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
+  const [autoSupplement, setAutoSupplement] = useState(initial.autoSupplement ?? true)
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
   const achievementUidObs = useObservable(initial.achievementUid || Storage.get("ninebot.uid") || " ")
   const achievementVehicleTypeObs = useObservable(initial.achievementVehicleType || Storage.get("ninebot.vehicleType") || " ")
@@ -881,6 +884,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       refreshInterval: Number(refreshInterval) || 15,
       autoSign: !!autoSign,
       autoSignTime: (autoSignTime || "00:30").trim(),
+      autoSupplement: !!autoSupplement,
       autoOpenBlindBox: !!autoOpenBlindBox,
       titleDayColor: initial.titleDayColor,
       titleNightColor: initial.titleNightColor,
@@ -1416,6 +1420,17 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                   frame={{ maxWidth: 'infinity' }}
                 />
               )}
+            </VStack>
+          </HStack>
+          
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="arrow.counterclockwise" foregroundStyle="systemGreen" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+              <Toggle
+                title="自动补签"
+                value={autoSupplement}
+                onChanged={setAutoSupplement}
+              />
             </VStack>
           </HStack>
           
