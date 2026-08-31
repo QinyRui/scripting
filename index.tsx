@@ -840,6 +840,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const achievementWnumberObs = useObservable(initial.achievementWnumber || Storage.get("ninebot.wnumber") || " ")
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [showAuthManage, setShowAuthManage] = useState(false)
   const [tasks, setTasks] = useState<TaskInfo[]>([])
   const [tasksLoading, setTasksLoading] = useState(false)
 
@@ -1263,118 +1264,113 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
           ) : null}
         </Section>
 
-        {/* ==================== 鉴权信息 ==================== */}
+        {/* ==================== 鉴权信息（Toggle展开） ==================== */}
         <Section 
           header={<Text font="headline">鉴权信息</Text>}
           footer={
-            <>
-              <Text font="footnote" foregroundStyle="secondaryLabel">
-                {enableBoxJs 
-                  ? "可使用上方同步按钮自动填充，或手动填写" 
-                  : "请先运行签到脚本抓包获取 Authorization 和 Device ID"}
-              </Text>
-              <Text font="caption" foregroundStyle="tertiaryLabel">
-                下方三项用于排行榜API，可从BoxJS同步或手动填写
-              </Text>
-              {deviceId && !validateDeviceId(deviceId) ? (
-                <Text font="caption2" foregroundStyle="red">
-                  ⚠️ DeviceId 格式错误，应为 UUID 格式
-                </Text>
-              ) : null}
-            </>
+            <Text font="footnote" foregroundStyle="secondaryLabel">
+              {enableBoxJs 
+                ? "可使用 BoxJS 同步鉴权信息" 
+                : "开启后展开配置 Authorization 和 Device ID"}
+            </Text>
           }
         >
           <HStack padding={16} spacing={12} alignment="center">
             <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="lock.fill" foregroundStyle="systemOrange" font={16} /></ZStack>
-            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
-              <HStack alignment="center">
-                <Text fontWeight="bold">Authorization</Text>
-                <Spacer />
-                {!!authorization && <Button action={clearAuth}><Image systemName="trash.circle.fill" foregroundStyle="systemRed" font={20} /></Button>}
+            <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+              <Toggle
+                title="管理鉴权信息"
+                value={showAuthManage}
+                onChanged={(value) => setShowAuthManage(value)}
+              />
+            </VStack>
+          </HStack>
+
+          {showAuthManage ? (
+            <>
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemOrange" opacity={0.15} /><Image systemName="lock.fill" foregroundStyle="systemOrange" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+                  <HStack alignment="center">
+                    <Text fontWeight="bold">Authorization</Text>
+                    <Spacer />
+                    {!!authorization && <Button action={clearAuth}><Image systemName="trash.circle.fill" foregroundStyle="systemRed" font={20} /></Button>}
+                  </HStack>
+                  <TextField
+                    label={<Text>{" "}</Text>}
+                    value={authorization}
+                    prompt="直接粘贴抓包获取的令牌"
+                    onChanged={setAuthorization}
+                    frame={{ maxWidth: 'infinity' }}
+                  />
+                </VStack>
               </HStack>
-              <TextField
-                label={<Text>{""}</Text>}
-                value={authorization}
-                prompt="直接粘贴抓包获取的令牌"
-                onChanged={setAuthorization}
-                frame={{ maxWidth: 'infinity' }}
-              />
-            </VStack>
-          </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="iphone" foregroundStyle="systemGreen" font={16} /></ZStack>
-            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
-              <HStack alignment="center">
-                <Text fontWeight="bold">DeviceId</Text>
-                <Spacer />
-                {!!deviceId && <Button action={clearDeviceId}><Image systemName="trash.circle.fill" foregroundStyle="systemRed" font={20} /></Button>}
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="iphone" foregroundStyle="systemGreen" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+                  <HStack alignment="center">
+                    <Text fontWeight="bold">DeviceId</Text>
+                    <Spacer />
+                    {!!deviceId && <Button action={clearDeviceId}><Image systemName="trash.circle.fill" foregroundStyle="systemRed" font={20} /></Button>}
+                  </HStack>
+                  <TextField
+                    label={<Text>{" "}</Text>}
+                    value={deviceId}
+                    prompt="例如: 06965B02-DE89..."
+                    onChanged={setDeviceId}
+                    frame={{ maxWidth: 'infinity' }}
+                  />
+                </VStack>
               </HStack>
-              <TextField
-                label={<Text>{""}</Text>}
-                value={deviceId}
-                prompt="例如: 06965B02-DE89..."
-                onChanged={setDeviceId}
-                frame={{ maxWidth: 'infinity' }}
-              />
-            </VStack>
-          </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="network" foregroundStyle="systemTeal" font={16} /></ZStack>
-            <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
-              <Text fontWeight="bold">User-Agent</Text>
-              <TextField
-                label={<Text>{""}</Text>}
-                value={userAgent}
-                prompt="留空使用默认值"
-                onChanged={setUserAgent}
-                frame={{ maxWidth: 'infinity' }}
-              />
-            </VStack>
-          </HStack>
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemTeal" opacity={0.15} /><Image systemName="network" foregroundStyle="systemTeal" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={4} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="bold">User-Agent</Text>
+                  <TextField
+                    label={<Text>{" "}</Text>}
+                    value={userAgent}
+                    prompt="留空使用默认值"
+                    onChanged={setUserAgent}
+                    frame={{ maxWidth: 'infinity' }}
+                  />
+                </VStack>
+              </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center" onTapGesture={handleTestApi}>
-            <ZStack frame={{ width: 32, height: 32 }}><Circle fill={testing ? "systemGray" : "systemBlue"} opacity={0.15} /><Image systemName="bolt.horizontal.fill" foregroundStyle={testing ? "systemGray" : "systemBlue"} font={16} /></ZStack>
-            <Text fontWeight="bold" foregroundStyle={testing ? "secondaryLabel" : "systemBlue"}>{testing ? "测试中..." : "测试 API 连接"}</Text>
-            <Spacer />
-            <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
-          </HStack>
+              <HStack padding={16} spacing={12} alignment="center" onTapGesture={handleTestApi}>
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill={testing ? "systemGray" : "systemBlue"} opacity={0.15} /><Image systemName="bolt.horizontal.fill" foregroundStyle={testing ? "systemGray" : "systemBlue"} font={16} /></ZStack>
+                <Text fontWeight="bold" foregroundStyle={testing ? "secondaryLabel" : "systemBlue"}>{testing ? "测试中..." : "测试 API 连接"}</Text>
+                <Spacer />
+                <Image systemName="chevron.right" font={12} foregroundStyle="secondaryLabel" />
+              </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}>
-              <Circle fill="systemBlue" opacity={0.15} />
-              <Image systemName="person.circle.fill" foregroundStyle="systemBlue" font={16} />
-            </ZStack>
-            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
-              <Text fontWeight="bold">用户ID (uid)</Text>
-              <TextField value={achievementUidObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
-            </VStack>
-          </HStack>
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemBlue" opacity={0.15} /><Image systemName="person.circle.fill" foregroundStyle="systemBlue" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="bold">用户ID (uid)</Text>
+                  <TextField value={achievementUidObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
+                </VStack>
+              </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}>
-              <Circle fill="systemGreen" opacity={0.15} />
-              <Image systemName="car.fill" foregroundStyle="systemGreen" font={16} />
-            </ZStack>
-            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
-              <Text fontWeight="bold">车型编号</Text>
-              <TextField value={achievementVehicleTypeObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
-            </VStack>
-          </HStack>
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemGreen" opacity={0.15} /><Image systemName="car.fill" foregroundStyle="systemGreen" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="bold">车型编号</Text>
+                  <TextField value={achievementVehicleTypeObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
+                </VStack>
+              </HStack>
 
-          <HStack padding={16} spacing={12} alignment="center">
-            <ZStack frame={{ width: 32, height: 32 }}>
-              <Circle fill="systemPurple" opacity={0.15} />
-              <Image systemName="number" foregroundStyle="systemPurple" font={16} />
-            </ZStack>
-            <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
-              <Text fontWeight="bold">设备序列号 (wnumber)</Text>
-              <TextField value={achievementWnumberObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
-            </VStack>
-          </HStack>
+              <HStack padding={16} spacing={12} alignment="center">
+                <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemPurple" opacity={0.15} /><Image systemName="number" foregroundStyle="systemPurple" font={16} /></ZStack>
+                <VStack alignment="leading" spacing={2} frame={{ maxWidth: "infinity" }}>
+                  <Text fontWeight="bold">设备序列号 (wnumber)</Text>
+                  <TextField value={achievementWnumberObs} label={<Text>{" "}</Text>} prompt="排行榜API所需" />
+                </VStack>
+              </HStack>
+            </>
+          ) : null}
         </Section>
-
         {/* ==================== 小组件配置 ==================== */}
         <Section 
           header={<Text font="headline">小组件配置</Text>}
@@ -1533,7 +1529,6 @@ function getInitialView(): "settings" | "blindbox" {
   } catch { }
   return "settings"
 }
-
 export default function App(_props: AppProps) {
   const [view, setView] = useState<"settings" | "blindbox">(getInitialView)
   const releaseNotes = useReleaseNotesSheet()
