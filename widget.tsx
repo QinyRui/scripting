@@ -939,19 +939,20 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
       } catch (e) { console.log('自动补签失败:', e) }
     }
 
-    // 自动领取每日分享任务奖励（rewardStatus=1 表示可领取）
+    // 自动领取每日分享任务奖励（rewardStatus=1 表示可领取，3 也可能是待领取）
     try {
       const shareTask = await getDailyShareTaskStatus(auth, devId)
-      if (shareTask && shareTask.rewardStatus === 1) {
-        console.log('🎁 每日分享任务可领取，自动领取中...')
+      console.log('📋 Widget分享任务状态: ' + (shareTask ? ('rewardStatus=' + shareTask.rewardStatus) : '未找到'))
+      if (shareTask && shareTask.rewardStatus !== 2) {
+        // 非已领取状态，尝试领取
+        console.log('🎁 每日分享任务尝试领取中...')
         const claimResult = await claimDailyShareReward(auth, devId)
         if (claimResult.success) {
           console.log('✅ 每日分享奖励已领取: +1 N币')
-          // 重新获取数据以更新 N币余额
           baseData = await getNinebotInfo(auth, devId)
+        } else {
+          console.log('ℹ️ 分享奖励领取结果:', claimResult.message)
         }
-      } else if (shareTask && shareTask.rewardStatus === 3) {
-        console.log('ℹ️ 每日分享任务今日已领取或不可参与')
       }
     } catch (e) { console.log('每日分享任务查询/领取失败:', e) }
 
