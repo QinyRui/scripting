@@ -1,5 +1,5 @@
 import { VStack, HStack, ZStack, Text, Spacer, Widget, Image, Rectangle, Circle, Capsule, Notification, gradient, type Color } from "scripting"
-import { getNinebotInfo, doSign, autoOpenBlindBoxes, refreshVehicleData, getMyAchievement, getDailyShareTaskStatus, claimDailyShareReward, type NinebotWidgetData, type VehicleInfo, type AchievementInfo } from './api'
+import { getNinebotInfo, doSign, doSupplement, autoOpenBlindBoxes, refreshVehicleData, getMyAchievement, getDailyShareTaskStatus, claimDailyShareReward, type NinebotWidgetData, type VehicleInfo, type AchievementInfo } from './api'
 import { getStorage, setStorage } from './utils/storage'
 
 // 不再需要 CalendarNotificationTrigger / DateComponents
@@ -898,6 +898,45 @@ const fetchWidgetData = async (): Promise<ExtendedNinebotData> => {
           console.log("📋 签到成功通知已补发")
         } catch (e) { console.log("签到通知发送失败:", e) }
       }
+    }
+
+    // 自动补签：检查日历中未签的天数并补签
+    if (settings.autoSupplement && baseData.calendarInfo && baseData.calendarInfo.length > 0) {
+      try {
+        const today = new Date()
+        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
+        
+        // 找出今天之前未签的日期（sign === 2 表示未签）
+        const missedDates: string[] = []
+        for (const day of baseData.calendarInfo) {
+          if (day.sign === 2 && day.timestamp) {
+            const d = new Date(day.timestamp)
+            const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+            // 只补签今天之前的（不含今天，今天已通过 doSign 处理）
+            if (dateStr < todayStr) {
+              missedDates.push(dateStr)
+            }
+          }
+        }
+        
+        if (missedDates.length > 0) {
+          console.log('📋 发现 ' + missedDates.length + ' 天未签，尝试补签:', missedDates.join(', '))
+          let supplementCount = 0
+          for (const dateStr of missedDates) {
+            const result = await doSupplement(auth, devId, dateStr)
+            if (result.success) {
+              supplementCount++
+              console.log('✅ 补签成功: ' + dateStr)
+            } else {
+              console.log('⚠️ 补签失败 (' + dateStr + '): ' + result.message)
+            }
+          }
+          if (supplementCount > 0) {
+            console.log('📋 共补签 ' + supplementCount + ' 天，刷新数据...')
+            baseData = await getNinebotInfo(auth, devId)
+          }
+        }
+      } catch (e) { console.log('自动补签失败:', e) }
     }
 
     // 自动领取每日分享任务奖励（rewardStatus=1 表示可领取）
