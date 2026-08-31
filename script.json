@@ -1,49 +1,49 @@
 {
-  "intentInputTypes" : [
-
-  ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "permissions" : null,
-  "localizedDescriptions" : {
-    "pt" : "",
-    "ja" : "",
-    "fr" : "",
-    "ru" : "",
-    "de" : "",
-    "it" : "",
-    "en" : "",
-    "zh" : "",
-    "es" : ""
-  },
-  "color" : "rgba(0, 198, 165,1)",
-  "entry" : "index.tsx",
-  "version" : "2.2.60",
-  "description" : "签到时自动领取每日分享任务奖励+1N币（需先在APP中分享一次）",
-  "runInApp" : true,
-  "remoteResource" : {
-    "autoUpdateInterval" : 3600,
-    "hash" : "9e5cd6c9f762f70f1963e3126faf3469",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
-  },
-  "name" : "九号APP签到",
-  "author" : {
-    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
-    "name" : "QinyRui",
-    "email" : "602839678@qq.com"
-  },
-  "localizedNames" : {
-    "zh" : "",
-    "de" : "",
-    "en" : "",
-    "ja" : "",
-    "es" : "",
-    "ru" : "",
-    "pt" : "",
-    "it" : "",
-    "fr" : ""
-  },
   "contributors" : [
 
   ],
-  "icon" : "scooter"
+  "name" : "九号APP签到",
+  "author" : {
+    "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
+    "email" : "602839678@qq.com",
+    "name" : "QinyRui"
+  },
+  "entry" : "index.tsx",
+  "icon" : "scooter",
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "intentInputTypes" : [
+
+  ],
+  "remoteResource" : {
+    "autoUpdateInterval" : 3600,
+    "hash" : "bb782c4ed558a2349caa2b75ef62d400",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
+  },
+  "color" : "rgba(0, 198, 165,1)",
+  "localizedNames" : {
+    "ja" : "",
+    "fr" : "",
+    "es" : "",
+    "ru" : "",
+    "zh" : "",
+    "it" : "",
+    "en" : "",
+    "pt" : "",
+    "de" : ""
+  },
+  "permissions" : null,
+  "version" : "2.2.61",
+  "runInApp" : true,
+  "localizedDescriptions" : {
+    "fr" : "",
+    "de" : "",
+    "pt" : "",
+    "it" : "",
+    "ja" : "",
+    "zh" : "",
+    "ru" : "",
+    "en" : "",
+    "es" : ""
+  },
+  "description" : "签到时自动领取每日分享任务奖励+1N币（需先在APP中分享一次）"
 }
