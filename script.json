@@ -1,0 +1,56 @@
+{
+  "intentInputTypes" : [
+
+  ],
+  "remoteResource" : {
+    "hash" : "186e010349c32b36fcc04acc7f62010c",
+    "autoUpdateInterval" : 3600,
+    "url" : "https:\/\/github.com\/Augus2008\/JavaScript\/tree\/main\/IP检测"
+  },
+  "localizedNames" : {
+    "ja" : "",
+    "es" : "",
+    "de" : "",
+    "en" : "",
+    "pt" : "",
+    "fr" : "",
+    "ru" : "",
+    "it" : "",
+    "zh" : ""
+  },
+  "version" : "1.1.9",
+  "name" : "IP检测",
+  "description" : "智能IP检测工具，支持VPN\/代理状态、风险评分与城市级地图展示",
+  "permissions" : [
+    "calendar",
+    "reminders",
+    "alarms",
+    "contacts",
+    "location",
+    "homeKit",
+    "photos",
+    "health",
+    "clipboard",
+    "fileSystem"
+  ],
+  "color" : "rgba(174, 109, 216, 1)",
+  "entry" : "index.tsx",
+  "contributors" : [
+
+  ],
+  "runInApp" : false,
+  "iconImage" : null,
+  "localizedDescriptions" : {
+    "ru" : "",
+    "pt" : "",
+    "it" : "",
+    "ja" : "",
+    "fr" : "",
+    "en" : "",
+    "de" : "",
+    "zh" : "",
+    "es" : ""
+  },
+  "author" : null,
+  "icon" : "antenna.radiowaves.left.and.right"
+}
