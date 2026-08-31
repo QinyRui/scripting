@@ -120,25 +120,45 @@ const ScanBeam = ({ width, color = Theme.colors.green }: { width: number, color?
 const NINEBOT_LOGO_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/LOUGO.png"
 const VEHICLE_IMG_PATH = "/var/mobile/Library/Mobile Documents/iCloud~com~thomfang~Scripting/Documents/scripts/九号APP签到/photos/ninebot-scooter-lineart.png"
 
-/** 签到核心仪表盘 — 彩色渐变环（基于时间旋转）+ 光晕 + 九号logo */
-const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }) => {
+/** 签到核心仪表盘 — 彩色渐变环 + 七段签到环 + 九号logo */
+const StatusDashboard = ({ calendarInfo, size }: { calendarInfo: Array<{ sign: number, timestamp: number }> | undefined, size: number }) => {
   const iconSize = size * 0.55
-  // ═══ 基于当前时间计算旋转角度（每圈不同速度）═══
-  const now = Date.now() / 1000  // 秒级时间戳
-  const rot1 = (now * 8) % 360    // 青色外圈：最快
+  // ═══ 基于当前时间计算旋转角度（内圈动态旋转）═══
+  const now = Date.now() / 1000
   const rot2 = -(now * 5) % 360   // 紫色圈：反向中速
   const rot3 = (now * 3) % 360    // 绿色圈：慢速
   const rot4 = -(now * 12) % 360  // 金色活动环：最快反向
 
+  // ═══ 计算七天签到状态（最近7天，按时间排序）═══
+  const sortedCal = (calendarInfo || []).slice().sort((a, b) => a.timestamp - b.timestamp)
+  const last7 = sortedCal.slice(-7)
+  const signedDaysCount = last7.filter(c => c.sign === 1).length
+
   return (
     <ZStack frame={{ width: size, height: size }} alignment="center">
-      {/* ═══ 第一层：最外圈 — 青色弧段（旋转）═══ */}
-      <ZStack frame={{ width: size, height: size }} alignment="center"
-        rotationEffect={{ degrees: rot1, anchor: "center" }}>
-        <Circle stroke={{ shapeStyle: '#00E5FF' as Color, strokeStyle: { lineWidth: Math.max(0.5, S(0.8)) } }}
-          frame={{ width: size, height: size }}
-          trim={{ from: 0.0, to: 0.75 }} opacity={0.25} />
-      </ZStack>
+      {/* ═══ 第一层：外圈 — 七段签到环（静止，每段一种颜色）═══ */}
+      {/* 底环 */}
+      <Circle stroke={{ shapeStyle: Theme.colors.cardStroke, strokeStyle: { lineWidth: Math.max(3, S(5)) } }}
+        frame={{ width: size, height: size }} opacity={0.3} />
+      {/* 七段彩色弧 — 每天一段，已签到=暗淡，未签到=明亮 */}
+      {(() => {
+        // 七段颜色：彩虹渐变（红→橙→黄→绿→青→蓝→紫）
+        const segColors = ['#FF6B6B', '#FF9F43', '#FFD93D', '#6BCB77', '#48DBFB', '#5B86E5', '#BF5AF2']
+        const segArc = 50.14 / 360   // 每段弧长占比
+        const gap = 3 / 360            // 段间间隙占比
+        return Array.from({ length: 7 }, (_, i) => {
+          const from = i * (segArc + gap)
+          const to = from + segArc
+          // 未签到=明亮，已签到=暗淡（用户要求：签到一天变暗一个）
+          const segOpacity = i < signedDaysCount ? 0.15 : 0.85
+          return (
+            <Circle key={"seg-" + i}
+              stroke={{ shapeStyle: segColors[i] as Color, strokeStyle: { lineWidth: Math.max(3, S(5)) } }}
+              frame={{ width: size, height: size }}
+              trim={{ from, to }} opacity={segOpacity} />
+          )
+        })
+      })()}
       {/* ═══ 第二圈 — 紫色弧段（反向旋转）═══ */}
       <ZStack frame={{ width: size * 0.88, height: size * 0.88 }} alignment="center"
         rotationEffect={{ degrees: rot2, anchor: "center" }}>
@@ -163,10 +183,10 @@ const StatusDashboard = ({ isSigned, size }: { isSigned: boolean, size: number }
 
       {/* ═══ 装饰点 — 跟随外圈旋转 ═══ */}
       <ZStack frame={{ width: size, height: size }} alignment="center"
-        rotationEffect={{ degrees: rot1 * 0.7, anchor: "center" }}>
-        <Circle fill="#00E5FF" frame={{ width: Math.max(3, S(4)), height: Math.max(3, S(4)) }}
+        rotationEffect={{ degrees: rot3 * 1.5, anchor: "center" }}>
+        <Circle fill="#BF5AF2" frame={{ width: Math.max(3, S(4)), height: Math.max(3, S(4)) }}
           offset={{ x: size * 0.33, y: -size * 0.1 }} opacity={0.50} />
-        <Circle fill="#BF5AF2" frame={{ width: Math.max(2, S(3)), height: Math.max(2, S(3)) }}
+        <Circle fill="#00E5FF" frame={{ width: Math.max(2, S(3)), height: Math.max(2, S(3)) }}
           offset={{ x: -size * 0.28, y: size * 0.2 } } opacity={0.40} />
       </ZStack>
 
@@ -222,43 +242,54 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
   </VStack>
 )
 
-/** 圆形倒计时环盲盒组件 — 左环右文布局 */
-const BlindBoxRing = ({ box, vehicleName, lastReward }: { box: any, vehicleName?: string, lastReward?: { rewardType: number, rewardValue: number } | null }) => {
+/** 圆形倒计时环盲盒组件 — 左环右文布局（七段彩色环 + 内圈奖励）*/
+const BlindBoxRing = ({ box, vehicleName, lastReward, calendarInfo }: { box: any, vehicleName?: string, lastReward?: { rewardType: number, rewardValue: number } | null, calendarInfo?: Array<{ sign: number, timestamp: number }> }) => {
   const isReady = box.leftDaysToOpen <= 0
   const total = box.awardDays || 7
   const left = box.leftDaysToOpen
-  const progress = isReady ? 1 : Math.max(0, Math.min(1, (total - left) / total))
   const ringSize = S(42)
   const ringWidth = Math.max(3, S(4))
 
-  // 颜色：可领取=绿色，冷却中=橙色
+  // 计算七天签到状态（与 StatusDashboard 同逻辑）
+  const sortedCal = (calendarInfo || []).slice().sort((a, b) => a.timestamp - b.timestamp)
+  const last7 = sortedCal.slice(-7)
+  const signedDaysCount = last7.filter(c => c.sign === 1).length
+
   const accentColor = isReady ? Theme.colors.green : Theme.colors.orange
-  const glowColor = isReady ? Theme.colors.green : Theme.colors.orange
-  const bgRingColor = Widget.isTransparentBackground
-    ? ("rgba(255,255,255,0.15)" as Color)
-    : ("rgba(255,255,255,0.08)" as Color)
 
   return (
     // @ts-ignore
     <HStack alignment="center" spacing={S(8)}>
-      {/* 左侧：发光倒计时环 */}
+      {/* 左侧：七段彩色倒计时环 */}
       <ZStack frame={{ width: ringSize, height: ringSize }} alignment="center">
         {/* 外层光晕 */}
-        <Circle fill={glowColor}
+        <Circle fill={accentColor}
           frame={{ width: ringSize + S(8), height: ringSize + S(8) }}
           opacity={0.12} />
         {/* 中层光晕 */}
-        <Circle fill={glowColor}
+        <Circle fill={accentColor}
           frame={{ width: ringSize + S(4), height: ringSize + S(4) }}
           opacity={0.18} />
         {/* 底环 */}
-        <Circle stroke={{ shapeStyle: bgRingColor, strokeStyle: { lineWidth: ringWidth } }}
-          frame={{ width: ringSize, height: ringSize }} />
-        {/* 进度环 */}
-        <Circle stroke={{ shapeStyle: accentColor, strokeStyle: { lineWidth: ringWidth } }}
-          frame={{ width: ringSize, height: ringSize }}
-          trim={{ from: 0, to: progress }}
-          rotationEffect={{ degrees: -90, anchor: "center" }} />
+        <Circle stroke={{ shapeStyle: Theme.colors.cardStroke, strokeStyle: { lineWidth: ringWidth } }}
+          frame={{ width: ringSize, height: ringSize }} opacity={0.3} />
+        {/* 七段彩色弧 — 每天一段，已签到=暗淡，未签到=明亮 */}
+        {(() => {
+          const segColors = ['#FF6B6B', '#FF9F43', '#FFD93D', '#6BCB77', '#48DBFB', '#5B86E5', '#BF5AF2']
+          const segArc = 50.14 / 360
+          const gap = 3 / 360
+          return Array.from({ length: 7 }, (_, i) => {
+            const from = i * (segArc + gap)
+            const to = from + segArc
+            const segOpacity = i < signedDaysCount ? 0.15 : 0.85
+            return (
+              <Circle key={"rb-seg-" + i}
+                stroke={{ shapeStyle: segColors[i] as Color, strokeStyle: { lineWidth: ringWidth } }}
+                frame={{ width: ringSize, height: ringSize }}
+                trim={{ from, to }} opacity={segOpacity} />
+            )
+          })
+        })()}
         {/* 中心内容 */}
         <VStack alignment="center" spacing={0}>
           {isReady ? (
@@ -386,6 +417,72 @@ const BlindBoxRowLarge = ({ box }: { box: any }) => {
 }
 
 // ========================
+// 大灯光束效果组件
+// ========================
+
+/**
+ * 车灯大灯光束 — 从车头向前（左）呈锥形扩散
+ * 白天(5-17点)：微弱近光灯
+ * 夜间(17-5点)：明亮远光灯
+ */
+const HeadlightBeam = ({ width, height }: { width: number, height: number }) => {
+  const hour = new Date().getHours()
+  const isNight = hour >= 17 || hour < 5
+  const baseOpacity = isNight
+    ? (hour >= 17 ? 0.35 + Math.min(0.65, (hour - 17) * 0.13)
+      : 0.9 - hour * 0.1)
+    : 0.10
+
+  // 车头大灯位置
+  const scooterLeft = width - 10 - 135
+  const scooterTop = height - 125
+  const lampX = scooterLeft + 135 * 0.30
+  const lampY = scooterTop + 125 * 0.42
+
+  // 光束方向：从车灯斜射向左下角盲盒圆环
+  const targetX = width * 0.05
+  const targetY = height * 0.88
+  const dx = targetX - lampX
+  const dy = targetY - lampY
+  const beamLen = Math.sqrt(dx * dx + dy * dy)
+
+  const layers = 80  // 大量薄层，极致平滑
+  const layerStep = beamLen / layers
+  const beamHalfH = height * 0.55  // 末端半高度（更宽扩散）
+
+  return (
+    <ZStack frame={{ width, height }} alignment="center">
+      {Array.from({ length: layers }, (_, i) => {
+        const t = (i + 0.5) / layers
+        // 沿对角线路径定位
+        const cx = lampX + dx * t
+        const cy = lampY + dy * t
+        // 超高重叠：每层宽度=步长*4，极致平滑
+        const spread = layerStep * 4
+        // 锥形高度：用 t^0.65 曲线，远处扩散更均匀饱满
+        const expandT = Math.pow(t, 0.65)
+        const lh = Math.max(4, beamHalfH * expandT)
+        // 透明度：(1-t)^1.8 平滑衰减，远处柔和淡出
+        const fadeT = Math.pow(1 - t, 1.8)
+        const bri = baseOpacity * 0.15 * fadeT
+        return (
+          <ZStack key={"beam-" + i} frame={{ width: spread, height: lh }} alignment="center"
+            offset={{ x: (cx - width / 2), y: (cy - height / 2) }}>
+            <Rectangle fill={{ r: 230, g: 240, b: 255, a: 1 } as any}
+              frame={{ width: spread, height: lh }} opacity={Math.max(0.002, bri)} />
+          </ZStack>
+        )
+      })}
+      {/* 车灯高光点 */}
+      <Circle fill={{ r: 255, g: 255, b: 255, a: 1 } as any}
+        frame={{ width: 8, height: 8 }}
+        offset={{ x: (lampX - width / 2), y: (lampY - height / 2) }}
+        opacity={baseOpacity * 0.7} />
+    </ZStack>
+  )
+}
+
+// ========================
 // 尺寸视图
 // ========================
 
@@ -429,9 +526,9 @@ const SmallWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
       widgetBackground={isTransparent ? "clear" : gradient("linear", { colors: ["#0A0E1A" as Color, "#050810" as Color], startPoint: "top", endPoint: "bottom" })}>
       <VStack padding={pad} spacing={S(2)} alignment="center" frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
-        {/* 大仪表盘 — 核心视觉 */}
+        {/* 大仪表盘 — 核心视觉（七段签到环）*/}
         <Spacer />
-        <StatusDashboard isSigned={info.isSigned} size={dashSize} />
+        <StatusDashboard calendarInfo={info.calendarInfo} size={dashSize} />
 
         {/* 扫描线 */}
         {info.isSigned && <ScanBeam width={W * 0.55} color={Theme.colors.green} />}
@@ -452,11 +549,13 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} alignment="bottomTrailing"
       widgetBackground={isTransparent ? "clear" : gradient("linear", { colors: ["#0A0E1A" as Color, "#050810" as Color], startPoint: "top", endPoint: "bottom" })}>
       
-      {/* 背景上的装饰：脱离文档流的车图，位于右下角 */}
+      {/* 背景上的装饰：脱离文档流的车图 + 大灯光束，位于右下角 */}
       <HStack padding={{ bottom: 0, trailing: 10 }}>
         <Image filePath={VEHICLE_IMG_PATH} resizable={true}
           frame={{ width: 135, height: 125 }} opacity={0.95} />
       </HStack>
+      {/* 大灯光束：从车头向左前方照射 */}
+      <HeadlightBeam width={W} height={H} />
 
       <VStack spacing={0} frame={{ maxWidth: "infinity", maxHeight: "infinity" }} alignment="leading"
         padding={{ top: 16, bottom: 12, leading: 16, trailing: 16 }}>
@@ -555,7 +654,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                   <VStack spacing={S(4)} alignment="leading">
                     {shownBoxes.length > 0 ? (
                       shownBoxes.map((box, i) => (
-                        <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} lastReward={lastReceivedReward} />
+                        <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} lastReward={lastReceivedReward} calendarInfo={info.calendarInfo} />
                       ))
                     ) : (
                       <HStack alignment="center" spacing={S(4)} padding={{ vertical: 4 }}>
@@ -569,35 +668,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
             </VStack>
             <Spacer />
           </HStack>
-          {/* 盲盒倒计时彩色进度条（全宽，7格满→每过一天从右减少一格） */}
-          {(() => {
-            const pendingBoxes = info.notOpenedBoxesDetail.filter(box => box.leftDaysToOpen > 0 || box.rewardStatus === 1)
-            const shownBox = pendingBoxes.filter(box => box.awardDays === 7).slice(0, 1)[0]
-            if (!shownBox) return null
-            const total = 7
-            const left = Math.min(shownBox.leftDaysToOpen, total)
-            const bgBarColor = Widget.isTransparentBackground
-              ? ("rgba(255,255,255,0.15)" as Color)
-              : ("rgba(255,255,255,0.08)" as Color)
-            const barColors = ["#FF6B6B", "#FF8E53", "#FFC048", "#A8E063", "#78E08F", "#48DBFB", "#0ABDE3"]
-            return (
-              <HStack spacing={S(1)} frame={{ height: S(4), maxWidth: "infinity" }}
-                background={{ shape: { type: "rect", cornerRadius: S(2) }, style: bgBarColor }}>
-                {Array.from({ length: total }).map((_, i) => {
-                  // 左边 left 格亮色（剩余天数），右边 (total-left) 格暗色（已过天数）
-                  const isActive = i < left
-                  const segColor = isActive ? barColors[i] : "rgba(255,255,255,0.06)"
-                  return (
-                    <ZStack key={"bar-" + i} frame={{ maxWidth: "infinity" }}>
-                      {/* @ts-ignore */}
-                      <Rectangle fill={segColor as Color} frame={{ height: S(4) }}
-                        background={{ shape: { type: "rect", cornerRadius: S(1) }, style: segColor as Color }} />
-                    </ZStack>
-                  )
-                })}
-              </HStack>
-            )
-          })()}
+
         </VStack>
       </VStack>
     </ZStack>
