@@ -103,6 +103,7 @@ const API_ENDPOINTS = {
   creditInfo: 'https://api5-h5-app-bj.ninebot.com/web/credit/get-msg',
   blindBoxList: `https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/list?t=${Date.now()}`,
   receiveBlindBox: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/blind-box/receive',
+  supplement: 'https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/supplement',
   taskList: 'https://cn-cbu-gateway.ninebot.com/portal/api/task-center/task/v3/list',
   taskReward: 'https://cn-cbu-gateway.ninebot.com/portal/self-service/task/reward',
   myAchievement: 'https://api5-h5-app-bj.ninebot.com/web/rank/my-achievement',
@@ -430,6 +431,35 @@ export async function doSign(authorization: string, deviceId: string): Promise<{
     }
   } catch (error) {
     console.error(`❌ 签到错误:`, error)
+    return { success: false, message: (error as Error).message }
+  }
+}
+
+/**
+ * 执行补签 — 对指定日期进行补签
+ * @param signDate 要补签的日期，格式 YYYY-MM-DD
+ */
+export async function doSupplement(authorization: string, deviceId: string, signDate: string): Promise<{ success: boolean; message: string; reward?: any }> {
+  try {
+    const headers = getAuthHeaders(authorization, deviceId)
+    const url = `${API_ENDPOINTS.supplement}?t=${Date.now()}`
+    
+    const response = await httpPost(url, {
+      headers,
+      body: { signDate }
+    })
+    
+    if (response.data && response.data.code === 0) {
+      const reward = response.data.data?.rewardList
+      console.log(`✅ 补签成功: ${signDate}, 奖励:`, JSON.stringify(reward))
+      return { success: true, message: '补签成功', reward }
+    } else {
+      const errorMsg = response.data?.msg || response.data?.message || '补签失败'
+      console.warn(`⚠️ 补签失败 (${signDate}):`, errorMsg)
+      return { success: false, message: errorMsg }
+    }
+  } catch (error) {
+    console.error(`❌ 补签错误 (${signDate}):`, error)
     return { success: false, message: (error as Error).message }
   }
 }
