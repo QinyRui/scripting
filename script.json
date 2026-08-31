@@ -1,49 +1,49 @@
 {
-  "color" : "rgba(0, 198, 165,1)",
+  "runInApp" : true,
+  "permissions" : null,
   "localizedDescriptions" : {
-    "de" : "",
-    "fr" : "",
-    "ja" : "",
     "ru" : "",
-    "es" : "",
-    "zh" : "",
     "pt" : "",
     "en" : "",
-    "it" : ""
-  },
-  "name" : "九号APP签到",
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "entry" : "index.tsx",
-  "localizedNames" : {
-    "ja" : "",
-    "zh" : "",
-    "fr" : "",
-    "de" : "",
-    "es" : "",
-    "ru" : "",
-    "pt" : "",
     "it" : "",
-    "en" : ""
+    "es" : "",
+    "de" : "",
+    "zh" : "",
+    "ja" : "",
+    "fr" : ""
   },
-  "permissions" : null,
-  "version" : "2.2.49",
-  "description" : "签到时自动领取每日分享任务奖励+1N币（需先在APP中分享一次）",
-  "contributors" : [
-
-  ],
-  "icon" : "scooter",
-  "runInApp" : true,
-  "remoteResource" : {
-    "hash" : "e79d5a3b48229c08905061e2cf9a94e5",
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "autoUpdateInterval" : 3600
-  },
-  "intentInputTypes" : [
-
-  ],
+  "entry" : "index.tsx",
   "author" : {
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "email" : "602839678@qq.com",
     "name" : "QinyRui"
-  }
+  },
+  "name" : "九号APP签到",
+  "intentInputTypes" : [
+
+  ],
+  "remoteResource" : {
+    "autoUpdateInterval" : 3600,
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
+    "hash" : "dbe67375d1a863d225e17e306c258acd"
+  },
+  "color" : "rgba(0, 198, 165,1)",
+  "contributors" : [
+
+  ],
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "description" : "签到时自动领取每日分享任务奖励+1N币（需先在APP中分享一次）",
+  "version" : "2.2.56",
+  "localizedNames" : {
+    "zh" : "",
+    "fr" : "",
+    "es" : "",
+    "ru" : "",
+    "ja" : "",
+    "en" : "",
+    "it" : "",
+    "de" : "",
+    "pt" : ""
+  },
+  "icon" : "scooter"
 }
