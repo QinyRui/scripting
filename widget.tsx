@@ -544,6 +544,10 @@ const SmallWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 /** ——— 中号组件 ——— */
 const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
   const ach = info.achievement
+  // 读取今日骑行数据显示开关
+  const settingsStr = getStorage('ninebotSettings')
+  const settings = typeof settingsStr === 'string' ? JSON.parse(settingsStr) : (settingsStr || {})
+  const showRide = settings.showRideData !== false  // 默认显示
 
   return (
     <ZStack frame={{ maxWidth: "infinity", maxHeight: "infinity" }} alignment="bottomTrailing"
@@ -562,39 +566,41 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
 
         {/* ═══ Row 1: 骑行数据(左) + 签到徽章(右) ═══ */}
         <HStack alignment="top" spacing={S(4)} frame={{ maxWidth: "infinity" }}>
-          <VStack alignment="leading" spacing={0} frame={{ minWidth: 0, maxWidth: S(130) }}>
-            <Text font={fs(10)} fontWeight="semibold" lineLimit={1}
-              foregroundStyle={{ color: Theme.colors.text1, opacity: 0.9 }}>
-              今日骑行
-            </Text>
-            {/* 骑行数据垂直排列 */}
-            <HStack alignment="top" spacing={S(8)} frame={{ minWidth: 0, maxWidth: "infinity" }}>
-              {/* 今日里程 */}
-              <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
-                <Image systemName="location.fill" font={fs(9)}
-                  foregroundStyle={{ color: Theme.colors.green, opacity: 0.85 }} />
-                <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>今日</Text>
-              </VStack>
-              {/* 总骑行天数 */}
-              <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
-                <Image systemName="bicycle" font={fs(9)}
-                  foregroundStyle={{ color: Theme.colors.yellow, opacity: 0.85 }} />
-                <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: Theme.colors.yellow, opacity: 1 }}>{ach ? ach.total_days + "天" : "--"}</Text>
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总骑行天数</Text>
-              </VStack>
-              {/* 总里程 */}
-              <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
-                <Image systemName="road.lanes" font={fs(9)}
-                  foregroundStyle={{ color: Theme.colors.cyan, opacity: 0.85 }} />
-                <Text font={fs(11)} fontWeight="bold"
-                  foregroundStyle={{ color: Theme.colors.cyan, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
-                <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总里程</Text>
-              </VStack>
-            </HStack>
-          </VStack>
+          {showRide ? (
+            <VStack alignment="leading" spacing={0} frame={{ minWidth: 0, maxWidth: S(130) }}>
+              <Text font={fs(10)} fontWeight="semibold" lineLimit={1}
+                foregroundStyle={{ color: Theme.colors.text1, opacity: 0.9 }}>
+                今日骑行
+              </Text>
+              {/* 骑行数据垂直排列 */}
+              <HStack alignment="top" spacing={S(8)} frame={{ minWidth: 0, maxWidth: "infinity" }}>
+                {/* 今日里程 */}
+                <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
+                  <Image systemName="location.fill" font={fs(9)}
+                    foregroundStyle={{ color: Theme.colors.green, opacity: 0.85 }} />
+                  <Text font={fs(11)} fontWeight="bold"
+                    foregroundStyle={{ color: Theme.colors.green, opacity: 1 }}>{ach ? ach.mileage + "km" : "--"}</Text>
+                  <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>今日</Text>
+                </VStack>
+                {/* 总骑行天数 */}
+                <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
+                  <Image systemName="bicycle" font={fs(9)}
+                    foregroundStyle={{ color: Theme.colors.yellow, opacity: 0.85 }} />
+                  <Text font={fs(11)} fontWeight="bold"
+                    foregroundStyle={{ color: Theme.colors.yellow, opacity: 1 }}>{ach ? ach.total_days + "天" : "--"}</Text>
+                  <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总骑行天数</Text>
+                </VStack>
+                {/* 总里程 */}
+                <VStack alignment="center" spacing={S(1)} frame={{ maxWidth: "infinity" }}>
+                  <Image systemName="road.lanes" font={fs(9)}
+                    foregroundStyle={{ color: Theme.colors.cyan, opacity: 0.85 }} />
+                  <Text font={fs(11)} fontWeight="bold"
+                    foregroundStyle={{ color: Theme.colors.cyan, opacity: 1 }}>{ach ? ach.odometer + "km" : "--"}</Text>
+                  <Text font={fs(8)} foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>总里程</Text>
+                </VStack>
+              </HStack>
+            </VStack>
+          ) : null}
           <Spacer />
           <VStack alignment="trailing" spacing={0}>
             <HStack alignment="center" spacing={2}>
