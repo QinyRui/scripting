@@ -95,6 +95,8 @@ export interface NinebotSettings {
   achievementUid: string
   achievementVehicleType: string
   achievementWnumber: string
+  // 显示控制
+  showRideData: boolean
 }
 
 // ==================== 默认设置 ====================
@@ -116,6 +118,7 @@ const defaultSettings: NinebotSettings = {
   achievementUid: "",
   achievementVehicleType: "",
   achievementWnumber: "",
+  showRideData: true,
 }
 
 // ==================== 工具函数 ====================
@@ -835,6 +838,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
   const [autoSignTime, setAutoSignTime] = useState(initial.autoSignTime || "00:30")
   const [autoSupplement, setAutoSupplement] = useState(initial.autoSupplement ?? true)
   const [autoOpenBlindBox, setAutoOpenBlindBox] = useState(initial.autoOpenBlindBox ?? false)
+  const [showRideData, setShowRideData] = useState(initial.showRideData ?? true)
   const achievementUidObs = useObservable(initial.achievementUid || Storage.get("ninebot.uid") || " ")
   const achievementVehicleTypeObs = useObservable(initial.achievementVehicleType || Storage.get("ninebot.vehicleType") || " ")
   const achievementWnumberObs = useObservable(initial.achievementWnumber || Storage.get("ninebot.wnumber") || " ")
@@ -894,6 +898,7 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
       achievementUid: (achievementUidObs.value || "").trim(),
       achievementVehicleType: (achievementVehicleTypeObs.value || "").trim(),
       achievementWnumber: (achievementWnumberObs.value || "").trim(),
+      showRideData: !!showRideData,
     }
 
     Storage.set(SETTINGS_KEY, newSettings)
@@ -1437,6 +1442,17 @@ function SettingsView({ onOpenBlindBox }: { onOpenBlindBox?: () => void }) {
                 title="自动开启盲盒"
                 value={autoOpenBlindBox}
                 onChanged={setAutoOpenBlindBox}
+              />
+            </VStack>
+          </HStack>
+          
+          <HStack padding={16} spacing={12} alignment="center">
+            <ZStack frame={{ width: 32, height: 32 }}><Circle fill="systemCyan" opacity={0.15} /><Image systemName="bicycle" foregroundStyle="systemCyan" font={16} /></ZStack>
+            <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity" }}>
+              <Toggle
+                title="显示今日骑行数据"
+                value={showRideData}
+                onChanged={setShowRideData}
               />
             </VStack>
           </HStack>
