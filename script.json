@@ -1,6 +1,6 @@
 {
   "color" : "rgba(0, 198, 165,1)",
-  "version" : "2.2.63",
+  "version" : "2.2.67",
   "name" : "九号APP签到",
   "remoteResource" : {
     "autoUpdateInterval" : 3600,
