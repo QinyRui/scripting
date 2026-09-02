@@ -1,49 +1,49 @@
 {
+  "color" : "rgba(0, 198, 165,1)",
+  "version" : "2.2.63",
+  "name" : "九号APP签到",
+  "remoteResource" : {
+    "autoUpdateInterval" : 3600,
+    "hash" : "9228d56bb04324599855d60af30f564e",
+    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号"
+  },
+  "description" : "签到时自动领取每日分享任务奖励+1N币（需先在APP中分享一次）",
+  "localizedNames" : {
+    "ja" : "",
+    "es" : "",
+    "it" : "",
+    "pt" : "",
+    "en" : "",
+    "ru" : "",
+    "de" : "",
+    "zh" : "",
+    "fr" : ""
+  },
+  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
+  "icon" : "scooter",
+  "intentInputTypes" : [
+
+  ],
   "author" : {
     "email" : "602839678@qq.com",
     "homepage" : "https:\/\/github.com\/QinyRui\/scripting",
     "name" : "QinyRui"
   },
-  "name" : "九号APP签到",
-  "runInApp" : true,
+  "localizedDescriptions" : {
+    "pt" : "",
+    "en" : "",
+    "ru" : "",
+    "zh" : "",
+    "ja" : "",
+    "es" : "",
+    "fr" : "",
+    "de" : "",
+    "it" : ""
+  },
+  "permissions" : null,
   "entry" : "index.tsx",
   "contributors" : [
 
   ],
-  "iconImage" : "https:\/\/raw.githubusercontent.com\/QinyRui\/scripting\/九号\/photos\/LOUGO.png",
-  "version" : "2.2.62",
-  "remoteResource" : {
-    "url" : "https:\/\/github.com\/QinyRui\/scripting\/tree\/九号",
-    "autoUpdateInterval" : 3600,
-    "hash" : "e7227d317841640b749b0f59ba74efe8"
-  },
-  "icon" : "scooter",
-  "color" : "rgba(0, 198, 165,1)",
-  "localizedNames" : {
-    "pt" : "",
-    "fr" : "",
-    "ja" : "",
-    "zh" : "",
-    "es" : "",
-    "de" : "",
-    "ru" : "",
-    "it" : "",
-    "en" : ""
-  },
-  "permissions" : null,
-  "intentInputTypes" : [
-
-  ],
-  "localizedDescriptions" : {
-    "es" : "",
-    "en" : "",
-    "ru" : "",
-    "de" : "",
-    "zh" : "",
-    "fr" : "",
-    "it" : "",
-    "ja" : "",
-    "pt" : ""
-  },
-  "description" : "签到时自动领取每日分享任务奖励+1N币（需先在APP中分享一次）"
+  "runInApp" : true
 }
