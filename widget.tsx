@@ -243,7 +243,7 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
 )
 
 /** 圆形倒计时环盲盒组件 — 左环右文布局（七段彩色环 + 内圈奖励）*/
-const BlindBoxRing = ({ box, vehicleName, lastReward, calendarInfo }: { box: any, vehicleName?: string, lastReward?: { rewardType: number, rewardValue: number } | null, calendarInfo?: Array<{ sign: number, timestamp: number }> }) => {
+const BlindBoxRing = ({ box, vehicleName, lastReward, calendarInfo, openedBoxesDetail }: { box: any, vehicleName?: string, lastReward?: { rewardType: number, rewardValue: number } | null, calendarInfo?: Array<{ sign: number, timestamp: number, rewardInfo?: { receiveStatus: number, rewardValue: number, rewardType: number, days: number } }>, openedBoxesDetail?: Array<{ awardDays: number, openedTime: string }> }) => {
   const isReady = box.leftDaysToOpen <= 0
   const total = box.awardDays || 7
   const left = box.leftDaysToOpen
@@ -301,42 +301,71 @@ const BlindBoxRing = ({ box, vehicleName, lastReward, calendarInfo }: { box: any
               <Text font={fs(7)} fontWeight="bold"
                 foregroundStyle={{ color: accentColor, opacity: 1 }}>可领</Text>
             </>
-          ) : lastReward ? (
-            <>
-              {/* 上一次盲盒奖励：自动识别经验/N币 */}
-              {/* @ts-ignore */}
-              <Image
-                systemName={lastReward.rewardType === 1 ? "star.fill" : "circle.grid.cross.fill"}
-                font={fs(9)}
-                foregroundStyle={{
-                  color: (lastReward.rewardType === 1 ? Theme.colors.green : Theme.colors.yellow) as Color,
-                  opacity: 1
-                }}
-              />
-              {/* @ts-ignore */}
-              <Text font={fs(9)} fontWeight="bold"
-                foregroundStyle={{
-                  color: (lastReward.rewardType === 1 ? Theme.colors.green : Theme.colors.yellow) as Color,
-                  opacity: 1
-                }}>
-                {"+" + lastReward.rewardValue}
-              </Text>
-              {/* @ts-ignore */}
-              <Text font={fs(5)}
-                foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>
-                {lastReward.rewardType === 1 ? "经验" : "N币"}
-              </Text>
-            </>
-          ) : (
-            <>
-              {/* @ts-ignore */}
-              <Text font={fs(18)} fontWeight="bold"
-                foregroundStyle={{ color: Theme.colors.text1, opacity: 1 }}>{left}</Text>
-              {/* @ts-ignore */}
-              <Text font={fs(6)}
-                foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>天后</Text>
-            </>
-          )}
+          ) : (() => {
+            // 优先级1：从日历信息中找最近领取的盲盒奖励（days >= 7 表示盲盒）
+            const recentBoxReward = (calendarInfo || [])
+              .filter(c => c.rewardInfo && c.rewardInfo.receiveStatus === 2 && (c.rewardInfo.days || 0) >= 7)
+              .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0]?.rewardInfo
+            if (recentBoxReward) {
+              const isExp = recentBoxReward.rewardType === 1
+              return (
+                <>
+                  {/* @ts-ignore */}
+                  <Image
+                    systemName={isExp ? "star.fill" : "circle.grid.cross.fill"}
+                    font={fs(9)}
+                    foregroundStyle={{ color: (isExp ? Theme.colors.green : Theme.colors.yellow) as Color, opacity: 1 }} />
+                  {/* @ts-ignore */}
+                  <Text font={fs(10)} fontWeight="bold"
+                    foregroundStyle={{ color: (isExp ? Theme.colors.green : Theme.colors.yellow) as Color, opacity: 1 }}>
+                    {"+" + recentBoxReward.rewardValue}
+                  </Text>
+                  {/* @ts-ignore */}
+                  <Text font={fs(5)}
+                    foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>
+                    {isExp ? "经验" : "N币"}
+                  </Text>
+                </>
+              )
+            }
+            // 优先级2：每日签到奖励
+            if (lastReward) {
+              return (
+                <>
+                  {/* @ts-ignore */}
+                  <Image
+                    systemName={lastReward.rewardType === 1 ? "star.fill" : "circle.grid.cross.fill"}
+                    font={fs(9)}
+                    foregroundStyle={{
+                      color: (lastReward.rewardType === 1 ? Theme.colors.green : Theme.colors.yellow) as Color,
+                      opacity: 1
+                    }}
+                  />
+                  {/* @ts-ignore */}
+                  <Text font={fs(9)} fontWeight="bold"
+                    foregroundStyle={{
+                      color: (lastReward.rewardType === 1 ? Theme.colors.green : Theme.colors.yellow) as Color,
+                      opacity: 1
+                    }}>
+                    {"+" + lastReward.rewardValue}
+                  </Text>
+                  {/* @ts-ignore */}
+                  <Text font={fs(5)}
+                    foregroundStyle={{ color: Theme.colors.text2, opacity: 0.7 }}>
+                    {lastReward.rewardType === 1 ? "经验" : "N币"}
+                  </Text>
+                </>
+              )
+            }
+            // 优先级3：无奖励时显示盲盒图标
+            return (
+              <>
+                {/* @ts-ignore */}
+                <Image systemName="gift.fill" font={fs(12)}
+                  foregroundStyle={{ color: Theme.colors.text2, opacity: 0.5 }} />
+              </>
+            )
+          })()}
         </VStack>
       </ZStack>
       {/* 右侧：文字信息 */}
@@ -660,7 +689,7 @@ const MediumWidgetView = ({ info }: { info: ExtendedNinebotData }) => {
                   <VStack spacing={S(4)} alignment="leading">
                     {shownBoxes.length > 0 ? (
                       shownBoxes.map((box, i) => (
-                        <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} lastReward={lastReceivedReward} calendarInfo={info.calendarInfo} />
+                        <BlindBoxRing key={"medium-ring-" + i} box={box} vehicleName={info.vehicle?.name || info.achievement?.vehicle_name} lastReward={lastReceivedReward} calendarInfo={info.calendarInfo} openedBoxesDetail={info.openedBoxesDetail} />
                       ))
                     ) : (
                       <HStack alignment="center" spacing={S(4)} padding={{ vertical: 4 }}>
