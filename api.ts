@@ -269,47 +269,20 @@ export async function getNinebotInfo(authorization: string, deviceId: string): P
       console.warn("⚠️ 盲盒 API 返回错误:", blindBoxResp.data?.msg || blindBoxResp.data?.message || JSON.stringify(blindBoxResp.data))
     }
 
-    // 自动领取每日分享奖励（半自动：用户分享一次后，脚本自动领取N币）
+    // 自动领取每日分享奖励（直接尝试领取，不依赖 rewardStatus 判断）
     let shareTaskRewardClaimed: boolean | null = null
     try {
-      console.log("🎁 检查每日分享任务状态...")
-      const shareTask = await getDailyShareTaskStatus(authorization, deviceId)
-      if (shareTask) {
-        console.log("📋 分享任务状态: rewardStatus=" + shareTask.rewardStatus + " (1=待领取, 2=已领取, 3=不可参与)")
-        if (shareTask.rewardStatus === 1) {
-          // rewardStatus=1 表示待领取，自动调用领取接口
-          console.log("📤 分享任务待领取，尝试自动领取奖励...")
-          const claimResult = await claimDailyShareReward(authorization, deviceId)
-          if (claimResult.success) {
-            shareTaskRewardClaimed = true
-            console.log("🎉 每日分享奖励领取成功！+" + (claimResult.reward || 1) + " N币")
-          } else {
-            shareTaskRewardClaimed = false
-            console.warn("⚠️ 分享奖励领取失败:", claimResult.message)
-          }
-        } else if (shareTask.rewardStatus === 2) {
-          shareTaskRewardClaimed = true
-          console.log("✅ 每日分享奖励已领取过")
-        } else if (shareTask.rewardStatus === 3) {
-          // rewardStatus=3 可能是“待领取”或“不可参与”，尝试领取一次
-          console.log("📤 分享任务状态=3，尝试领取...")
-          const claimResult = await claimDailyShareReward(authorization, deviceId)
-          if (claimResult.success) {
-            shareTaskRewardClaimed = true
-            console.log("🎉 分享奖励领取成功（状态3）!")
-          } else {
-            shareTaskRewardClaimed = false
-            console.log("ℹ️ 分享任务状态3领取结果:", claimResult.message)
-          }
-        } else {
-          shareTaskRewardClaimed = false
-          console.log("ℹ️ 分享任务未知状态:", shareTask.rewardStatus)
-        }
+      console.log("🎁 尝试领取每日分享奖励...")
+      const claimResult = await claimDailyShareReward(authorization, deviceId)
+      if (claimResult.success) {
+        shareTaskRewardClaimed = true
+        console.log("🎉 每日分享奖励领取成功！+" + (claimResult.reward || 1) + " N币")
       } else {
-        console.log("ℹ️ 未找到每日分享任务，跳过")
+        shareTaskRewardClaimed = false
+        console.warn("⚠️ 分享奖励领取结果:", claimResult.message)
       }
     } catch (e) {
-      console.warn("⚠️ 分享任务检查失败:", e)
+      console.warn("⚠️ 分享奖励领取异常:", e)
     }
 
     const result = { 
