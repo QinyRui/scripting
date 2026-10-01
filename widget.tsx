@@ -245,15 +245,14 @@ const StatItem = ({ icon, label, value, color }: { icon: string, label: string, 
 /** 圆形倒计时环盲盒组件 — 左环右文布局（七段彩色环 + 内圈奖励）*/
 const BlindBoxRing = ({ box, vehicleName, lastReward, calendarInfo, openedBoxesDetail }: { box: any, vehicleName?: string, lastReward?: { rewardType: number, rewardValue: number } | null, calendarInfo?: Array<{ sign: number, timestamp: number, rewardInfo?: { receiveStatus: number, rewardValue: number, rewardType: number, days: number } }>, openedBoxesDetail?: Array<{ awardDays: number, openedTime: string }> }) => {
   const isReady = box.leftDaysToOpen <= 0
+  // 计算盲盒倒计时进度（总天数 - 剩余天数 = 已等待天数）
   const total = box.awardDays || 7
   const left = box.leftDaysToOpen
   const ringSize = S(42)
   const ringWidth = Math.max(3, S(4))
 
-  // 计算七天签到状态（与 StatusDashboard 同逻辑）
-  const sortedCal = (calendarInfo || []).slice().sort((a, b) => a.timestamp - b.timestamp)
-  const last7 = sortedCal.slice(-7)
-  const signedDaysCount = last7.filter(c => c.sign === 1).length
+  // 段数与总天数一致，已等待天数 = total - left
+  const passedDays = total - left
 
   const accentColor = isReady ? Theme.colors.green : Theme.colors.orange
 
@@ -273,18 +272,19 @@ const BlindBoxRing = ({ box, vehicleName, lastReward, calendarInfo, openedBoxesD
         {/* 底环 */}
         <Circle stroke={{ shapeStyle: Theme.colors.cardStroke, strokeStyle: { lineWidth: ringWidth } }}
           frame={{ width: ringSize, height: ringSize }} opacity={0.3} />
-        {/* 七段彩色弧 — 每天一段，已签到=暗淡，未签到=明亮 */}
+        {/* 彩色弧段 — 每天一段，已等待=暗淡，未等待=明亮，与倒计时同步 */}
         {(() => {
-          const segColors = ['#FF6B6B', '#FF9F43', '#FFD93D', '#6BCB77', '#48DBFB', '#5B86E5', '#BF5AF2']
-          const segArc = 50.14 / 360
-          const gap = 3 / 360
-          return Array.from({ length: 7 }, (_, i) => {
+          const segColors = ['#FF6B6B', '#FF9F43', '#FFD93D', '#6BCB77', '#48DBFB', '#5B86E5', '#BF5AF2', '#FF6B9D', '#C44569', '#F8B500', '#00D2D3', '#54A0FF', '#5F27CD', '#FF9FF3', '#341F97', '#EE5253', '#0ABDE3', '#10AC84', '#FF6B6B', '#FF9F43', '#FFD93D', '#6BCB77', '#48DBFB', '#5B86E5', '#BF5AF2', '#FF6B9D', '#C44569', '#F8B500', '#00D2D3', '#54A0FF']
+          const segCount = Math.min(total, 30) // 最多30段
+          const segArc = (360 - segCount * 4) / segCount / 360
+          const gap = 4 / 360
+          return Array.from({ length: segCount }, (_, i) => {
             const from = i * (segArc + gap)
             const to = from + segArc
-            const segOpacity = i < signedDaysCount ? 0.15 : 0.85
+            const segOpacity = i < passedDays ? 0.15 : 0.85
             return (
               <Circle key={"rb-seg-" + i}
-                stroke={{ shapeStyle: segColors[i] as Color, strokeStyle: { lineWidth: ringWidth } }}
+                stroke={{ shapeStyle: segColors[i % segColors.length] as Color, strokeStyle: { lineWidth: ringWidth } }}
                 frame={{ width: ringSize, height: ringSize }}
                 trim={{ from, to }} opacity={segOpacity} />
             )
