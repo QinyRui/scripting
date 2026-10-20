@@ -6,7 +6,7 @@ import { FontSettingsPage, FontSizeSubPage, FontColorSubPage } from "./pages/fon
 import { WallpaperSettingsPage } from "./pages/wallpaper-settings"
 import { NotificationSettingsPage } from "./pages/notification-settings"
 import { LayoutSettingsPage } from "./pages/layout-settings"
-import { TyphoonMonitorPage } from "./pages/typhoon-monitor"
+import { TyphoonPathPage } from "./pages/typhoon-webview"
 import { WeatherHeroIcon } from "./components/weather-hero"
 import { useReleaseNotesSheet } from "./components/what-is-new"
 import { reverseGeocodeOSM } from "./utils/location"
@@ -592,15 +592,15 @@ function ConfigPage() {
 
         </Section>
 
-        {/* 台风实时监控 */}
+        {/* 台风路径 */}
         <Section header={<Text font="headline">实用工具</Text>}>
-          <NavigationLink destination={<TyphoonMonitorPage />}>
+          <NavigationLink destination={<TyphoonPathPage />}>
             <HStack padding={{ vertical: 8 }} spacing={12} alignment="center">
               <ZStack frame={{ width: 32, height: 32 }}>
                 <Circle fill="systemRed" opacity={0.15} />
                 <Image systemName="hurricane" foregroundStyle="systemRed" font={16} />
               </ZStack>
-              <Text fontWeight="bold">台风实时监控</Text>
+              <Text fontWeight="bold">台风路径</Text>
             </HStack>
           </NavigationLink>
         </Section>
